@@ -1,4 +1,3 @@
-#include <linux/vfio.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
