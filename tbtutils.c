@@ -57,6 +57,9 @@ int main(void)
 	struct vdid *vdid = get_vdid(pci_id);
 	printf("%s, %s\n", vdid->vendor_id, vdid->device_id);
 
-	bind_grp_modules(pci_id, false);
+	bind_grp_modules(pci_id, true);
+
+	struct vfio_hlvl_params *params = vfio_dev_init(pci_id);
+        printf("%d %d %d %d\n", params->container, params->group, params->device, params->dev_info->num_regions);
 }
 
