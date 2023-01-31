@@ -19,6 +19,7 @@ struct vdid {
 void do_pci_rescan(void);
 void remove_pci_dev(const char *pci_id);
 struct vdid* get_vdid(const char *pci_id);
+struct list_item* get_bars_offset(const char *pci_id);
 
 /*struct pci_access* init_pci(void);
 void clean_pci(struct pci_access *pacc);

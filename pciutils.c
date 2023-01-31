@@ -44,6 +44,9 @@ struct vdid* get_vdid(const char *pci_id)
 	return vdid;
 }
 
+
+
+
 /*static u32 host_class_id = 0x0c0340;
 
 struct pci_access* init_pci(void)

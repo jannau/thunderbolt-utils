@@ -3,7 +3,7 @@
 #define MAX_LEN	1024
 
 struct list_item {
-	char *val;
+	void *val;
 	struct list_item *next;
 };
 
@@ -12,3 +12,4 @@ char* do_bash_cmd(const char *cmd);
 struct list_item *do_bash_cmd_list(const char *cmd);
 char *trim_white_space(char *str);
 char* switch_cmd_to_root(const char *cmd);
+struct list_item* list_add(struct list_item *tail, const void *val);

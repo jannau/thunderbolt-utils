@@ -5,7 +5,7 @@
 
 #include "utils.h"
 
-static struct list_item* list_add(struct list_item *tail, const char *val)
+struct list_item* list_add(struct list_item *tail, const void *val)
 {
 	struct list_item *temp = malloc(sizeof(struct list_item));
 
@@ -65,14 +65,14 @@ struct list_item* do_bash_cmd_list(const char *cmd)
 		output = trim_white_space(output);
 
 		if (tail == NULL) {
-			head = list_add(tail, output);;
+			head = list_add(tail, (void*)output);;
 			tail = head;
 
 			output = temp_output;
 			continue;
 		}
 
-		tail = list_add(tail, output);
+		tail = list_add(tail, (void*)output);
 
 		output = temp_output;
 	}

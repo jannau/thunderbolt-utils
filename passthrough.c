@@ -60,6 +60,21 @@ static char* find_iommu_grp(const char *pci_id)
 	return iommu_grp;
 }
 
+static bool is_vfio_bar_index(u8 index)
+{
+	if ((index == VFIO_PCI_BAR0_REGION_INDEX) || (index == VFIO_PCI_BAR1_REGION_INDEX) ||
+	    (index == VFIO_PCI_BAR2_REGION_INDEX) || (index == VFIO_PCI_BAR3_REGION_INDEX) ||
+	    (index == VFIO_PCI_BAR4_REGION_INDEX) || (index == VFIO_PCI_BAR5_REGION_INDEX))
+		return true;
+
+	return false;
+}
+
+static bool is_vfio_pci_cfg_index(u8 index)
+{
+	return index == VFIO_PCI_CONFIG_REGION_INDEX;
+}
+
 bool check_vfio_module(void)
 {
 	char *cmd = "modprobe 2>/dev/null vfio-pci; echo $?";
@@ -82,9 +97,9 @@ void bind_grp_modules(const char *pci_id, bool bind)
 
 	for (; list_modules != NULL; list_modules = list_modules->next) {
 		if (bind)
-			bind_vfio_module(list_modules->val, get_vdid(list_modules->val));
+			bind_vfio_module((char*)list_modules->val, get_vdid(list_modules->val));
 		else
-			unbind_vfio_module(list_modules->val, get_vdid(list_modules->val));
+			unbind_vfio_module((char*)list_modules->val, get_vdid(list_modules->val));
 	}
 
 	if (!bind)
@@ -136,4 +151,60 @@ struct vfio_hlvl_params* vfio_dev_init(const char *pci_id)
 	params->dev_info = &device_info;
 
 	return params;
+}
+
+void get_dev_bar_regions(struct vfio_hlvl_params *params, const char *pci_id)
+{
+	struct list_item *temp = NULL;
+	u8 i = 0;
+
+	params->bar_regions = NULL;
+
+	for (i = 0; i < VFIO_PCI_NUM_REGIONS; i++) {
+		struct vfio_region_info *region_info = malloc(sizeof(struct vfio_region_info));
+
+		region_info->argsz = sizeof(*region_info);
+
+		if (!is_vfio_bar_index(i))
+			continue;
+
+		region_info->index = i;
+		ioctl(params->device, VFIO_DEVICE_GET_REGION_INFO, region_info);
+
+		if (region_info->size == 0x0)
+			continue;
+
+		temp = list_add(temp, (void*)region_info);
+
+		if (!params->bar_regions)
+			params->bar_regions = temp;
+	}
+}
+
+void get_dev_pci_cfg_regions(struct vfio_hlvl_params *params, const char *pci_id)
+{
+	struct list_item *temp = NULL;
+	u8 i = 0;
+
+	params->pci_cfg_regions = NULL;
+
+	for (i = 0; i < VFIO_PCI_NUM_REGIONS; i++) {
+		struct vfio_region_info *region_info = malloc(sizeof(struct vfio_region_info));
+
+		region_info->argsz = sizeof(*region_info);
+
+		if (!is_vfio_pci_cfg_index(i))
+			continue;
+
+		region_info->index = i;
+		ioctl(params->device, VFIO_DEVICE_GET_REGION_INFO, region_info);
+
+		if (region_info->size == 0x0)
+			continue;
+
+		temp = list_add(temp, (void*)region_info);
+
+		if (!params->pci_cfg_regions)
+			params->pci_cfg_regions = temp;
+	}
 }
