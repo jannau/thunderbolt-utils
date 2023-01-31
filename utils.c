@@ -86,13 +86,15 @@ char* trim_white_space(char *str)
 {
 	char *end;
 
-	while (isspace((unsigned char)*str)) str++;
+	while (isspace((unsigned char)*str))
+		str++;
 
 	if (*str == 0)
 		return str;
 
 	end = str + strlen(str) - 1;
-	while (end > str && isspace((unsigned char)*end)) end--;
+	while (end > str && isspace((unsigned char)*end))
+		end--;
 
 	*++end = '\0';
 
