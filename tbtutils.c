@@ -61,12 +61,9 @@ int main(void)
 
 	struct vfio_hlvl_params *params = vfio_dev_init(pci_id);
         printf("%d %d %d %d\n", params->container, params->group, params->device, params->dev_info->num_regions);
-	get_dev_pci_cfg_regions(params, pci_id);
+	get_dev_pci_cfg_region(params, pci_id);
 
-	struct list_item *temp = (params->pci_cfg_regions);
-	for(;temp!=NULL;temp=temp->next) {
-		struct vfio_region_info info = *(struct vfio_region_info*)(temp->val);
+		struct vfio_region_info info = *(params->pci_cfg_region);
 		printf("index:%d size:%x\n", info.index, info.size);
-	}
 }
 

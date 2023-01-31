@@ -181,12 +181,11 @@ void get_dev_bar_regions(struct vfio_hlvl_params *params, const char *pci_id)
 	}
 }
 
-void get_dev_pci_cfg_regions(struct vfio_hlvl_params *params, const char *pci_id)
+void get_dev_pci_cfg_region(struct vfio_hlvl_params *params, const char *pci_id)
 {
-	struct list_item *temp = NULL;
 	u8 i = 0;
 
-	params->pci_cfg_regions = NULL;
+	params->pci_cfg_region = NULL;
 
 	for (i = 0; i < VFIO_PCI_NUM_REGIONS; i++) {
 		struct vfio_region_info *region_info = malloc(sizeof(struct vfio_region_info));
@@ -199,12 +198,11 @@ void get_dev_pci_cfg_regions(struct vfio_hlvl_params *params, const char *pci_id
 		region_info->index = i;
 		ioctl(params->device, VFIO_DEVICE_GET_REGION_INFO, region_info);
 
-		if (region_info->size == 0x0)
-			continue;
+		params->pci_cfg_region = region_info;
 
-		temp = list_add(temp, (void*)region_info);
-
-		if (!params->pci_cfg_regions)
-			params->pci_cfg_regions = temp;
+		return;
 	}
 }
+
+//void host_mem_read_long(
+
