@@ -2,7 +2,8 @@
 
 #include "pciutils/lib/pci.h"
 
-#define MAX_LEN	1024
+#define BITMASK(x, y)	((u64)(-1) >> (64 - x)) << y
+#define MAX_LEN		1024
 
 struct list_item {
 	void *val;

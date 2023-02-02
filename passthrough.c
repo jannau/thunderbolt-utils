@@ -272,12 +272,12 @@ u32 read_host_mem_long(struct vfio_hlvl_params *params, u64 off)
 
 u16 read_host_mem_word(struct vfio_hlvl_params *params, u64 off)
 {
-	return (u16)read_host_mem(params, off);
+	return read_host_mem(params, off) & BITMASK(15, 0);
 }
 
 u8 read_host_mem_byte(struct vfio_hlvl_params *params, u64 off)
 {
-	return (u8)read_host_mem(params, off);
+	return read_host_mem(params, off) & BITMASK(7, 0);
 }
 
 void write_host_mem(const struct vfio_hlvl_params *params, const u64 off, const u32 value)
