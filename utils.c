@@ -1,9 +1,15 @@
+#include <sys/mman.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 
 #include "utils.h"
+
+#define PAGE_SIZE		sysconf(_SC_PAGE_SIZE)
+#define GET_ALIGNED_PAGE(x, a)	_GET_ALIGNED_PAGE(x, (typeof(x))(a) - 1)
+#define _GET_ALIGNED_PAGE(x, a)	(((x) + (a)) & ~(a))
 
 struct list_item* list_add(struct list_item *tail, const void *val)
 {
@@ -111,4 +117,37 @@ char* switch_cmd_to_root(const char *cmd)
 	strncpy(cmd_to_return, cmd_as_root, sizeof(cmd_as_root));
 	cmd_to_return[sizeof(cmd_as_root)] = '\0';
 	return cmd_to_return;
+}
+
+static bool is_page_aligned(const u64 off)
+{
+	return !off || ((PAGE_SIZE % off) == 0);
+}
+
+u64 get_page_aligned_addr(const u64 off)
+{
+	if (is_page_aligned(off))
+		return off;
+
+	return GET_ALIGNED_PAGE(off, PAGE_SIZE);
+}
+
+void* get_user_mapped_read_va(int fd, u64 off, u64 size)
+{
+	return mmap(NULL, size, PROT_READ, MAP_SHARED, fd, off);
+}
+
+void* get_user_mapped_write_va(int fd, u64 off, u64 size)
+{
+	return mmap(NULL, size, PROT_WRITE, MAP_SHARED, fd, off);
+}
+
+void* get_user_mapped_rw_va(int fd, u64 off, u64 size)
+{
+	return mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, off);
+}
+
+void unmap_user_mapped_va(void *addr, u64 size)
+{
+	munmap(addr, size);
 }

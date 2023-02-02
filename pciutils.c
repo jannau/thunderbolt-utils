@@ -1,7 +1,7 @@
-//#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "pciutils.h"
 
@@ -43,6 +43,27 @@ struct vdid* get_vdid(const char *pci_id)
 	vdid->device_id[VDID_LEN] = '\0';
 	return vdid;
 }
+
+/*u32 read_pci_cfg_long(const struct vfio_hlvl_params *params, u64 off)
+{
+	struct vfio_region_info *reg_info = find_bar_for_off;
+	u64 page_aligned_off;
+	void *user_va;
+	u32 mem;
+	printf("flags:%x\n", reg_info->flags);
+	printf("size:%x\n", reg_info->size);
+	off += reg_info->offset;
+	printf("%llu\n", off);
+	page_aligned_off = get_page_aligned_addr(off);
+	printf("%llu\n", page_aligned_off);
+	user_va = get_user_mapped_read_va(params->device, off);
+	printf("add:%d ret:%d\n", user_va, errno);
+	mem = *(u32*)(user_va);
+	printf("%d\n", mem);
+	unmap_user_mapped_va(user_va);
+
+	return mem;
+}*/
 
 /*static u32 host_class_id = 0x0c0340;
 

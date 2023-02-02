@@ -1,12 +1,13 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <stdio.h>
 
-#include "passthrough.h"
+#include "pciutils.h"
 
 #define TRIM_IOMMU_NUM_PATH	13
 
@@ -73,6 +74,40 @@ static bool is_vfio_bar_index(u8 index)
 static bool is_vfio_pci_cfg_index(u8 index)
 {
 	return index == VFIO_PCI_CONFIG_REGION_INDEX;
+}
+
+static bool is_region_mmap(const struct vfio_region_info *reg_info)
+{
+	return reg_info->flags & VFIO_REGION_INFO_FLAG_MMAP;
+}
+
+
+static u32 read_host_mem(const struct vfio_hlvl_params *params, const u64 off)
+{
+	struct vfio_region_info *reg_info = find_bar_for_off(params->bar_regions, off);
+	struct list_item *temp = params->bar_regions;
+	struct vfio_region_info *temp_reg;
+	u64 prev_size = 0;
+	void *user_va;
+	u32 mem;
+
+	if (!is_region_mmap(reg_info))
+		return ~0;
+
+	while (temp->val != reg_info) {
+		temp_reg = (struct vfio_region_info*)(temp->val);
+		prev_size += temp_reg->size;
+
+		temp = temp->next;
+	}
+
+	user_va = get_user_mapped_read_va(params->device, reg_info->offset, reg_info->size);
+
+	mem = *(u32*)(user_va + (off - prev_size));
+
+	unmap_user_mapped_va(user_va, reg_info->size);
+
+	return mem;
 }
 
 bool check_vfio_module(void)
@@ -204,5 +239,43 @@ void get_dev_pci_cfg_region(struct vfio_hlvl_params *params, const char *pci_id)
 	}
 }
 
-//void host_mem_read_long(
+struct vfio_region_info* find_bar_for_off(const struct list_item *bar_regions, const u64 off)
+{
+	struct list_item *temp = bar_regions;
+	struct vfio_region_info reg_info;
+	u64 temp_size = 0;
 
+	while (temp) {
+		reg_info = *(struct vfio_region_info*)(temp->val);
+
+		temp_size += reg_info.size;
+		if (temp_size <= off) {
+			temp = temp->next;
+			continue;
+		}
+
+		break;
+	}
+
+	if (!temp) {
+		printf("offset:0x%" PRIx64 " out of bounds\n", off);
+		return NULL;
+	}
+
+	return (struct vfio_region_info*)(temp->val);
+}
+
+u32 read_host_mem_long(const struct vfio_hlvl_params *params, const u64 off)
+{
+	return read_host_mem(params, off);
+}
+
+u16 read_host_mem_word(const struct vfio_hlvl_params *params, const u64 off)
+{
+	return (u16)read_host_mem(params, off);
+}
+
+u8 read_host_mem_byte(const struct vfio_hlvl_params *params, const u64 off)
+{
+	return (u8)read_host_mem(params, off);
+}

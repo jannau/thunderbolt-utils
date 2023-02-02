@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "passthrough.h"
+#include "pciutils.h"
 
 #define TRIM_NUM_PATH	13
 
@@ -61,9 +61,11 @@ int main(void)
 
 	struct vfio_hlvl_params *params = vfio_dev_init(pci_id);
         printf("%d %d %d %d\n", params->container, params->group, params->device, params->dev_info->num_regions);
+	get_dev_bar_regions(params, pci_id);
 	get_dev_pci_cfg_region(params, pci_id);
+	struct vfio_region_info *find_bar = find_bar_for_off(params->bar_regions, 0x0);
+	printf("bar:%d\n", find_bar->index);
+	printf("%d\n",get_page_aligned_addr(4096));
 
-		struct vfio_region_info info = *(params->pci_cfg_region);
-		printf("index:%d size:%x\n", info.index, info.size);
+	printf("mem:0x%x\n", read_host_mem_byte(params, 0x39640));
 }
-

@@ -1,7 +1,6 @@
 //#include <stdbool.h>
-
 //#include "pciutils/lib/pci.h"
-#include "utils.h"
+#include "passthrough.h"
 
 #define VDID_LEN	4
 #define TRIM_VDID_PATH	10
@@ -19,8 +18,7 @@ struct vdid {
 void do_pci_rescan(void);
 void remove_pci_dev(const char *pci_id);
 struct vdid* get_vdid(const char *pci_id);
-struct list_item* get_bars_offset(const char *pci_id);
-
+u32 read_pci_cfg_long(const struct vfio_hlvl_params *params, u64 off);
 /*struct pci_access* init_pci(void);
 void clean_pci(struct pci_access *pacc);
 bool find_host_controller(void);*/
