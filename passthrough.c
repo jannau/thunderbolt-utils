@@ -76,7 +76,7 @@ static bool is_vfio_pci_cfg_index(u8 index)
 	return index == VFIO_PCI_CONFIG_REGION_INDEX;
 }
 
-static bool is_region_mmap(const struct vfio_region_info *reg_info)
+static bool is_region_mmap(struct vfio_region_info *reg_info)
 {
 	return reg_info->flags & VFIO_REGION_INFO_FLAG_MMAP;
 }
@@ -120,7 +120,7 @@ bool check_vfio_module(void)
 	return !strtoul(present, &present, 10);
 }
 
-void bind_grp_modules(const char *pci_id, bool bind)
+void bind_grp_modules(const char *pci_id, const bool bind)
 {
 	struct list_item *list_modules;
 	char path[MAX_LEN];
@@ -265,17 +265,17 @@ struct vfio_region_info* find_bar_for_off(const struct list_item *bar_regions, c
 	return (struct vfio_region_info*)(temp->val);
 }
 
-u32 read_host_mem_long(const struct vfio_hlvl_params *params, const u64 off)
+u32 read_host_mem_long(struct vfio_hlvl_params *params, u64 off)
 {
 	return read_host_mem(params, off);
 }
 
-u16 read_host_mem_word(const struct vfio_hlvl_params *params, const u64 off)
+u16 read_host_mem_word(struct vfio_hlvl_params *params, u64 off)
 {
 	return (u16)read_host_mem(params, off);
 }
 
-u8 read_host_mem_byte(const struct vfio_hlvl_params *params, const u64 off)
+u8 read_host_mem_byte(struct vfio_hlvl_params *params, u64 off)
 {
 	return (u8)read_host_mem(params, off);
 }
@@ -289,7 +289,7 @@ void write_host_mem(const struct vfio_hlvl_params *params, const u64 off, const 
 	void *user_va;
 
 	if (!is_region_mmap(reg_info))
-		return ~0;
+		return;
 
 	while (temp->val != reg_info) {
 		temp_reg = (struct vfio_region_info*)(temp->val);

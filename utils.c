@@ -11,6 +11,11 @@
 #define GET_ALIGNED_PAGE(x, a)	_GET_ALIGNED_PAGE(x, (typeof(x))(a) - 1)
 #define _GET_ALIGNED_PAGE(x, a)	(((x) + (a)) & ~(a))
 
+static bool is_page_aligned(u64 off)
+{
+	return !off || ((PAGE_SIZE % off) == 0);
+}
+
 struct list_item* list_add(struct list_item *tail, const void *val)
 {
 	struct list_item *temp = malloc(sizeof(struct list_item));
@@ -119,12 +124,7 @@ char* switch_cmd_to_root(const char *cmd)
 	return cmd_to_return;
 }
 
-static bool is_page_aligned(const u64 off)
-{
-	return !off || ((PAGE_SIZE % off) == 0);
-}
-
-u64 get_page_aligned_addr(const u64 off)
+u64 get_page_aligned_addr(u64 off)
 {
 	if (is_page_aligned(off))
 		return off;

@@ -46,11 +46,6 @@ static char* trim_host_pci_id(const u8 domain)
 	return pci_id;
 }
 
-u32 read_host_reg(u8 domain, u32 pos)
-{
-	return 0;
-}
-
 int main(void)
 {
 	char *pci_id = trim_host_pci_id(0);
