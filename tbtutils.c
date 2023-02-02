@@ -67,5 +67,7 @@ int main(void)
 	printf("bar:%d\n", find_bar->index);
 	printf("%d\n",get_page_aligned_addr(4096));
 
-	printf("mem:0x%x\n", read_host_mem_byte(params, 0x39640));
+	printf("mem:0x%x\n", read_host_mem_byte(params, 0x39880));
+	write_host_mem(params, 0x39880, 0x0);
+	printf("mem:0x%x\n", read_host_mem_byte(params, 0x39880));
 }

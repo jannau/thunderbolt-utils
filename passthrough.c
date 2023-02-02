@@ -279,3 +279,27 @@ u8 read_host_mem_byte(const struct vfio_hlvl_params *params, const u64 off)
 {
 	return (u8)read_host_mem(params, off);
 }
+
+void write_host_mem(const struct vfio_hlvl_params *params, const u64 off, const u32 value)
+{
+	struct vfio_region_info *reg_info = find_bar_for_off(params->bar_regions, off);
+	struct list_item *temp = params->bar_regions;
+	struct vfio_region_info *temp_reg;
+	u64 prev_size = 0;
+	void *user_va;
+
+	if (!is_region_mmap(reg_info))
+		return ~0;
+
+	while (temp->val != reg_info) {
+		temp_reg = (struct vfio_region_info*)(temp->val);
+		prev_size += temp_reg->size;
+
+		temp = temp->next;
+	}
+
+	user_va = get_user_mapped_write_va(params->device, reg_info->offset, reg_info->size);
+	*(u32*)(user_va + (off - prev_size)) = value;
+
+	unmap_user_mapped_va(user_va, reg_info->size);
+}

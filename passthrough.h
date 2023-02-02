@@ -20,3 +20,4 @@ struct vfio_region_info* find_bar_for_off(const struct list_item *bar_regions, c
 u32 read_host_mem_long(const struct vfio_hlvl_params *params, const u64 off);
 u16 read_host_mem_word(const struct vfio_hlvl_params *params, const u64 off);
 u8 read_host_mem_byte(const struct vfio_hlvl_params *params, const u64 off);
+void write_host_mem(const struct vfio_hlvl_params *params, const u64 off, const u32 value);
