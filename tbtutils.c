@@ -67,4 +67,15 @@ int main(void)
 	printf("mem:0x%x\n", read_host_mem_byte(params, 0x39880));
 
 	printf("mask:%x\n", BITMASK(3,1));
+
+	struct vfio_iommu_type1_dma_map *map =	iommu_map_va(params->container, 4096);
+	printf("%x %x\n", map->iova, map->size);
+
+	iommu_unmap_va(params->container, map);
+//	return 0;
+	map =  iommu_map_va(params->container, 4096);
+        printf("%x %x\n", map->iova, map->size);
+
+        iommu_unmap_va(params->container, map);
+
 }

@@ -102,12 +102,23 @@ static u32 read_host_mem(const struct vfio_hlvl_params *params, const u64 off)
 	}
 
 	user_va = get_user_mapped_read_va(params->device, reg_info->offset, reg_info->size);
-
+	printf("readhostmemvaddr:%llu\n", user_va);
 	mem = *(u32*)(user_va + (off - prev_size));
 
 	unmap_user_mapped_va(user_va, reg_info->size);
 
 	return mem;
+}
+
+static struct vfio_iommu_type1_info* get_iommu_info(int container)
+{
+	struct vfio_iommu_type1_info *info = malloc(sizeof(struct vfio_iommu_type1_info));
+
+	info->argsz = sizeof(struct vfio_iommu_type1_info);
+
+	ioctl(container, VFIO_IOMMU_GET_INFO, info);
+
+	return info;
 }
 
 bool check_vfio_module(void)
@@ -302,4 +313,37 @@ void write_host_mem(const struct vfio_hlvl_params *params, const u64 off, const 
 	*(u32*)(user_va + (off - prev_size)) = value;
 
 	unmap_user_mapped_va(user_va, reg_info->size);
+}
+
+struct vfio_iommu_type1_dma_map* iommu_map_va(int container, u64 size)
+{
+	struct vfio_iommu_type1_info info = { .argsz = sizeof(info) };
+	struct vfio_iommu_type1_dma_map *dma_map;
+	u64 pgsize_sup;
+	int ret;
+
+	dma_map = malloc(sizeof(struct vfio_iommu_type1_dma_map));
+	dma_map->argsz = sizeof(struct vfio_iommu_type1_dma_map);
+
+	ioctl(container, VFIO_IOMMU_GET_INFO, &info);
+	pgsize_sup = get_size_least_set(info.iova_pgsizes);
+
+	dma_map->vaddr = get_user_mapped_read_va(-1, 0, pgsize_sup);
+	dma_map->iova = 0;
+	dma_map->size = pgsize_sup;
+	dma_map->flags = VFIO_DMA_MAP_FLAG_READ;
+
+	ioctl(container, VFIO_IOMMU_MAP_DMA, dma_map);
+
+	return dma_map;
+}
+
+void iommu_unmap_va(int container, struct vfio_iommu_type1_dma_map *dma_map)
+{
+	struct vfio_iommu_type1_dma_unmap dma_unmap = { .argsz = sizeof(dma_unmap) };
+
+	dma_unmap.size = dma_map->size;
+	dma_unmap.iova = dma_map->iova;
+
+	ioctl(container, VFIO_IOMMU_UNMAP_DMA, &dma_unmap);
 }

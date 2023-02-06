@@ -21,3 +21,5 @@ u32 read_host_mem_long(struct vfio_hlvl_params *params, u64 off);
 u16 read_host_mem_word(struct vfio_hlvl_params *params, u64 off);
 u8 read_host_mem_byte(struct vfio_hlvl_params *params, u64 off);
 void write_host_mem(const struct vfio_hlvl_params *params, const u64 off, const u32 value);
+struct vfio_iommu_type1_dma_map* iommu_map_va(int container, u64 size);
+void iommu_unmap_va(int container, struct vfio_iommu_type1_dma_map *dma_map);

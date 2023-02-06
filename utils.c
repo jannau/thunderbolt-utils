@@ -1,13 +1,14 @@
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/mman.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <ctype.h>
 
 #include "utils.h"
 
-#define PAGE_SIZE		sysconf(_SC_PAGE_SIZE)
 #define GET_ALIGNED_PAGE(x, a)	_GET_ALIGNED_PAGE(x, (typeof(x))(a) - 1)
 #define _GET_ALIGNED_PAGE(x, a)	(((x) + (a)) & ~(a))
 
@@ -134,20 +135,34 @@ u64 get_page_aligned_addr(u64 off)
 
 void* get_user_mapped_read_va(int fd, u64 off, u64 size)
 {
+	if (fd == -1)
+		return mmap(NULL, size, PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+
 	return mmap(NULL, size, PROT_READ, MAP_SHARED, fd, off);
 }
 
 void* get_user_mapped_write_va(int fd, u64 off, u64 size)
 {
+	if (fd == -1)
+		return mmap(NULL, size, PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+
 	return mmap(NULL, size, PROT_WRITE, MAP_SHARED, fd, off);
 }
 
 void* get_user_mapped_rw_va(int fd, u64 off, u64 size)
 {
+	if (fd == -1)
+		return mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+
 	return mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, off);
 }
 
 void unmap_user_mapped_va(void *addr, u64 size)
 {
 	munmap(addr, size);
+}
+
+u64 get_size_least_set(u64 bitmask)
+{
+	return (u64)1 << (ffsll(bitmask) - 1);
 }

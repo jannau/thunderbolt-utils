@@ -1,10 +1,13 @@
 #include <stdbool.h>
+#include <unistd.h>
 
 #include "pciutils/lib/pci.h"
 
 #define BITMASK(x, y)	((u64)(-1) >> (64 - x)) << y
 #define BIT(x)		BITMASK(x, x)
 #define MAX_LEN		1024
+
+#define PAGE_SIZE	sysconf(_SC_PAGE_SIZE)
 
 struct list_item {
 	void *val;
@@ -22,3 +25,4 @@ void* get_user_mapped_read_va(int fd, u64 off, u64 size);
 void* get_user_mapped_write_va(int fd, u64 off, u64 size);
 void* get_user_mapped_rw_va(int fd, u64 off, u64 size);
 void unmap_user_mapped_va(void *addr, u64 size);
+u64 get_size_least_set(u64 bitmask);
