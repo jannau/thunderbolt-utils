@@ -9,6 +9,9 @@
 
 #define PAGE_SIZE	sysconf(_SC_PAGE_SIZE)
 
+#define READ_FLAG	BIT(0)
+#define WRITE_FLAG	BIT(1)
+
 struct list_item {
 	void *val;
 	struct list_item *next;

@@ -68,12 +68,12 @@ int main(void)
 
 	printf("mask:%x\n", BITMASK(3,1));
 
-	struct vfio_iommu_type1_dma_map *map =	iommu_map_va(params->container, 4096);
+	struct vfio_iommu_type1_dma_map *map =	iommu_map_va(params->container, READ_FLAG);
 	printf("%x %x\n", map->iova, map->size);
 
 	iommu_unmap_va(params->container, map);
 //	return 0;
-	map =  iommu_map_va(params->container, 4096);
+	map =  iommu_map_va(params->container, WRITE_FLAG);
         printf("%x %x\n", map->iova, map->size);
 
         iommu_unmap_va(params->container, map);

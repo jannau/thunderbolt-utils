@@ -81,7 +81,6 @@ static bool is_region_mmap(struct vfio_region_info *reg_info)
 	return reg_info->flags & VFIO_REGION_INFO_FLAG_MMAP;
 }
 
-
 static u32 read_host_mem(const struct vfio_hlvl_params *params, const u64 off)
 {
 	struct vfio_region_info *reg_info = find_bar_for_off(params->bar_regions, off);
@@ -315,7 +314,7 @@ void write_host_mem(const struct vfio_hlvl_params *params, const u64 off, const 
 	unmap_user_mapped_va(user_va, reg_info->size);
 }
 
-struct vfio_iommu_type1_dma_map* iommu_map_va(int container, u64 size)
+struct vfio_iommu_type1_dma_map* iommu_map_va(const int container, const u8 op_flags)
 {
 	struct vfio_iommu_type1_info info = { .argsz = sizeof(info) };
 	struct vfio_iommu_type1_dma_map *dma_map;
@@ -328,17 +327,26 @@ struct vfio_iommu_type1_dma_map* iommu_map_va(int container, u64 size)
 	ioctl(container, VFIO_IOMMU_GET_INFO, &info);
 	pgsize_sup = get_size_least_set(info.iova_pgsizes);
 
-	dma_map->vaddr = get_user_mapped_read_va(-1, 0, pgsize_sup);
+	if (op_flags == READ_FLAG) {
+		dma_map->vaddr = get_user_mapped_read_va(-1, 0, pgsize_sup);
+		dma_map->flags = VFIO_DMA_MAP_FLAG_READ;
+	} else if (op_flags == WRITE_FLAG) {
+		dma_map->vaddr = get_user_mapped_write_va(-1, 0, pgsize_sup);
+		dma_map->flags = VFIO_DMA_MAP_FLAG_WRITE;
+	} else if (op_flags == READ_FLAG | WRITE_FLAG) {
+		dma_map->vaddr = get_user_mapped_rw_va(-1, 0, pgsize_sup);
+		dma_map->flags = VFIO_DMA_MAP_FLAG_READ | VFIO_DMA_MAP_FLAG_WRITE;
+	}
+
 	dma_map->iova = 0;
 	dma_map->size = pgsize_sup;
-	dma_map->flags = VFIO_DMA_MAP_FLAG_READ;
 
 	ioctl(container, VFIO_IOMMU_MAP_DMA, dma_map);
 
 	return dma_map;
 }
 
-void iommu_unmap_va(int container, struct vfio_iommu_type1_dma_map *dma_map)
+void iommu_unmap_va(const int container, struct vfio_iommu_type1_dma_map *dma_map)
 {
 	struct vfio_iommu_type1_dma_unmap dma_unmap = { .argsz = sizeof(dma_unmap) };
 
