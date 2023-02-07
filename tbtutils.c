@@ -46,6 +46,46 @@ static char* trim_host_pci_id(const u8 domain)
 	return pci_id;
 }
 
+/* Reset the host-interface registers to their default values */
+static void reset_host_interface(struct vfio_hlvl_params *params)
+{
+	write_host_mem(params, HOST_RESET, RESET);
+
+	/* Host interface takes a max. of 10 ms to reset */
+	usleep(10000);
+}
+
+/*
+ * Initialize the host-interface trasmit registers.
+ * This library works on only one ring descriptor at once hence initialize the size of the ring
+ * to 2. This is done so we could let the producer and consumer indexes become different for
+ * the transmission to get processed by the host-interface layer.
+ */
+static void init_host_tx(const struct vfio_hlvl_params *params)
+{
+	struct vfio_iommu_type1_dma_map *dma_map = iommu_map_va(params->container, RDWR_FLAG);
+	u32 val = 0;
+	u64 off;
+
+	off = TX_BASE_LOW;
+
+	while (off <= TX_RING_SIZE) {
+		if (off == TX_BASE_LOW)
+			write_host_mem(params, off, dma_map->iova & BITMASK(31,0));
+		else if (off == TX_BASE_HIGH)
+			write_host_mem(params, off, (dma_map->iova & BITMASK(63, 32)) >> 32);
+		else if (off == TX_PROD_CONS_INDEX)
+			write_host_mem(params, off, 0);
+		else if (off == TX_RING_SIZE)
+			write_host_mem(params, off, 2);
+
+		off += 4;
+	}
+
+	val |= TX_RAW | TX_VALID;
+	write_host_mem(params, TX_RING_CTRL, val);
+}
+
 int main(void)
 {
 	char *pci_id = trim_host_pci_id(0);
@@ -78,4 +118,6 @@ int main(void)
 
         iommu_unmap_va(params->container, map);
 
+	reset_host_interface(params);
+	init_host_tx(params);
 }

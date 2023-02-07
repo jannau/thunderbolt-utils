@@ -11,6 +11,7 @@
 
 #define READ_FLAG	BIT(0)
 #define WRITE_FLAG	BIT(1)
+#define RDWR_FLAG	READ_FLAG | WRITE_FLAG
 
 struct list_item {
 	void *val;

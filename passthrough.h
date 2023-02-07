@@ -1,6 +1,6 @@
 #include <linux/vfio.h>
 
-#include "utils.h"
+#include "host_regs.h"
 
 struct vfio_hlvl_params {
 	int container;

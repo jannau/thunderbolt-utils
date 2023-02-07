@@ -1,4 +1,4 @@
-#define "utils.h"
+#include "utils.h"
 
 #define HOST_CAPS			0x39640
 #define TOTAL_PATHS			BITMASK(10, 0)
@@ -41,7 +41,7 @@
 
 #define RX_RING_BUF_SIZE		0x800c
 #define RX_RING_SIZE			BITMASK(15, 0)
-#define RX_RING_BUF_SIZE		BITMASK(27, 16)
+#define RX_RING_DATA_BUF_SIZE		BITMASK(27, 16)
 #define RX_RING_BUF_SIZE_SHIFT(x)	x << 16
 
 #define RX_RING_CTRL			0x29800

@@ -101,7 +101,7 @@ static u32 read_host_mem(const struct vfio_hlvl_params *params, const u64 off)
 	}
 
 	user_va = get_user_mapped_read_va(params->device, reg_info->offset, reg_info->size);
-	printf("readhostmemvaddr:%llu\n", user_va);
+
 	mem = *(u32*)(user_va + (off - prev_size));
 
 	unmap_user_mapped_va(user_va, reg_info->size);
