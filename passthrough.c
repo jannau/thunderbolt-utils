@@ -333,7 +333,7 @@ struct vfio_iommu_type1_dma_map* iommu_map_va(const int container, const u8 op_f
 	} else if (op_flags == WRITE_FLAG) {
 		dma_map->vaddr = get_user_mapped_write_va(-1, 0, pgsize_sup);
 		dma_map->flags = VFIO_DMA_MAP_FLAG_WRITE;
-	} else if (op_flags == READ_FLAG | WRITE_FLAG) {
+	} else if (op_flags == RDWR_FLAG) {
 		dma_map->vaddr = get_user_mapped_rw_va(-1, 0, pgsize_sup);
 		dma_map->flags = VFIO_DMA_MAP_FLAG_READ | VFIO_DMA_MAP_FLAG_WRITE;
 	}
