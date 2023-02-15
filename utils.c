@@ -23,7 +23,7 @@ static bool is_page_aligned(u64 off)
 	return !off || ((PAGE_SIZE % off) == 0);
 }
 
-static bool is_arch_x86()
+static bool is_arch_x86(void)
 {
 	char *path = "uname -m | grep x86 | wc -l";
 	char *bash_result;
@@ -32,7 +32,7 @@ static bool is_arch_x86()
 	return strtoul(bash_result, &bash_result, 10);
 }
 
-static bool is_cpu_le()
+static bool is_cpu_le(void)
 {
 	char *path = "lscpu | grep 'Little Endian' | wc -l";
 	char *bash_result;
@@ -43,7 +43,7 @@ static bool is_cpu_le()
 
 static u32 do_crc(u32 crc, u32 x)
 {
-	if (is_cpu_le)
+	if (is_cpu_le())
 		return crc32_t0[(crc ^ (x)) & 255] ^ (crc >> 8);
 	else
 		return crc32_t0[((crc >> 24) ^ (x)) & 255] ^ (crc << 8);
@@ -51,7 +51,7 @@ static u32 do_crc(u32 crc, u32 x)
 
 static u32 do_crc4(u32 q)
 {
-	if (is_cpu_le)
+	if (is_cpu_le())
 		return (crc32_t3[(q) & 255] ^ crc32_t2[(q >> 8) & 255] ^ \
 			crc32_t1[(q >> 16) & 255] ^ crc32_t0[(q >> 24) & 255]);
 	else
