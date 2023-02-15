@@ -314,7 +314,7 @@ void write_host_mem(const struct vfio_hlvl_params *params, const u64 off, const 
 	unmap_user_mapped_va(user_va, reg_info->size);
 }
 
-struct vfio_iommu_type1_dma_map* iommu_map_va(const int container, const u8 op_flags)
+struct vfio_iommu_type1_dma_map* iommu_map_va(const int container, const u8 op_flags, const u8 index)
 {
 	struct vfio_iommu_type1_info info = { .argsz = sizeof(info) };
 	struct vfio_iommu_type1_dma_map *dma_map;
@@ -338,7 +338,7 @@ struct vfio_iommu_type1_dma_map* iommu_map_va(const int container, const u8 op_f
 		dma_map->flags = VFIO_DMA_MAP_FLAG_READ | VFIO_DMA_MAP_FLAG_WRITE;
 	}
 
-	dma_map->iova = 0;
+	dma_map->iova = index * pgsize_sup;
 	dma_map->size = pgsize_sup;
 
 	ioctl(container, VFIO_IOMMU_MAP_DMA, dma_map);

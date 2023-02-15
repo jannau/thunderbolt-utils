@@ -9,12 +9,54 @@
 
 #include "utils.h"
 
-#define GET_ALIGNED_PAGE(x, a)	_GET_ALIGNED_PAGE(x, (typeof(x))(a) - 1)
-#define _GET_ALIGNED_PAGE(x, a)	(((x) + (a)) & ~(a))
+#define GET_ALIGNED_PAGE(x, a)		_GET_ALIGNED_PAGE(x, (typeof(x))(a) - 1)
+#define _GET_ALIGNED_PAGE(x, a)		(((x) + (a)) & ~(a))
+
+#define CRC32_POLY_LE			0x82f63b78
+
+/* Thunderbolt uses 32-bit CRC */
+static u32 crc32_table_le[4][256];
+static u32 *crc32_t0, *crc32_t1, *crc32_t2, *crc32_t3;
 
 static bool is_page_aligned(u64 off)
 {
 	return !off || ((PAGE_SIZE % off) == 0);
+}
+
+static bool is_arch_x86()
+{
+	char *path = "uname -m | grep x86 | wc -l";
+	char *bash_result;
+
+	bash_result = do_bash_cmd(path);
+	return strtoul(bash_result, &bash_result, 10);
+}
+
+static bool is_cpu_le()
+{
+	char *path = "lscpu | grep 'Little Endian' | wc -l";
+	char *bash_result;
+
+	bash_result = do_bash_cmd(path);
+	return strtoul(bash_result, &bash_result, 10);
+}
+
+static u32 do_crc(u32 crc, u32 x)
+{
+	if (is_cpu_le)
+		return crc32_t0[(crc ^ (x)) & 255] ^ (crc >> 8);
+	else
+		return crc32_t0[((crc >> 24) ^ (x)) & 255] ^ (crc << 8);
+}
+
+static u32 do_crc4(u32 q)
+{
+	if (is_cpu_le)
+		return (crc32_t3[(q) & 255] ^ crc32_t2[(q >> 8) & 255] ^ \
+			crc32_t1[(q >> 16) & 255] ^ crc32_t0[(q >> 24) & 255]);
+	else
+		return (crc32_t0[(q) & 255] ^ crc32_t1[(q >> 8) & 255] ^ \
+			crc32_t2[(q >> 16) & 255] ^ crc32_t3[(q >> 24) & 255]);
 }
 
 struct list_item* list_add(struct list_item *tail, const void *val)
@@ -165,4 +207,88 @@ void unmap_user_mapped_va(void *addr, u64 size)
 u64 get_size_least_set(u64 bitmask)
 {
 	return (u64)1 << (ffsll(bitmask) - 1);
+}
+
+static void crc32_init(void)
+{
+	u32 crc = 1;
+	u32 i, j;
+
+	crc32_table_le[0][0] = 0;
+
+	for (i = 256 >> 1; i; i >>= 1) {
+		crc = (crc >> 1) ^ ((crc & 1) ? CRC32_POLY_LE : 0);
+
+		for (j = 0; j < 256; j += 2 * i)
+			crc32_table_le[0][i + j] = crc ^ crc32_table_le[0][j];
+	}
+
+	for (i = 0; i < 256; i++) {
+		crc = crc32_table_le[0][i];
+
+		for (j = 1; j < 4; j++) {
+			crc = crc32_table_le[0][crc & 0xff] ^ (crc >> 8);
+			crc32_table_le[j][i] = crc;
+		}
+	}
+
+	crc32_t0 = crc32_table_le[0];
+	crc32_t1 = crc32_table_le[1];
+	crc32_t2 = crc32_table_le[2];
+	crc32_t3 = crc32_table_le[3];
+}
+
+u32 get_crc32(u32 crc, u8 *data, u64 size)
+{
+	u64 rem_size;
+	u32 *b, q;
+	u64 i;
+
+	crc32_init();
+
+	if ((long)data & 3 && size) {
+		do {
+			crc = do_crc(crc, *data++);
+		} while ((--size) && ((long)data) & 3);
+	}
+
+	rem_size = size & 3;
+	size = size >> 2;
+
+	b = (u32*)data;
+
+	if (is_arch_x86()) {
+		--b;
+
+		for (i = 0; i < size; i++) {
+			q = crc ^ *++b;
+			crc = do_crc4(q);
+		}
+
+		size = rem_size;
+
+		if (size) {
+			u8 *p = (u8*)(b + 1) - 1;
+
+			for (i = 0; i < size; i++)
+				crc = do_crc(crc, *++p);
+		}
+	} else {
+		for (--b; size; --size) {
+			q = crc ^ *++b;
+			crc = do_crc4(q);
+		}
+
+		size = rem_size;
+
+		if (size) {
+			u8 *p = (u8*)(b + 1) - 1;
+
+			do {
+				crc = do_crc(crc, *++p);
+			} while (--size);
+		}
+	}
+
+	return crc;
 }

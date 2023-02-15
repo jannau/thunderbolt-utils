@@ -5,7 +5,7 @@
 
 #include "pciutils.h"
 
-#define TRIM_NUM_PATH	13
+#define TRIM_NUM_PATH		13
 
 static char *tbt_sysfs_path = "/sys/bus/thunderbolt/devices/";
 
@@ -47,13 +47,13 @@ static char* trim_host_pci_id(const u8 domain)
 }
 
 /* Reset the host-interface registers to their default values */
-static void reset_host_interface(struct vfio_hlvl_params *params)
+/*static void reset_host_interface(struct vfio_hlvl_params *params)
 {
-	write_host_mem(params, HOST_RESET, RESET);
+	write_host_mem(params, HOST_RESET, RESET);*/
 
 	/* Host interface takes a max. of 10 ms to reset */
-	usleep(10000);
-}
+	/*usleep(10000);
+}*/
 
 /*
  * Initialize the host-interface trasmit registers.
@@ -61,9 +61,9 @@ static void reset_host_interface(struct vfio_hlvl_params *params)
  * to 2. This is done so we could let the producer and consumer indexes become different for
  * the transmission to get processed by the host-interface layer.
  */
-static void init_host_tx(const struct vfio_hlvl_params *params)
+/*static void* init_host_tx(const struct vfio_hlvl_params *params)
 {
-	struct vfio_iommu_type1_dma_map *dma_map = iommu_map_va(params->container, RDWR_FLAG);
+	struct vfio_iommu_type1_dma_map *dma_map = iommu_map_va(params->container, RDWR_FLAG, 0);
 	u32 val = 0;
 	u64 off;
 
@@ -84,15 +84,39 @@ static void init_host_tx(const struct vfio_hlvl_params *params)
 
 	val |= TX_RAW | TX_VALID;
 	write_host_mem(params, TX_RING_CTRL, val);
+
+	return dma_map->vaddr;
 }
+
+static struct tx_desc* make_tx_desc(const struct vfio_hlvl_params *params, const u64 size)
+{
+	struct vfio_iommu_type1_dma_map *dma_map;
+	struct tx_desc *desc;
+	u32 tx_ctrl = 0;
+
+	desc = init_host_tx(params);
+	desc = malloc(sizeof(struct tx_desc));
+
+	tx_ctrl = size;
+}*/
 
 int main(void)
 {
-	char *pci_id = trim_host_pci_id(0);
+	/*char *pci_id = trim_host_pci_id(0);
 	struct vdid *vdid = get_vdid(pci_id);
-	printf("%s, %s\n", vdid->vendor_id, vdid->device_id);
+	printf("%s, %s\n", vdid->vendor_id, vdid->device_id);*/
 
-	bind_grp_modules(pci_id, true);
+	u32 num = 0x4002000;
+	printf("tobe:%llx\n", htobe32(num));
+
+	u8 data[] = {0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 32, 0};
+	u32 crc = get_crc32(~0, data, 12);
+	printf("crc:%llx\n", crc);
+	printf("negate crc:%llx\n", ~crc);
+	printf("crcbe:%llx\n", htobe32(~crc));
+	return 0;
+
+/*	bind_grp_modules(pci_id, true);
 
 	struct vfio_hlvl_params *params = vfio_dev_init(pci_id);
         printf("%d %d %d %d\n", params->container, params->group, params->device, params->dev_info->num_regions);
@@ -108,16 +132,16 @@ int main(void)
 
 	printf("mask:%x\n", BITMASK(3,1));
 
-	struct vfio_iommu_type1_dma_map *map =	iommu_map_va(params->container, READ_FLAG);
+	struct vfio_iommu_type1_dma_map *map =	iommu_map_va(params->container, READ_FLAG, 0);
 	printf("%x %x\n", map->iova, map->size);
 
 	iommu_unmap_va(params->container, map);
-//	return 0;
-	map =  iommu_map_va(params->container, WRITE_FLAG);
+	return 0;
+	map =  iommu_map_va(params->container, WRITE_FLAG, 1);
         printf("%x %x\n", map->iova, map->size);
 
         iommu_unmap_va(params->container, map);
 
 	reset_host_interface(params);
-	init_host_tx(params);
+	init_host_tx(params);*/
 }
