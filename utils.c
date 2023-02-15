@@ -59,6 +59,35 @@ static u32 do_crc4(u32 q)
 			crc32_t2[(q >> 16) & 255] ^ crc32_t3[(q >> 24) & 255]);
 }
 
+static void crc32_init(void)
+{
+	u32 crc = 1;
+	u32 i, j;
+
+	crc32_table_le[0][0] = 0;
+
+	for (i = 256 >> 1; i; i >>= 1) {
+		crc = (crc >> 1) ^ ((crc & 1) ? CRC32_POLY_LE : 0);
+
+		for (j = 0; j < 256; j += 2 * i)
+			crc32_table_le[0][i + j] = crc ^ crc32_table_le[0][j];
+	}
+
+	for (i = 0; i < 256; i++) {
+		crc = crc32_table_le[0][i];
+
+		for (j = 1; j < 4; j++) {
+			crc = crc32_table_le[0][crc & 0xff] ^ (crc >> 8);
+			crc32_table_le[j][i] = crc;
+		}
+	}
+
+	crc32_t0 = crc32_table_le[0];
+	crc32_t1 = crc32_table_le[1];
+	crc32_t2 = crc32_table_le[2];
+	crc32_t3 = crc32_table_le[3];
+}
+
 struct list_item* list_add(struct list_item *tail, const void *val)
 {
 	struct list_item *temp = malloc(sizeof(struct list_item));
@@ -207,35 +236,6 @@ void unmap_user_mapped_va(void *addr, u64 size)
 u64 get_size_least_set(u64 bitmask)
 {
 	return (u64)1 << (ffsll(bitmask) - 1);
-}
-
-static void crc32_init(void)
-{
-	u32 crc = 1;
-	u32 i, j;
-
-	crc32_table_le[0][0] = 0;
-
-	for (i = 256 >> 1; i; i >>= 1) {
-		crc = (crc >> 1) ^ ((crc & 1) ? CRC32_POLY_LE : 0);
-
-		for (j = 0; j < 256; j += 2 * i)
-			crc32_table_le[0][i + j] = crc ^ crc32_table_le[0][j];
-	}
-
-	for (i = 0; i < 256; i++) {
-		crc = crc32_table_le[0][i];
-
-		for (j = 1; j < 4; j++) {
-			crc = crc32_table_le[0][crc & 0xff] ^ (crc >> 8);
-			crc32_table_le[j][i] = crc;
-		}
-	}
-
-	crc32_t0 = crc32_table_le[0];
-	crc32_t1 = crc32_table_le[1];
-	crc32_t2 = crc32_table_le[2];
-	crc32_t3 = crc32_table_le[3];
 }
 
 u32 get_crc32(u32 crc, u8 *data, u64 size)
