@@ -242,7 +242,7 @@ void get_dev_pci_cfg_region(struct vfio_hlvl_params *params, const char *pci_id)
 
 		region_info->index = i;
 		ioctl(params->device, VFIO_DEVICE_GET_REGION_INFO, region_info);
-
+		printf("mmappci:%d\n", is_region_mmap(region_info));
 		params->pci_cfg_region = region_info;
 
 		return;

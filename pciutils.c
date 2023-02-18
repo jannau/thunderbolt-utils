@@ -44,6 +44,20 @@ struct vdid* get_vdid(const char *pci_id)
 	return vdid;
 }
 
+/* Make the respective PCIe device use DMA */
+void allow_bus_master(const char *pci_id)
+{
+	char path[MAX_LEN];
+	char *root_cmd;
+
+	/* To avoid any conflicts, set the MM mapping accessibility also */
+	snprintf(path, sizeof(path), "setpci -s %s 0x%x.B=0x%x", pci_id, PCI_CMD,
+		 PCI_CMD_MASTER | PCI_CMD_MEM);
+
+	root_cmd = switch_cmd_to_root(path);
+	do_bash_cmd(root_cmd);
+}
+
 /*u32 read_pci_cfg_long(const struct vfio_hlvl_params *params, u64 off)
 {
 	struct vfio_region_info *reg_info = find_bar_for_off;

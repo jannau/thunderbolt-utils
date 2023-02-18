@@ -18,9 +18,8 @@
 #define TX_BASE_HIGH			0x4
 
 #define TX_PROD_CONS_INDEX		0x8
-#define TX_PROD_INDEX			BITMASK(31, 16)
+#define TX_PROD_INDEX			16
 #define TX_PROD_INDEX_SHIFT(x)		x << 16
-#define TX_CONS_INDEX			BITMASK(15, 0)
 
 #define TX_RING_SIZE			0xc
 

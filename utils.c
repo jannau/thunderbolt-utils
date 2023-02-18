@@ -292,3 +292,13 @@ u32 get_crc32(u32 crc, u8 *data, u64 size)
 
 	return crc;
 }
+
+void convert_to_be32(u32 *data, const u64 len)
+{
+	u64 i;
+
+	for (i = 0; i < len; i++) {
+		*data = htobe32(*data);
+		++data;
+	}
+}
