@@ -1,7 +1,11 @@
 #include <stdbool.h>
 #include <unistd.h>
+#include <stdint.h>
 
-#include "pciutils/lib/pci.h"
+#define u8		uint8_t
+#define u16		uint16_t
+#define u32		uint32_t
+#define u64		uint64_t
 
 #define BITMASK(x, y)	((u64)(-1) >> (63 - x)) << y
 #define BIT(x)		(u64)1 << x
