@@ -9,3 +9,5 @@ echo 0000:03:00.0 > /sys/bus/pci/devices/0000\:03\:00.0/driver/unbind
 echo '8086 15e8' > /sys/bus/pci/drivers/vfio-pci/remove_id
 echo 1 > /sys/bus/pci/devices/0000\:03\:00.0/remove
 echo 1 > /sys/bus/pci/rescan
+
+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
