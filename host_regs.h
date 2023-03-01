@@ -1,5 +1,27 @@
 #include "utils.h"
 
+/* Indication of the TBT HW loading the f/w from the IMR */
+#define VS_CAP_9			0xc8
+#define VS_FW_RDY			BIT(31)
+
+/* Latency tolerance reporting */
+#define VS_CAP_15			0xe0
+#define VS_CAP_16			0xe4
+
+/* PCIe config force power registers */
+#define VS_CAP_22			0xfc
+#define VS_FORCE_PWR			BIT(1)
+#define VS_DMA_DELAY_MASK		BITMASK(31, 24)
+#define VS_DMA_DELAY_SHIFT		24
+
+/* ICM registers (used for thunderbolt initialization) */
+#define ICM_FW_STS			0x39944
+#define ICM_NVM_AUTH_DONE		BIT(31)
+#define ICM_EN				BIT(0)
+#define ICM_CIO_RST_REQ			BIT(30)
+#define ICM_EN_CPU			BIT(2)
+#define ICM_EN_INV			BIT(1)
+
 #define HOST_CAPS			0x39640
 #define TOTAL_PATHS			BITMASK(10, 0)
 
@@ -49,9 +71,9 @@
 #define RX_E2E_FLOW_EN			BIT(28)
 #define RX_NS				BIT(29)
 #define RX_RAW				BIT(30)
-#define RING_VALID			BIT(31)
+#define RX_VALID			BIT(31)
 
-#define RX_PDF				0x29804
+#define RX_RING_PDF			0x29804
 #define RX_EOF_PDF			BITMASK(15, 0)
 #define RX_SOF_PDF			BITMASK(31, 16)
 #define RX_SOF_PDF_MASK(x)		x << 16

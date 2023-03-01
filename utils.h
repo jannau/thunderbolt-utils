@@ -4,7 +4,7 @@
 #include "pciutils/lib/pci.h"
 
 #define BITMASK(x, y)	((u64)(-1) >> (63 - x)) << y
-#define BIT(x)		BITMASK(x, x)
+#define BIT(x)		(u64)1 << x
 
 #define MAX_LEN		1024
 
@@ -13,6 +13,8 @@
 #define READ_FLAG	BIT(0)
 #define WRITE_FLAG	BIT(1)
 #define RDWR_FLAG	READ_FLAG | WRITE_FLAG
+
+#define msleep(x)	usleep(x * 1000)
 
 struct list_item {
 	void *val;

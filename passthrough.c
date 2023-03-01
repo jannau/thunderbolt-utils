@@ -342,7 +342,7 @@ struct vfio_iommu_type1_dma_map* iommu_map_va(const int container, const u8 op_f
 	dma_map->size = pgsize_sup;
 
 	ioctl(container, VFIO_IOMMU_MAP_DMA, dma_map);
-
+	printf("mpaiova:%x\n", dma_map->iova);
 	return dma_map;
 }
 

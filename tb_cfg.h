@@ -1,5 +1,7 @@
 #include "pciutils.h"
 
+#define ICM_DRV_READY	0x3
+
 /* Configuration spaces */
 #define PATH_CFG	0
 #define ADP_CFG		1
@@ -14,6 +16,13 @@
 #define TX_DESC_DONE	BIT(1)
 #define TX_REQ_STS	BIT(2)
 #define TX_INT_EN	BIT(3)
+
+#define RX_DESC_DONE	BIT(21)
+#define RX_REQ_STS	BIT(22)
+#define RX_INT_EN	BIT(23)
+
+/* Max. amount of time(us) taken by the router to write back into the host memory */
+#define CTRL_TIMEOUT	2000
 
 struct req_payload {
 	u32 addr:13;
@@ -31,6 +40,14 @@ struct read_req {
 	u32 crc;
 };
 
+struct write_req {
+	u32 route_high;
+	u32 route_low;
+	struct req_payload payload;
+	u32 buf;
+	u32 crc;
+};
+
 struct tx_desc {
 	u32 addr_low;
 	u32 addr_high;
@@ -39,4 +56,16 @@ struct tx_desc {
 	u32 sof_pdf:4;
 	u32 flags:12;
 	u32 rsvd;
+};
+
+struct rx_desc {
+	u32 addr_low;
+	u32 addr_high;
+	u32 flags;
+	u32 rsvd;
+};
+
+struct rx_pair {
+	struct rx_desc *desc;
+	struct write_req *req;
 };

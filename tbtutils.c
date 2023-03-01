@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "tb_cfg.h"
 
@@ -92,6 +93,47 @@ static void* init_host_tx(const struct vfio_hlvl_params *params)
 	return dma_map->vaddr;
 }
 
+/*
+ * Initialize the receive host-interface registers. Ring size has been set to '2' similar to
+ * the transmit ring size.
+ * 'Ring size' register of the RX layer needs to be set with the no. of bytes to be posted in
+ * the host memory.
+ */
+static void* init_host_rx(const struct vfio_hlvl_params *params, u64 len)
+{
+	struct vfio_iommu_type1_dma_map *dma_map = iommu_map_va(params->container, RDWR_FLAG,
+								page_index++);
+	u32 val = 0;
+	u64 off;
+
+	off = RX_BASE_LOW;
+
+	while (off <= RX_RING_BUF_SIZE) {
+		if (off == RX_BASE_LOW)
+			write_host_mem(params, off, dma_map->iova & BITMASK(31, 0));
+		else if (off == RX_BASE_HIGH)
+			write_host_mem(params, off, (dma_map->iova & BITMASK(63, 32)) >> 32);
+		else if (off == RX_PROD_CONS_INDEX)
+			write_host_mem(params, off, 0);
+		else if (off == RX_RING_BUF_SIZE)
+			write_host_mem(params, off, 2 | (24 << 16));
+
+		off += 4;
+	}
+
+	val |= RX_RAW | RX_VALID;
+	write_host_mem(params, RX_RING_CTRL, val);
+	val = read_host_mem_long(params, RX_RING_BUF_SIZE);
+	printf("rxsize:%x\n", val);
+	val = read_host_mem_long(params, RX_RING_CTRL);
+	printf("rxflagsafter:%x\n", val);
+	printf("rxiovawrittenlow:%x\n", read_host_mem_long(params, RX_BASE_LOW));
+	printf("rxiovawrittenhig:%x\n", read_host_mem_long(params, RX_BASE_HIGH));
+
+	write_host_mem(params, RX_RING_PDF, 0);
+	return dma_map->vaddr;
+}
+
 static struct req_payload* make_req_payload(const u32 addr, const u64 len, const u32 adp,
 					    const u32 cfg_space)
 {
@@ -132,8 +174,51 @@ static struct tx_desc* make_tx_read_req(const struct vfio_hlvl_params *params, c
 
 	convert_to_be32(req, sizeof(struct read_req) - 4);
 	req->crc = htobe32(~(get_crc32(~0, req, sizeof(struct read_req) - 4)));
+	printf("txcrc:%x\n", req->crc);
+	printf("txflags:%x\n", desc->flags);
+
+	printf("printing tx buffer\n");
+	u8 *buf = req;
+	for (int i=0;i<sizeof(struct read_req);i++) {
+		printf("%d %x\n", i, *(u8*)buf);
+		buf++;
+	}
 
 	return desc;
+}
+
+/* Prepare the receive descriptor and the write buffer request */
+static struct rx_pair* make_rx_read_req(const struct vfio_hlvl_params *params, const u64 route,
+					const struct req_payload *payload, u64 len)
+{
+	struct vfio_iommu_type1_dma_map *dma_map;
+	struct rx_desc *desc;
+	struct write_req *req;
+	struct rx_pair *pair;
+
+	/* DMA mapping for control requests */
+	dma_map = iommu_map_va(params->container, RDWR_FLAG, page_index++);
+
+	desc = init_host_rx(params, 4 * len);
+	desc->addr_low = dma_map->iova & BITMASK(31, 0);
+	desc->addr_high = (dma_map->iova & BITMASK(63, 32)) >> 32;
+	desc->flags = RX_REQ_STS;
+	printf("raw flags:%x\n", RX_REQ_STS);
+	printf("rx flags:%x\n", desc->flags);
+	desc->rsvd = 0;
+
+	req = dma_map->vaddr;
+	req->route_high = (route & BITMASK(63, 32)) >> 32;
+	req->route_low = route & BITMASK(31, 0);
+	req->payload = *payload;
+	req->buf = 0;
+	req->crc = 0;
+
+	pair = malloc(sizeof(struct rx_pair));
+	pair->desc = desc;
+	pair->req = req;
+
+	return pair;
 }
 
 /* Increases the TX producer index by 1 to start a TX transmission */
@@ -152,14 +237,146 @@ static void tx_start(const struct vfio_hlvl_params *params)
 	write_host_mem(params, TX_PROD_CONS_INDEX, val);
 }
 
-static u32 read_router_cfg(const char *pci_id,const struct vfio_hlvl_params *params,
-			   const u64 route, const u32 addr)
+/* Increases the RX consumer index by 1 to start a RX transmission */
+static void rx_start(const struct vfio_hlvl_params *params)
 {
-	struct req_payload *payload = make_req_payload(addr, 1, 0, ROUTER_CFG);
-	struct tx_desc *desc = make_tx_read_req(params, route, payload);
+	u16 cons_index, size;
+	u32 index;
+
+	index = read_host_mem_long(params, RX_PROD_CONS_INDEX);
+	printf("rxindex:%x\n", index);
+	cons_index = index & BITMASK(15, 0);
+	size = read_host_mem_word(params, RX_RING_BUF_SIZE);
+
+	cons_index = (cons_index + 1) % size;
+
+	index &= ~BITMASK(15, 0);
+	index |= cons_index;
+	printf("rxindextowrite:%x\n", index);
+	write_host_mem(params, RX_PROD_CONS_INDEX, index);
+	index = read_host_mem_long(params, RX_PROD_CONS_INDEX);
+        printf("rxindexafter:%x\n", index);
+}
+
+/*
+ * Reads 'len' no. of doublewords from the router config space, starting from 'addr'.
+ * 'len' should be greater than '0' and less than '60'. The caller needs to ensure that.
+ */
+static u32 read_router_cfg(const char *pci_id,const struct vfio_hlvl_params *params,
+			   const u64 route, const u32 addr, const u64 len)
+{
+	struct req_payload *payload = make_req_payload(addr, len, 0, ROUTER_CFG);
+	struct tx_desc *tx_desc = make_tx_read_req(params, route, payload);
+	struct rx_pair *rx_pair = make_rx_read_req(params, route, payload, len);
 
 	allow_bus_master(pci_id);
+
 	tx_start(params);
+	rx_start(params);
+	usleep(10000000);
+	printf("tx flags now:%x\n", tx_desc->flags);
+	printf("rx flags now:%x\n", rx_pair->desc->flags);
+	if (!(tx_desc->flags & TX_DESC_DONE)) {
+		printf("Transport layer failed to receive the control packet\n");
+		return NULL;
+	}
+
+	printf("rxprodcons:%x\n", read_host_mem_long(params, RX_PROD_CONS_INDEX));
+
+	if (!(rx_pair->desc->flags & RX_DESC_DONE)) {
+		printf("Failed to write the buffer into the host memory\n");
+		return NULL;
+	}
+
+	printf("rajat\n");
+	printf("buffer:%x\n", rx_pair->req->buf);
+
+}
+
+/* Wait for the FW_ready bit to settle down */
+static int tbt_wait_for_pwr(const char *pci_id)
+{
+	char *root_cmd, *bash_op;
+	u16 retries = 350; /* TODO: Verify the proper amount of retries */
+	char cmd[MAX_LEN];
+	u32 val;
+
+	snprintf(cmd, sizeof(cmd), "setpci -s %s 0x%x.L", pci_id, VS_CAP_9);
+	root_cmd = switch_cmd_to_root(cmd);
+
+	while (retries--) {
+		bash_op = do_bash_cmd(root_cmd);
+		bash_op[8] = '\0';
+
+		val = strtoul(bash_op, &bash_op, 16);
+		if (val & VS_FW_RDY)
+			return 0;
+
+		msleep(5);
+	}
+
+	return ETIMEDOUT;
+}
+
+/* Load the required f/w from the IMR and power on the TBT IP */
+static int tbt_hw_force_pwr(const char *pci_id, u32 val)
+{
+	char cmd[MAX_LEN];
+	char *root_cmd;
+
+	val &= VS_DMA_DELAY_MASK;
+	val |= 0x22 < VS_DMA_DELAY_SHIFT; /* TODO: Check the DMA delay counter value */
+	val |= VS_FORCE_PWR;
+
+	snprintf(cmd, sizeof(cmd), "setpci -s %s 0x%x.L=0x%x", pci_id, VS_CAP_22, val);
+	root_cmd = switch_cmd_to_root(cmd);
+	do_bash_cmd(root_cmd);
+
+	return tbt_wait_for_pwr(pci_id);
+}
+
+static void tbt_hw_set_ltr(const char *pci_id)
+{
+	char cmd[MAX_LEN], wr_cmd[MAX_LEN];
+	char *root_cmd, *bash_op;
+	u32 val, ltr;
+
+	snprintf(cmd, sizeof(cmd), "setpci -s %s 0x%x.L", pci_id, VS_CAP_16);
+	root_cmd = switch_cmd_to_root(cmd);
+	bash_op = do_bash_cmd(root_cmd);
+	bash_op[8] = '\0';
+
+	val = strtoul(bash_op, &bash_op, 16);
+	val &= 0xffff;
+	ltr = val << 16 | val; /* Always use the max. LTR value to be safe */
+
+	snprintf(wr_cmd, sizeof(wr_cmd), "setpci -s %s 0x%x.L=0x%x", pci_id, VS_CAP_15, ltr);
+	root_cmd = switch_cmd_to_root(wr_cmd);
+	do_bash_cmd(root_cmd);
+}
+
+static int tbt_hw_init(const char *pci_id)
+{
+	char *root_cmd, *bash_op;
+	char cmd[MAX_LEN];
+	u32 val;
+	int ret;
+
+	snprintf(cmd, sizeof(cmd), "setpci -s %s 0x%x.L", pci_id, VS_CAP_22);
+	root_cmd = switch_cmd_to_root(cmd);
+	bash_op = do_bash_cmd(root_cmd);
+	bash_op[8] = '\0';
+
+	val = strtoul(bash_op, &bash_op, 16);
+	ret = tbt_hw_force_pwr(pci_id, val);
+	if (ret) {
+		printf("timeout in powering on the TBT h/w\n");
+		return ret;
+	}
+
+	tbt_hw_set_ltr(pci_id);
+
+	return 0;
 }
 
 int main(void)
@@ -208,5 +425,6 @@ int main(void)
 	iommu_unmap_va(params->container, map);*/
 	printf("after init:%x\n", read_host_mem_long(params, 0x19800));
 
-	read_router_cfg(pci_id, params, 0, 0);
+	tbt_hw_init(pci_id);
+	read_router_cfg(pci_id, params, 0, 0, 1);
 }
