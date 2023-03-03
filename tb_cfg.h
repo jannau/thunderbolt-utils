@@ -24,6 +24,10 @@
 /* Max. amount of time(us) taken by the router to write back into the host memory */
 #define CTRL_TIMEOUT	2000
 
+/* HopID and SuppID for control packets */
+#define CTRL_HOP	0x0
+#define CTRL_SUPP	0x0
+
 struct req_payload {
 	u32 addr:13;
 	u32 len:6;

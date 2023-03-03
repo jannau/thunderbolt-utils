@@ -82,7 +82,7 @@ static void* init_host_tx(const struct vfio_hlvl_params *params)
 		else if (off == TX_PROD_CONS_INDEX)
 			write_host_mem(params, off, 0);
 		else if (off == TX_RING_SIZE)
-			write_host_mem(params, off, 2);
+			write_host_mem(params, off, 12);
 
 		off += 4;
 	}
@@ -116,21 +116,16 @@ static void* init_host_rx(const struct vfio_hlvl_params *params, u64 len)
 		else if (off == RX_PROD_CONS_INDEX)
 			write_host_mem(params, off, 0);
 		else if (off == RX_RING_BUF_SIZE)
-			write_host_mem(params, off, 2 | (24 << 16));
+			write_host_mem(params, off, 12 | (24 << 16));
 
 		off += 4;
 	}
 
 	val |= RX_RAW | RX_VALID;
 	write_host_mem(params, RX_RING_CTRL, val);
-	val = read_host_mem_long(params, RX_RING_BUF_SIZE);
-	printf("rxsize:%x\n", val);
-	val = read_host_mem_long(params, RX_RING_CTRL);
-	printf("rxflagsafter:%x\n", val);
-	printf("rxiovawrittenlow:%x\n", read_host_mem_long(params, RX_BASE_LOW));
-	printf("rxiovawrittenhig:%x\n", read_host_mem_long(params, RX_BASE_HIGH));
 
 	write_host_mem(params, RX_RING_PDF, 0);
+
 	return dma_map->vaddr;
 }
 
@@ -172,17 +167,9 @@ static struct tx_desc* make_tx_read_req(const struct vfio_hlvl_params *params, c
 	req->route_low = route & BITMASK(31, 0);
 	req->payload = *payload;
 
-	convert_to_be32(req, sizeof(struct read_req) - 4);
-	req->crc = htobe32(~(get_crc32(~0, req, sizeof(struct read_req) - 4)));
-	printf("txcrc:%x\n", req->crc);
-	printf("txflags:%x\n", desc->flags);
-
-	printf("printing tx buffer\n");
-	u8 *buf = req;
-	for (int i=0;i<sizeof(struct read_req);i++) {
-		printf("%d %x\n", i, *(u8*)buf);
-		buf++;
-	}
+	convert_to_be32(req, (sizeof(struct read_req) - 4) / 4);
+	req->crc = ~(get_crc32(~0, req, sizeof(struct read_req) - 4));
+	be32_to_u32(req, (sizeof(struct read_req) - 4) / 4);
 
 	return desc;
 }
@@ -203,16 +190,15 @@ static struct rx_pair* make_rx_read_req(const struct vfio_hlvl_params *params, c
 	desc->addr_low = dma_map->iova & BITMASK(31, 0);
 	desc->addr_high = (dma_map->iova & BITMASK(63, 32)) >> 32;
 	desc->flags = RX_REQ_STS;
-	printf("raw flags:%x\n", RX_REQ_STS);
-	printf("rx flags:%x\n", desc->flags);
 	desc->rsvd = 0;
 
 	req = dma_map->vaddr;
-	req->route_high = (route & BITMASK(63, 32)) >> 32;
+	/*req->route_high = (route & BITMASK(63, 32)) >> 32;
 	req->route_low = route & BITMASK(31, 0);
 	req->payload = *payload;
 	req->buf = 0;
-	req->crc = 0;
+	req->crc = 0;*/
+	memset(req, sizeof(struct write_req), 0);
 
 	pair = malloc(sizeof(struct rx_pair));
 	pair->desc = desc;
@@ -244,7 +230,6 @@ static void rx_start(const struct vfio_hlvl_params *params)
 	u32 index;
 
 	index = read_host_mem_long(params, RX_PROD_CONS_INDEX);
-	printf("rxindex:%x\n", index);
 	cons_index = index & BITMASK(15, 0);
 	size = read_host_mem_word(params, RX_RING_BUF_SIZE);
 
@@ -252,10 +237,7 @@ static void rx_start(const struct vfio_hlvl_params *params)
 
 	index &= ~BITMASK(15, 0);
 	index |= cons_index;
-	printf("rxindextowrite:%x\n", index);
 	write_host_mem(params, RX_PROD_CONS_INDEX, index);
-	index = read_host_mem_long(params, RX_PROD_CONS_INDEX);
-        printf("rxindexafter:%x\n", index);
 }
 
 /*
@@ -271,26 +253,20 @@ static u32 read_router_cfg(const char *pci_id,const struct vfio_hlvl_params *par
 
 	allow_bus_master(pci_id);
 
-	tx_start(params);
 	rx_start(params);
-	usleep(10000000);
-	printf("tx flags now:%x\n", tx_desc->flags);
-	printf("rx flags now:%x\n", rx_pair->desc->flags);
+	tx_start(params);
+
+	msleep(10000);
+
 	if (!(tx_desc->flags & TX_DESC_DONE)) {
-		printf("Transport layer failed to receive the control packet\n");
+		printf("transport layer failed to receive the control packet\n");
 		return NULL;
 	}
-
-	printf("rxprodcons:%x\n", read_host_mem_long(params, RX_PROD_CONS_INDEX));
 
 	if (!(rx_pair->desc->flags & RX_DESC_DONE)) {
-		printf("Failed to write the buffer into the host memory\n");
+		printf("failed to write the buffer into the host memory\n");
 		return NULL;
 	}
-
-	printf("rajat\n");
-	printf("buffer:%x\n", rx_pair->req->buf);
-
 }
 
 /* Wait for the FW_ready bit to settle down */
@@ -381,10 +357,12 @@ static int tbt_hw_init(const char *pci_id)
 
 int main(void)
 {
-	char *pci_id = trim_host_pci_id(0);
+	/*bind_grp_modules("0000:00:0d.2", false);
+	return 0;*/
+	char *pci_id = "0000:00:0d.2";
 	struct vdid *vdid = get_vdid(pci_id);
 	printf("%s, %s\n", vdid->vendor_id, vdid->device_id);
-
+	printf("%s\n", pci_id);
 	u32 num = 0x4002000;
 	printf("tobe:%llx\n", htobe32(num));
 
@@ -393,8 +371,8 @@ int main(void)
 	printf("crc:%llx\n", crc);
 	printf("negate crc:%llx\n", ~crc);
 	printf("crcbe:%llx\n", htobe32(~crc));
-
-	bind_grp_modules(pci_id, true);
+	//return 0;
+	//bind_grp_modules(pci_id, true);
 
 	struct vfio_hlvl_params *params = vfio_dev_init(pci_id);
         printf("%d %d %d %d\n", params->container, params->group, params->device, params->dev_info->num_regions);
@@ -424,7 +402,12 @@ int main(void)
 	init_host_tx(params);
 	iommu_unmap_va(params->container, map);*/
 	printf("after init:%x\n", read_host_mem_long(params, 0x19800));
-
+	reset_host_interface(params);
 	tbt_hw_init(pci_id);
+	int i = 3;
+	while(i--)
 	read_router_cfg(pci_id, params, 0, 0, 1);
+
+	printf("removing vfio\n");
+	//bind_grp_modules(pci_id, false);
 }

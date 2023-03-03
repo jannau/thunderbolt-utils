@@ -38,4 +38,6 @@ void* get_user_mapped_rw_va(int fd, u64 off, u64 size);
 void unmap_user_mapped_va(void *addr, u64 size);
 u64 get_size_least_set(u64 bitmask);
 u32 get_crc32(u32 crc, u8 *data, u64 size);
+u8 get_crc8(u8 crc, u8 *data, u64 size);
 void convert_to_be32(u32 *data, const u64 len);
+void be32_to_u32(u32 *data, const u64 len);

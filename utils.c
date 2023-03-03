@@ -12,9 +12,14 @@
 #define GET_ALIGNED_PAGE(x, a)		_GET_ALIGNED_PAGE(x, (typeof(x))(a) - 1)
 #define _GET_ALIGNED_PAGE(x, a)		(((x) + (a)) & ~(a))
 
+/* Control packets */
 #define CRC32_POLY_LE			0x82f63b78
 
-/* Thunderbolt uses 32-bit CRC */
+/* Transport packet header */
+#define CRC8_POLY			0x07
+#define CRC8_XOROUT			0x55
+
+/* TBT control packets use 32-bit CRC */
 static u32 crc32_table_le[4][256];
 static u32 *crc32_t0, *crc32_t1, *crc32_t2, *crc32_t3;
 
@@ -293,12 +298,40 @@ u32 get_crc32(u32 crc, u8 *data, u64 size)
 	return crc;
 }
 
+u8 get_crc8(u8 crc, u8 *data, u64 size)
+{
+	u8 i;
+
+	while (size--) {
+		crc ^= *data++;
+
+		for (i = 0; i < 8; i++) {
+			if (crc & 0x80)
+				crc = (crc << 1) ^ CRC8_POLY;
+			else
+				crc <<=1;
+		}
+	}
+
+	return crc ^ CRC8_XOROUT;
+}
+
 void convert_to_be32(u32 *data, const u64 len)
 {
 	u64 i;
 
 	for (i = 0; i < len; i++) {
 		*data = htobe32(*data);
+		++data;
+	}
+}
+
+void be32_to_u32(u32 *data, const u64 len)
+{
+	u64 i;
+
+	for (i = 0; i < len; i++) {
+		*data = be32toh(*data);
 		++data;
 	}
 }
