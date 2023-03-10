@@ -70,22 +70,11 @@ static void* init_host_tx(const struct vfio_hlvl_params *params)
 	struct vfio_iommu_type1_dma_map *dma_map = iommu_map_va(params->container, RDWR_FLAG,
 								page_index++);
 	u32 val = 0;
-	u64 off;
 
-	off = TX_BASE_LOW;
-
-	while (off <= TX_RING_SIZE) {
-		if (off == TX_BASE_LOW)
-			write_host_mem(params, off, dma_map->iova & BITMASK(31,0));
-		else if (off == TX_BASE_HIGH)
-			write_host_mem(params, off, (dma_map->iova & BITMASK(63, 32)) >> 32);
-		else if (off == TX_PROD_CONS_INDEX)
-			write_host_mem(params, off, 0);
-		else if (off == TX_RING_SIZE)
-			write_host_mem(params, off, 12);
-
-		off += 4;
-	}
+	write_host_mem(params, TX_BASE_LOW, dma_map->iova & BITMASK(31,0));
+	write_host_mem(params, TX_BASE_HIGH, (dma_map->iova & BITMASK(63, 32)) >> 32);
+	write_host_mem(params, TX_PROD_CONS_INDEX, 0);
+	write_host_mem(params, TX_RING_SIZE, 12); /* Optimum no. of descriptors? */
 
 	val |= TX_RAW | TX_VALID;
 	write_host_mem(params, TX_RING_CTRL, val);
@@ -104,22 +93,17 @@ static void* init_host_rx(const struct vfio_hlvl_params *params, u64 len)
 	struct vfio_iommu_type1_dma_map *dma_map = iommu_map_va(params->container, RDWR_FLAG,
 								page_index++);
 	u32 val = 0;
-	u64 off;
 
-	off = RX_BASE_LOW;
+	write_host_mem(params, RX_BASE_LOW, dma_map->iova & BITMASK(31, 0));
+	write_host_mem(params, RX_BASE_HIGH, (dma_map->iova & BITMASK(63, 32)) >> 32);
+	write_host_mem(params, RX_PROD_CONS_INDEX, 0);
 
-	while (off <= RX_RING_BUF_SIZE) {
-		if (off == RX_BASE_LOW)
-			write_host_mem(params, off, dma_map->iova & BITMASK(31, 0));
-		else if (off == RX_BASE_HIGH)
-			write_host_mem(params, off, (dma_map->iova & BITMASK(63, 32)) >> 32);
-		else if (off == RX_PROD_CONS_INDEX)
-			write_host_mem(params, off, 0);
-		else if (off == RX_RING_BUF_SIZE)
-			write_host_mem(params, off, 12 | (24 << 16));
-
-		off += 4;
-	}
+	/*
+	 * Optimum no. of descriptors: 256 (min. bytes required) / 16 (bytes in a
+	 * descriptor).
+	 * Correct buffer size?
+	 */
+	write_host_mem(params, RX_RING_BUF_SIZE, 16);
 
 	val |= RX_RAW | RX_VALID;
 	write_host_mem(params, RX_RING_CTRL, val);
