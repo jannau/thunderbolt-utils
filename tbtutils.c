@@ -10,6 +10,14 @@
 
 static char *tbt_sysfs_path = "/sys/bus/thunderbolt/devices/";
 
+/* List of the descriptors for ring 0 of TX and RX */
+static struct va_phy_addr tx_desc[TX_SIZE];
+static struct va_phy_addr rx_desc[RX_SIZE];
+
+/* Currently used descriptors */
+static u8 tx_index = 0;
+static u8 rx_index = 0;
+
 /* A static page index to keep track of iova offset to be given */
 static page_index = 0;
 
@@ -56,46 +64,81 @@ static void reset_host_interface(struct vfio_hlvl_params *params)
 	write_host_mem(params, HOST_RESET, RESET);
 
 	/* Host interface takes a max. of 10 ms to reset */
-	usleep(10000);
+	msleep(10);
+}
+
+static void tx_index_inc(void)
+{
+	tx_index = (tx_index + 1) % TX_SIZE;
+}
+
+static void rx_index_inc(void)
+{
+	rx_index = (rx_index + 1) % RX_SIZE;
+}
+
+/* Allocate the TX descriptors and reserve the DMA memory */
+static void allocate_tx_desc(const struct vfio_hlvl_params *params)
+{
+	struct vfio_iommu_type1_dma_map *dma_map;
+	u8 i = 0;
+
+	for (; i < TX_SIZE; i++) {
+		dma_map = iommu_map_va(params->container, RDWR_FLAG, page_index++);
+
+		tx_desc[i].va = dma_map->vaddr;
+		tx_desc[i].iova = dma_map->iova;
+	}
+}
+
+/* Allocate the RX descriptors and reserve the DMA memory */
+static void allocate_rx_desc(const struct vfio_hlvl_params *params)
+{
+	struct vfio_iommu_type1_dma_map *dma_map;
+	u8 i = 0;
+
+	for (; i < RX_SIZE; i++) {
+		dma_map = iommu_map_va(params->container, RDWR_FLAG, page_index++);
+
+		rx_desc[i].va = dma_map->vaddr;
+		rx_desc[i].iova = dma_map->iova;
+	}
 }
 
 /*
  * Initialize the host-interface transmit registers.
- * This library works on only one ring descriptor at once hence initialize the size of the ring
- * to 2. This is done so we could let the producer and consumer indexes become different for
- * the transmission to get processed by the host-interface layer.
+ * Ring size is coded with a total of 16 descriptors, to make it equal to
+ * the RX ring size.
  */
 static void* init_host_tx(const struct vfio_hlvl_params *params)
 {
-	struct vfio_iommu_type1_dma_map *dma_map = iommu_map_va(params->container, RDWR_FLAG,
-								page_index++);
 	u32 val = 0;
 
-	write_host_mem(params, TX_BASE_LOW, dma_map->iova & BITMASK(31,0));
-	write_host_mem(params, TX_BASE_HIGH, (dma_map->iova & BITMASK(63, 32)) >> 32);
+	write_host_mem(params, TX_BASE_LOW, tx_desc[tx_index].iova & BITMASK(31,0));
+	write_host_mem(params, TX_BASE_HIGH, (tx_desc[tx_index].iova &
+		       BITMASK(63, 32)) >> 32);
 	write_host_mem(params, TX_PROD_CONS_INDEX, 0);
-	write_host_mem(params, TX_RING_SIZE, 12); /* Optimum no. of descriptors? */
+	write_host_mem(params, TX_RING_SIZE, TX_SIZE); /* Optimum no. of descriptors? */
 
 	val |= TX_RAW | TX_VALID;
 	write_host_mem(params, TX_RING_CTRL, val);
 
-	return dma_map->vaddr;
+	return tx_desc[tx_index].va;
 }
 
 /*
- * Initialize the receive host-interface registers. Ring size has been set to '2' similar to
- * the transmit ring size.
- * 'Ring size' register of the RX layer needs to be set with the no. of bytes to be posted in
- * the host memory.
+ * Initialize the receive host-interface registers. Ring size has been set to 16 since
+ * the CM spec. indicates min. size to be 256 bytes.
+ * Data buffer size of the RX layer needs to be set with the no. of bytes to be posted in
+ * the host memory. For now, program it to '0' to represent a max. of 4096 bytes.
  */
 static void* init_host_rx(const struct vfio_hlvl_params *params, u64 len)
 {
-	struct vfio_iommu_type1_dma_map *dma_map = iommu_map_va(params->container, RDWR_FLAG,
-								page_index++);
 	u32 val = 0;
 
-	write_host_mem(params, RX_BASE_LOW, dma_map->iova & BITMASK(31, 0));
-	write_host_mem(params, RX_BASE_HIGH, (dma_map->iova & BITMASK(63, 32)) >> 32);
+	write_host_mem(params, RX_BASE_LOW, rx_desc[rx_index].iova & BITMASK(31, 0));
+	write_host_mem(params, RX_BASE_HIGH, (rx_desc[rx_index].iova &
+		       BITMASK(63, 32)) >> 32);
 	write_host_mem(params, RX_PROD_CONS_INDEX, 0);
 
 	/*
@@ -103,14 +146,35 @@ static void* init_host_rx(const struct vfio_hlvl_params *params, u64 len)
 	 * descriptor).
 	 * Correct buffer size?
 	 */
-	write_host_mem(params, RX_RING_BUF_SIZE, 16);
+	write_host_mem(params, RX_RING_BUF_SIZE, RX_SIZE);
 
 	val |= RX_RAW | RX_VALID;
 	write_host_mem(params, RX_RING_CTRL, val);
 
 	write_host_mem(params, RX_RING_PDF, 0);
 
-	return dma_map->vaddr;
+	return rx_desc[rx_index].va;
+}
+
+static struct tport_header* make_tport_header(const u64 len, u8 pdf)
+{
+	struct tport_header *header = calloc(1, sizeof(struct tport_header));
+	u32 *ptr;
+	u8 crc;
+
+	header->len = len;
+	header->hop_id = CTRL_HOP;
+	header->supp_id = CTRL_SUPP;
+	header->pdf = pdf;
+
+	ptr = header;
+
+	*ptr = htobe32(*ptr);
+	crc = get_crc8(0, header, sizeof(struct tport_header) - 1);
+	*ptr = be32toh(*ptr);
+
+	header->hec = crc;
+	return header;
 }
 
 static struct req_payload* make_req_payload(const u32 addr, const u64 len, const u32 adp,
@@ -131,28 +195,35 @@ static struct tx_desc* make_tx_read_req(const struct vfio_hlvl_params *params, c
 					const struct req_payload *payload)
 {
 	struct vfio_iommu_type1_dma_map *dma_map;
-	struct tx_desc *desc;
+	struct ring_desc *desc;
 	struct read_req *req;
+	u32 *ptr;
 
-	/* DMA mapping for control requests */
+	/* DMA mapping for read control request */
 	dma_map = iommu_map_va(params->container, RDWR_FLAG, page_index++);
 
 	desc = init_host_tx(params);
 	desc->addr_low = dma_map->iova & BITMASK(31, 0);
 	desc->addr_high = (dma_map->iova & BITMASK(63, 32)) >> 32;
-	desc->len = sizeof(struct read_req) - 4;
+	desc->len = sizeof(struct read_req);
 	desc->eof_pdf = EOF_SOF_READ;
 	desc->sof_pdf = EOF_SOF_READ;
 	desc->flags = TX_REQ_STS;
 	desc->rsvd = 0;
 
+	tx_index_inc();
+
 	req = dma_map->vaddr;
+	req->header = *make_tport_header(sizeof(struct read_req) - 4, EOF_SOF_READ);
 	req->route_high = (route & BITMASK(63, 32)) >> 32;
 	req->route_low = route & BITMASK(31, 0);
 	req->payload = *payload;
 
 	convert_to_be32(req, (sizeof(struct read_req) - 4) / 4);
-	req->crc = ~(get_crc32(~0, req, sizeof(struct read_req) - 4));
+
+	ptr = req;
+
+	req->crc = ~(get_crc32(~0, ptr + 1, sizeof(struct read_req) - 8));
 	be32_to_u32(req, (sizeof(struct read_req) - 4) / 4);
 
 	return desc;
@@ -163,7 +234,7 @@ static struct rx_pair* make_rx_read_req(const struct vfio_hlvl_params *params, c
 					const struct req_payload *payload, u64 len)
 {
 	struct vfio_iommu_type1_dma_map *dma_map;
-	struct rx_desc *desc;
+	struct ring_desc *desc;
 	struct write_req *req;
 	struct rx_pair *pair;
 
@@ -173,7 +244,7 @@ static struct rx_pair* make_rx_read_req(const struct vfio_hlvl_params *params, c
 	desc = init_host_rx(params, 4 * len);
 	desc->addr_low = dma_map->iova & BITMASK(31, 0);
 	desc->addr_high = (dma_map->iova & BITMASK(63, 32)) >> 32;
-	desc->flags = RX_REQ_STS;
+	//desc->flags = RX_REQ_STS;
 	desc->rsvd = 0;
 
 	req = dma_map->vaddr;
@@ -232,9 +303,10 @@ static u32 read_router_cfg(const char *pci_id,const struct vfio_hlvl_params *par
 			   const u64 route, const u32 addr, const u64 len)
 {
 	struct req_payload *payload = make_req_payload(addr, len, 0, ROUTER_CFG);
-	struct tx_desc *tx_desc = make_tx_read_req(params, route, payload);
+	struct ring_desc *tx_desc = make_tx_read_req(params, route, payload);
+	return 0;
 	struct rx_pair *rx_pair = make_rx_read_req(params, route, payload, len);
-
+	return 0;
 	allow_bus_master(pci_id);
 
 	rx_start(params);
@@ -355,6 +427,11 @@ int main(void)
 	printf("crc:%llx\n", crc);
 	printf("negate crc:%llx\n", ~crc);
 	printf("crcbe:%llx\n", htobe32(~crc));
+
+	u8 val[] = {0xd0, 0xff, 0x13};
+	u8 crc8 = get_crc8(0, val, 3);
+	printf("crc8:%x\n", crc8);
+	//return 0;
 	//return 0;
 	//bind_grp_modules(pci_id, true);
 
@@ -388,6 +465,7 @@ int main(void)
 	printf("after init:%x\n", read_host_mem_long(params, 0x19800));
 	reset_host_interface(params);
 	tbt_hw_init(pci_id);
+	allocate_tx_desc(params);
 	int i = 3;
 	while(i--)
 	read_router_cfg(pci_id, params, 0, 0, 1);

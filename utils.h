@@ -25,6 +25,15 @@ struct list_item {
 	struct list_item *next;
 };
 
+/*
+ * Mapped virtual and physical addresses.
+ * Default size is coded to 'PAGE_SIZE'.
+ */
+struct va_phy_addr {
+	void *va;
+	u64 iova;
+};
+
 int strpos(char *str, char *substr, u32 pos);
 char* do_bash_cmd(const char *cmd);
 struct list_item *do_bash_cmd_list(const char *cmd);

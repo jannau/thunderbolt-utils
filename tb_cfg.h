@@ -28,6 +28,9 @@
 #define CTRL_HOP	0x0
 #define CTRL_SUPP	0x0
 
+#define TX_SIZE		16
+#define RX_SIZE		16
+
 struct req_payload {
 	u32 addr:13;
 	u32 len:6;
@@ -37,7 +40,16 @@ struct req_payload {
 	u32 rsvd:3;
 };
 
+struct tport_header {
+	u32 hec:8;
+	u32 len:8;
+	u32 hop_id:11;
+	u32 supp_id:1;
+	u32 pdf:4;
+};
+
 struct read_req {
+	struct tport_header header;
 	u32 route_high;
 	u32 route_low;
 	struct req_payload payload;
@@ -45,6 +57,7 @@ struct read_req {
 };
 
 struct write_req {
+	u32 header;
 	u32 route_high;
 	u32 route_low;
 	struct req_payload payload;
@@ -52,7 +65,8 @@ struct write_req {
 	u32 crc;
 };
 
-struct tx_desc {
+/* Ring descriptor */
+struct ring_desc {
 	u32 addr_low;
 	u32 addr_high;
 	u32 len:12;
@@ -62,14 +76,7 @@ struct tx_desc {
 	u32 rsvd;
 };
 
-struct rx_desc {
-	u32 addr_low;
-	u32 addr_high;
-	u32 flags;
-	u32 rsvd;
-};
-
 struct rx_pair {
-	struct rx_desc *desc;
+	struct ring_desc *desc;
 	struct write_req *req;
 };
