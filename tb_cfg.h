@@ -12,14 +12,16 @@
 #define EOF_SOF_READ	1
 #define EOF_SOF_WRITE	2
 
-/* Transmit descriptor flags w.r.t. the position of flags in the descriptor's memory */
+/* Transmit descriptor flags w.r.t. the position of 'flags' in the descriptor's memory */
 #define TX_DESC_DONE	BIT(1)
 #define TX_REQ_STS	BIT(2)
 #define TX_INT_EN	BIT(3)
 
-#define RX_DESC_DONE	BIT(21)
-#define RX_REQ_STS	BIT(22)
-#define RX_INT_EN	BIT(23)
+/* Receive descriptor flags w.r.t. the position of 'flags' in the descriptor's memory */
+#define RX_DESC_DONE	BIT(1)
+#define RX_BUF_OVF	BIT(2)
+#define RX_REQ_STS	BIT(2)
+#define RX_INT_EN	BIT(3)
 
 /* Max. amount of time(us) taken by the router to write back into the host memory */
 #define CTRL_TIMEOUT	2000
@@ -49,7 +51,6 @@ struct tport_header {
 };
 
 struct read_req {
-	struct tport_header header;
 	u32 route_high;
 	u32 route_low;
 	struct req_payload payload;
@@ -57,7 +58,6 @@ struct read_req {
 };
 
 struct write_req {
-	u32 header;
 	u32 route_high;
 	u32 route_low;
 	struct req_payload payload;
