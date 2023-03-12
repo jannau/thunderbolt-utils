@@ -23,6 +23,3 @@ void do_pci_rescan(void);
 void remove_pci_dev(const char *pci_id);
 struct vdid* get_vdid(const char *pci_id);
 void allow_bus_master(const char *pci_id);
-/*struct pci_access* init_pci(void);
-void clean_pci(struct pci_access *pacc);
-bool find_host_controller(void);*/
