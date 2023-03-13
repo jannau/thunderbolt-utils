@@ -93,7 +93,7 @@ static void crc32_init(void)
 	crc32_t3 = crc32_table_le[3];
 }
 
-struct list_item* list_add(struct list_item *tail, const void *val)
+struct list_item* list_add(struct list_item *tail, void *val)
 {
 	struct list_item *temp = malloc(sizeof(struct list_item));
 
@@ -334,4 +334,16 @@ void be32_to_u32(u32 *data, u64 len)
 		*data = be32toh(*data);
 		++data;
 	}
+}
+
+/* Convert a string literal into its equivalent decimal format */
+u32 strtoud(const char *str)
+{
+	return strtoul(str, &str, 10);
+}
+
+/* Convert a string literal into its equivalent hexadecimal format */
+u32 strtouh(const char *str)
+{
+	return strtoul(str, &str, 16);
 }
