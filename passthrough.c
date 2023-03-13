@@ -81,7 +81,7 @@ static bool is_region_mmap(struct vfio_region_info *reg_info)
 	return reg_info->flags & VFIO_REGION_INFO_FLAG_MMAP;
 }
 
-static u32 read_host_mem(const struct vfio_hlvl_params *params, const u64 off)
+static u32 read_host_mem(const struct vfio_hlvl_params *params, u64 off)
 {
 	struct vfio_region_info *reg_info = find_bar_for_off(params->bar_regions, off);
 	struct list_item *temp = params->bar_regions;
@@ -130,7 +130,7 @@ bool check_vfio_module(void)
 	return !strtoul(present, &present, 10);
 }
 
-void bind_grp_modules(const char *pci_id, const bool bind)
+void bind_grp_modules(const char *pci_id, bool bind)
 {
 	struct list_item *list_modules;
 	char path[MAX_LEN];
@@ -249,7 +249,7 @@ void get_dev_pci_cfg_region(struct vfio_hlvl_params *params, const char *pci_id)
 	}
 }
 
-struct vfio_region_info* find_bar_for_off(const struct list_item *bar_regions, const u64 off)
+struct vfio_region_info* find_bar_for_off(const struct list_item *bar_regions, u64 off)
 {
 	struct list_item *temp = bar_regions;
 	struct vfio_region_info reg_info;
@@ -275,22 +275,22 @@ struct vfio_region_info* find_bar_for_off(const struct list_item *bar_regions, c
 	return (struct vfio_region_info*)(temp->val);
 }
 
-u32 read_host_mem_long(struct vfio_hlvl_params *params, u64 off)
+u32 read_host_mem_long(const struct vfio_hlvl_params *params, u64 off)
 {
 	return read_host_mem(params, off);
 }
 
-u16 read_host_mem_word(struct vfio_hlvl_params *params, u64 off)
+u16 read_host_mem_word(const struct vfio_hlvl_params *params, u64 off)
 {
 	return read_host_mem(params, off) & BITMASK(15, 0);
 }
 
-u8 read_host_mem_byte(struct vfio_hlvl_params *params, u64 off)
+u8 read_host_mem_byte(const struct vfio_hlvl_params *params, u64 off)
 {
 	return read_host_mem(params, off) & BITMASK(7, 0);
 }
 
-void write_host_mem(const struct vfio_hlvl_params *params, const u64 off, const u32 value)
+void write_host_mem(const struct vfio_hlvl_params *params, u64 off, u32 value)
 {
 	struct vfio_region_info *reg_info = find_bar_for_off(params->bar_regions, off);
 	struct list_item *temp = params->bar_regions;
@@ -314,7 +314,7 @@ void write_host_mem(const struct vfio_hlvl_params *params, const u64 off, const 
 	unmap_user_mapped_va(user_va, reg_info->size);
 }
 
-struct vfio_iommu_type1_dma_map* iommu_map_va(const int container, const u8 op_flags, const u8 index)
+struct vfio_iommu_type1_dma_map* iommu_map_va(int container, u8 op_flags, u8 index)
 {
 	struct vfio_iommu_type1_info info = { .argsz = sizeof(info) };
 	struct vfio_iommu_type1_dma_map *dma_map;
@@ -346,7 +346,7 @@ struct vfio_iommu_type1_dma_map* iommu_map_va(const int container, const u8 op_f
 	return dma_map;
 }
 
-void iommu_unmap_va(const int container, struct vfio_iommu_type1_dma_map *dma_map)
+void iommu_unmap_va(int container, const struct vfio_iommu_type1_dma_map *dma_map)
 {
 	struct vfio_iommu_type1_dma_unmap dma_unmap = { .argsz = sizeof(dma_unmap) };
 

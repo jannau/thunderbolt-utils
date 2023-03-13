@@ -5,7 +5,7 @@
 
 #include "pciutils.h"
 
-void do_pci_rescan()
+void do_pci_rescan(void)
 {
 	char *path = "echo 1 > /sys/bus/pci/rescan";
 

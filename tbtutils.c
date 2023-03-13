@@ -34,7 +34,7 @@ static u8 total_domains(void)
 	return strtoul(output, &output, 10);
 }
 
-static char* trim_host_pci_id(const u8 domain)
+static char* trim_host_pci_id(u8 domain)
 {
 	char *pci_id = malloc(MAX_LEN * sizeof(char));
 	char path[MAX_LEN];
@@ -59,7 +59,7 @@ static char* trim_host_pci_id(const u8 domain)
 }
 
 /* Reset the host-interface registers to their default values */
-static void reset_host_interface(struct vfio_hlvl_params *params)
+static void reset_host_interface(const struct vfio_hlvl_params *params)
 {
 	write_host_mem(params, HOST_RESET, RESET);
 
@@ -154,7 +154,7 @@ static void* init_host_rx(const struct vfio_hlvl_params *params)
 	return rx_desc[0].va;
 }
 
-static struct tport_header* make_tport_header(const u64 len, u8 pdf)
+static struct tport_header* make_tport_header(u64 len, u8 pdf)
 {
 	struct tport_header *header = calloc(1, sizeof(struct tport_header));
 	u32 *ptr;
@@ -175,8 +175,7 @@ static struct tport_header* make_tport_header(const u64 len, u8 pdf)
 	return header;
 }
 
-static struct req_payload* make_req_payload(const u32 addr, const u64 len, const u32 adp,
-					    const u32 cfg_space)
+static struct req_payload* make_req_payload(u32 addr, u64 len, u32 adp, u32 cfg_space)
 {
 	struct req_payload *payload = calloc(1, sizeof(struct req_payload));
 
@@ -189,7 +188,7 @@ static struct req_payload* make_req_payload(const u32 addr, const u64 len, const
 }
 
 /* Prepare the transmit descriptor and the read buffer request */
-static struct tx_desc* make_tx_read_req(const struct vfio_hlvl_params *params, const u64 route,
+static struct tx_desc* make_tx_read_req(const struct vfio_hlvl_params *params, u64 route,
 					const struct req_payload *payload)
 {
 	struct vfio_iommu_type1_dma_map *dma_map;
@@ -223,8 +222,8 @@ static struct tx_desc* make_tx_read_req(const struct vfio_hlvl_params *params, c
 }
 
 /* Prepare the receive descriptor and the write buffer request */
-static struct rx_pair* make_rx_read_resp(const struct vfio_hlvl_params *params, const u64 route,
-					const struct req_payload *payload)
+static struct rx_pair* make_rx_read_resp(const struct vfio_hlvl_params *params, u64 route,
+					 const struct req_payload *payload)
 {
 	struct vfio_iommu_type1_dma_map *dma_map;
 	struct ring_desc *desc;
@@ -272,8 +271,8 @@ static void tx_start(const struct vfio_hlvl_params *params)
 
 
 /* Reads one doubleword from the router config space, starting from 'addr' */
-static u32 read_router_cfg(const char *pci_id,const struct vfio_hlvl_params *params,
-			   const u64 route, const u32 addr)
+static u32 read_router_cfg(const char *pci_id, const struct vfio_hlvl_params *params,
+			   u64 route, u32 addr)
 {
 	struct req_payload *payload = make_req_payload(addr, 1, 0, ROUTER_CFG);
 	struct ring_desc *tx_desc = make_tx_read_req(params, route, payload);

@@ -108,7 +108,7 @@ struct list_item* list_add(struct list_item *tail, const void *val)
 	return temp;
 }
 
-int strpos(char *str, char *substr, const u32 offset)
+int strpos(const char *str, const char *substr, u64 offset)
 {
 	char strnew[strlen(str)];
 	char *pos_str;
@@ -243,7 +243,7 @@ u64 get_size_least_set(u64 bitmask)
 	return (u64)1 << (ffsll(bitmask) - 1);
 }
 
-u32 get_crc32(u32 crc, u8 *data, u64 size)
+u32 get_crc32(u32 crc, const u8 *data, u64 size)
 {
 	u64 rem_size;
 	u32 *b, q;
@@ -298,7 +298,7 @@ u32 get_crc32(u32 crc, u8 *data, u64 size)
 	return crc;
 }
 
-u8 get_crc8(u8 crc, u8 *data, u64 size)
+u8 get_crc8(u8 crc, const u8 *data, u64 size)
 {
 	u8 i;
 
@@ -316,7 +316,7 @@ u8 get_crc8(u8 crc, u8 *data, u64 size)
 	return crc ^ CRC8_XOROUT;
 }
 
-void convert_to_be32(u32 *data, const u64 len)
+void convert_to_be32(u32 *data, u64 len)
 {
 	u64 i;
 
@@ -326,7 +326,7 @@ void convert_to_be32(u32 *data, const u64 len)
 	}
 }
 
-void be32_to_u32(u32 *data, const u64 len)
+void be32_to_u32(u32 *data, u64 len)
 {
 	u64 i;
 
