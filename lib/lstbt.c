@@ -63,18 +63,18 @@ static inline u8 router_len_in_depth(u8 depth)
 	return ((2 * depth) + 1);
 }
 
+static inline is_host_router(const char *router)
+{
+	return router[strlen(router)-1] == '0';
+}
+
 /* Returns the depth of the given valid router string */
 static inline u8 depth_of_router(const char *router)
 {
-	if (router[strlen(router) - 1] == '0')
+	if (is_host_router(router))
 		return 0;
 
 	return (strlen(router) - 1) / 2;
-}
-
-static inline is_host_router(const char *router)
-{
-	return router[2] == '0';
 }
 
 /*
