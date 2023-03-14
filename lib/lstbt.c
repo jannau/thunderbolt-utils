@@ -89,7 +89,7 @@ static inline bool is_router_depth(const char *router, u8 depth)
 	return !is_host_router(router) && (strlen(router) == router_len_in_depth(depth));
 }
 
-bool validate_args(const char *domain, const char *depth, const char *device)
+static bool validate_args(const char *domain, const char *depth, const char *device)
 {
 	u8 domains = total_domains();
 	u8 i = 0;
@@ -121,7 +121,7 @@ bool validate_args(const char *domain, const char *depth, const char *device)
 }
 
 /* Returns 'true' if the router exists, 'false' otherwise */
-bool is_router_present(const char *router)
+static bool is_router_present(const char *router)
 {
 	char path[MAX_LEN];
 	char *bash;
@@ -162,7 +162,34 @@ static void dump_name(const char *router)
 	snprintf(d_path, sizeof(d_path), "cat %s%s/device_name", tbt_sysfs_path, router);
 	device = do_bash_cmd(d_path);
 
-	printf("%s %s\n", vendor, device);
+	printf("%s %s ", vendor, device);
+}
+
+/* Dump the generation of the router */
+static void dump_generation(const char *router)
+{
+	char gen[MAX_LEN];
+	u8 generation;
+
+	snprintf(gen, sizeof(gen), "cat %s%s/generation", tbt_sysfs_path, router);
+	generation = strtoud(do_bash_cmd(gen));
+
+	switch(generation) {
+	case 1:
+		printf("(TBT1)\n");
+		break;
+	case 2:
+		printf("(TBT2)\n");
+		break;
+	case 3:
+		printf("(TBT3)\n");
+		break;
+	case 4:
+		printf("(USB4)\n");
+		break;
+	default:
+		printf("(Unknown)\n");
+	}
 }
 
 static bool dump_router(const char *router)
@@ -181,6 +208,7 @@ static bool dump_router(const char *router)
 
 	dump_vdid(router);
 	dump_name(router);
+	dump_generation(router);
 
 	return true;
 }
@@ -272,6 +300,6 @@ void lstbt(const u8 *domain, const u8 *depth, const char *device)
 
 int main(void)
 {
-	lstbt(NULL, "0", NULL);
+	lstbt(NULL, NULL, NULL);
 	return 0;
 }
