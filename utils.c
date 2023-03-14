@@ -347,3 +347,17 @@ u32 strtouh(const char *str)
 {
 	return strtoul(str, &str, 16);
 }
+
+/* Returns a substring from a string 'str', starting from 'pos' with length 'len' */
+char* get_substr(const char *str, u64 pos, u64 len)
+{
+	char *substr = malloc((len + 1)* sizeof(char));
+	u64 index = 0;
+	u64 i = pos;
+
+	for (; i < pos + len; i++)
+		substr[index++] = str[i];
+
+	substr[index] = '\0';
+	return substr;
+}
