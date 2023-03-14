@@ -205,7 +205,7 @@ static bool enumerate_domain_tree(u8 domain, const u8 *depth)
 				continue;
 
 			if (is_host_router((char*)router->val) &&
-			    is_router_domain((char*)router->val, domain) {
+			    is_router_domain((char*)router->val, domain)) {
 				found |= enumerate_dev_tree((char*)router->val, 0);
 				break;
 			}
