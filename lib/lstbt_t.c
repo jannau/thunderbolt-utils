@@ -18,13 +18,10 @@ static inline bool is_router_domain(const char *router, u8 domain)
 /* Depth here refers to the depth in the topological output */
 static inline u8 total_whitespace(u8 depth)
 {
-	if (!depth)
+	if (!depth || (depth == 1))
 		return 0;
 
-	if (depth == 1)
-		return 0;
-
-	return 5 * (depth - 1);
+	return 4 * (depth - 1);
 }
 
 /* Depth refers to the description in the above function */
@@ -39,7 +36,7 @@ static void dump_init_depth(u8 depth)
 
 	printf("    ");
 
-	for (; i < total_whitespace(depth); i++)
+	for (; i <= total_whitespace(depth); i++)
 		printf(" ");
 
 	printf("|__ ");
