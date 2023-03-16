@@ -1,5 +1,3 @@
-//#include <stdbool.h>
-//#include "pciutils/lib/pci.h"
 #include "passthrough.h"
 
 #define VDID_LEN		4

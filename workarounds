@@ -1,7 +1,3 @@
-snprintf dont malloc
-strncpy do malloc
-always set last to '\0' after strncpy or anything else
-remember - trim
 iova param should always be in multiples of page size
 TODO: munmap -> vaddr should be in multiples of page size
 

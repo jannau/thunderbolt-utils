@@ -122,7 +122,7 @@ static void* init_host_tx(const struct vfio_hlvl_params *params)
 	val |= TX_RAW | TX_VALID;
 	write_host_mem(params, TX_RING_CTRL, val);
 
-	return tx_desc[0].va;
+	return tx_desc[tx_index].va;
 }
 
 /*
@@ -151,7 +151,7 @@ static void* init_host_rx(const struct vfio_hlvl_params *params)
 
 	write_host_mem(params, RX_RING_PDF, 0xffffffff);
 
-	return rx_desc[0].va;
+	return rx_desc[rx_index].va;
 }
 
 static struct tport_header* make_tport_header(u64 len, u8 pdf)
@@ -281,14 +281,14 @@ static u32 read_router_cfg(const char *pci_id, const struct vfio_hlvl_params *pa
 	allow_bus_master(pci_id);
 
 	printf("txflagsbefore:%x\n", tx_desc->flags);
-	//tx_start(params);
+	tx_start(params);
 
 	msleep(10000);
-	//printf("txflagsafter:%x\n", tx_desc->flags);
-	/*if (!(tx_desc->flags & TX_DESC_DONE)) {
+	printf("txflagsafter:%x\n", tx_desc->flags);
+	if (!(tx_desc->flags & TX_DESC_DONE)) {
 		printf("transport layer failed to receive the control packet\n");
 		return NULL;
-	}*/
+	}
 
 	u32 *ptr = rx_pair->desc;
 	for (int i=0;i<4;i++) {
@@ -391,9 +391,7 @@ static int tbt_hw_init(const char *pci_id)
 
 int main(void)
 {
-	/*bind_grp_modules("0000:00:0d.2", false);
-	return 0;*/
-	char *pci_id = "0000:00:0d.2";
+	char *pci_id = "0000:03:00.0";
 	struct vdid *vdid = get_vdid(pci_id);
 	printf("%s, %s\n", vdid->vendor_id, vdid->device_id);
 	printf("%s\n", pci_id);
@@ -409,9 +407,7 @@ int main(void)
 	u8 val[] = {0xd0, 0xff, 0x13};
 	u8 crc8 = get_crc8(0, val, 3);
 	printf("crc8:%x\n", crc8);
-	//return 0;
-	//return 0;
-	//bind_grp_modules(pci_id, true);
+	bind_grp_modules(pci_id, true);
 
 	struct vfio_hlvl_params *params = vfio_dev_init(pci_id);
         printf("%d %d %d %d\n", params->container, params->group, params->device, params->dev_info->num_regions);
@@ -448,7 +444,5 @@ int main(void)
 	int i = 3;
 	while(i--)
 	read_router_cfg(pci_id, params, 0, 0);
-
-	printf("removing vfio\n");
-	//bind_grp_modules(pci_id, false);
+	bind_grp_modules(pci_id, false);
 }
