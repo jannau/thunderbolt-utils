@@ -45,7 +45,7 @@ static u64 get_register_val(const char *router, u8 cap_id, u8 vcap_id, u64 off)
 	if (!strlen(output))
 		return COMPLEMENT_BIT64;
 
-	return strtouh(do_bash_cmd(root_cmd));
+	return strtouh(output);
 }
 
 /*
