@@ -260,6 +260,6 @@ void lstbt_t(const u8 *domain, const u8 *depth, const char *device)
 
 int main()
 {
-	lstbt_t("0", NULL, NULL);
+	lstbt_t(NULL, NULL, NULL);
 	return 0;
 }

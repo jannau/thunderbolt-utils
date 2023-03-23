@@ -1,0 +1,91 @@
+
+/* Router configuration registers related to USB4 */
+#define ROUTER_CS_1				0x1
+#define ROUTER_CS_1_UPS_ADP			BITMASK(13, 8)
+#define ROUTER_CS_1_UPS_ADP_SHIFT		8
+#define ROUTER_CS_1_MAX_ADP			BITMASK(19, 14)
+#define ROUTER_CS_1_MAX_ADP_SHIFT		14
+#define ROUTER_CS_1_DEPTH			BITMASK(22, 20)
+#define ROUTER_CS_1_DEPTH_SHIFT			20
+#define ROUTER_CS_1_REV_NO			BITMASK(31, 24)
+#define ROUTER_CS_1_REV_NO_SHIFT		24
+
+#define ROUTER_CS_2				0x2
+#define ROUTER_CS_2_TOP_ID_LOW			BITMASK(31, 0)
+
+#define ROUTER_CS_3				0x3
+#define ROUTER_CS_3_TOP_ID_HIGH			BITMASK(23, 0)
+#define ROUTER_CS_3_TOP_ID_VALID		BIT(31)
+#define ROUTER_CS_3_TOP_ID_VALID_SHIFT		31
+
+#define ROUTER_CS_4				0x4
+#define ROUTER_CS_4_NOT_TIMEOUT			BITMASK(7, 0)
+#define ROUTER_CS_4_CMUV			BITMASK(15, 8)
+#define ROUTER_CS_4_CMUV_SHIFT			8
+#define ROUTER_CS_4_USB4V			BITMASK(31, 24)
+#define ROUTER_CS_4_USB4V_SHIFT			24
+
+#define ROUTER_CS_5				0x5
+#define ROUTER_CS_5_WOP				BIT(1)
+#define ROUTER_CS_5_WOP_SHIFT			1
+#define ROUTER_CS_5_WOU				BIT(2)
+#define ROUTER_CS_5_WOU_SHIFT			2
+#define ROUTER_CS_5_WOD				BIT(3)
+#define ROUTER_CS_5_WOD_SHIFT			3
+#define ROUTER_CS_5_C3S				BIT(23)
+#define ROUTER_CS_5_PTO				BIT(24)
+#define ROUTER_CS_5_PTO_SHIFT			24
+#define ROUTER_CS_5_UTO				BIT(25)
+#define ROUTER_CS_5_UTO_SHIFT			25
+#define ROUTER_CS_5_IHCO			BIT(26)
+#define ROUTER_CS_5_IHCO_SHIFT			26
+#define ROUTER_CS_5_CV				BIT(31)
+#define ROUTER_CS_5_CV_SHIFT			31
+
+#define ROUTER_CS_6				0x6
+#define ROUTER_CS_6_SR				BIT(0)
+#define ROUTER_CS_6_WOPS			BIT(2)
+#define ROUTER_CS_6_WOPS_SHIFT			2
+#define ROUTER_CS_6_WOUS			BIT(3)
+#define ROUTER_CS_6_WOUS_SHIFT			3
+#define ROUTER_CS_6_WODS			BIT(4)
+#define ROUTER_CS_6_WODS_SHIFT			4
+#define ROUTER_CS_6_IHCI			BIT(18)
+#define ROUTER_CS_6_IHCI_SHIFT			18
+#define ROUTER_CS_6_RR				BIT(24)
+#define ROUTER_CS_6_RR_SHIFT			24
+#define ROUTER_CS_6_CR				BIT(25)
+#define ROUTER_CS_6_CR_SHIFT			25
+
+/* Router configuration registers related to TBT3 */
+#define ROUTER_VCAP_ID				0x05
+
+#define ROUTER_VSEC1_ID				0x01
+
+#define ROUTER_VSEC1_1				0x1
+#define ROUTER_VSEC1_1_PED			BITMASK(6, 3)
+
+#define ROUTER_VSEC3_ID				0x03
+
+#define ROUTER_VSEC4_ID				0x04
+
+#define ROUTER_VSEC6_ID				0x06
+
+/* VSEC6 common region */
+#define ROUTER_VSEC6_COM			0x2
+#define ROUTER_VSEC6_COM_USB4_LEN		BITMASK(27, 16)
+#define ROUTER_VSEC6_COM_USB4_LEN_SHIFT		16
+
+/* VSEC6 port mode */
+#define ROUTER_VSEC6_PORT_MODE			0x26
+
+/* VSEC6 lane control */
+#define ROUTER_VSEC6_LC_SX_CTRL			0x96
+#define ROUTER_VSEC6_LC_SX_CTRL_EWE		BITMASK(10, 0)
+#define ROUTER_VSEC6_LC_SX_CTRL_L0C		BIT(16)
+#define ROUTER_VSEC6_LC_SX_CTRL_L1C		BIT(20)
+
+/* VSEC6 link attributes */
+#define ROUTER_VSEC6_LINK_ATTR			0x97
+#define ROUTER_VSEC6_LINK_ATTR_TCM		BIT(17)
+#define ROUTER_VSEC6_LINK_ATTR_CPS		BIT(18)

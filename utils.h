@@ -7,7 +7,12 @@
 #define u32			uint32_t
 #define u64			uint64_t
 
-#define BITMASK(x, y)		((u64)(-1) >> (63 - x)) << y
+#define s8			int8_t
+#define s16			int16_t
+#define s32			int32_t
+#define s64			int64_t
+
+#define BITMASK(x, y)		((u64)(-1) >> (63 - x)) & ~((u64)(-1) >> (64 - y))
 #define BIT(x)			(u64)1 << x
 
 #define MAX_LEN			1024
@@ -21,6 +26,13 @@
 #define msleep(x)		usleep(x * 1000)
 
 #define REDIRECTED_NULL		"0>/dev/null 1>/dev/null 2>/dev/null"
+
+#define COMPLEMENT_BIT64	(u64)~0
+
+/* Max. value the respective no. of bits can reflect + 1 */
+#define MAX_BIT8		BIT(8)
+#define MAX_BIT16		BIT(16)
+#define MAX_BIT32		BIT(32)
 
 struct list_item {
 	void *val;
