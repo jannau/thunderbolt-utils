@@ -31,8 +31,8 @@
  */
 static u64 get_register_val(const char *router, u8 cap_id, u8 vcap_id, u64 off)
 {
-	char path[MAX_LEN];
 	char final_path[MAX_LEN];
+	char path[MAX_LEN];
 	char *root_cmd;
 	char *output;
 
