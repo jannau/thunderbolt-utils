@@ -502,7 +502,7 @@ u32 get_tbt3_wake_events_en(const char *router, u8 port)
  *
  * Valid only for TBT3 routers.
  */
-u16 gen_tbt3_lanes_configured(const char *router, u8 port)
+u16 get_tbt3_lanes_configured(const char *router, u8 port)
 {
 	u64 com_len, usb4_len;
 	u64 off, val;
