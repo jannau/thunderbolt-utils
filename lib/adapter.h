@@ -66,3 +66,27 @@
 #define PORT_CS_19_EWOC			BIT(16)
 #define PORT_CS_19_EWOD			BIT(17)
 #define PORT_CS_19_EWOU4		BIT(18)
+
+/* USB3 configuration space */
+#define ADP_USB3_CS_0			0x0
+#define ADP_USB3_CS_0_VALID		BIT(30)
+#define ADP_USB3_CS_0_PE		BIT(31)
+
+#define ADP_USB3_CS_1			0x1
+#define ADP_USB3_CS_1_CUB		BITMASK(11, 0)
+#define ADP_USB3_CS_1_CDB		BITMASK(23, 12)
+#define ADP_USB3_CS_1_HCA		BIT(31)
+
+#define ADP_USB3_CS_2			0x2
+#define ADP_USB3_CS_2_AUB		BITMASK(11, 0)
+#define ADP_USB3_CS_2_ADB		BITMASK(23, 12)
+#define ADP_USB3_CS_2_CMR		BIT(31)
+
+#define ADP_USB3_CS_3			0x3
+#define ADP_USB3_CS_3_SCALE		BITMASK(5, 0)
+
+#define ADP_USB3_CS_4			0x4
+#define ADP_USB3_CS_4_ALR		BITMASK(6, 0)
+#define ADP_USB3_CS_4_ULV		BIT(7)
+#define ADP_USB3_CS_4_PLS		BITMASK(11, 8)
+#define ADP_USB3_CS_4_MAX_SUP_LR	BITMASK(18, 12)
