@@ -90,3 +90,12 @@
 #define ADP_USB3_CS_4_ULV		BIT(7)
 #define ADP_USB3_CS_4_PLS		BITMASK(11, 8)
 #define ADP_USB3_CS_4_MAX_SUP_LR	BITMASK(18, 12)
+
+/* PCIe configuration space */
+#define ADP_PCIE_CS_0			0x0
+#define ADP_PCIE_CS_0_LINK		BIT(16)
+#define ADP_PCIE_CS_0_TX_EI		BIT(17)
+#define ADP_PCIE_CS_0_RX_EI		BIT(18)
+#define ADP_PCIE_CS_0_RST		BIT(19)
+#define ADP_PCIE_CS_0_LTSSM		BITMASK(28, 25)
+#define ADP_PCIE_CS_0_PE		BIT(31)
