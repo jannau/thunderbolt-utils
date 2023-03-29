@@ -99,3 +99,62 @@
 #define ADP_PCIE_CS_0_RST		BIT(19)
 #define ADP_PCIE_CS_0_LTSSM		BITMASK(28, 25)
 #define ADP_PCIE_CS_0_PE		BIT(31)
+
+/* DP configuration space */
+#define ADP_DP_CS_0			0x0
+#define ADP_DP_CS_0_AE			BIT(30)
+#define ADP_DP_CS_0_VE			BIT(31)
+#define ADP_DP_CS_2			0x2
+#define ADP_DP_CS_2_NRD_MLC		BITMASK(2, 0) /* Only for DP IN adapters */
+#define ADP_DP_CS_2_HPD			BIT(6)
+#define ADP_DP_CS_2_NRD_MLR		BITMASK(9, 7) /* Only for DP IN adapters */
+#define ADP_DP_CS_2_CA			BIT(10) /* Only for DP IN adapters */
+#define ADP_DP_CS_2_GR			BITMASK(12, 11) /* Only for DP IN adapters */
+#define ADP_DP_CS_2_CMMS		BIT(20) /* Only for DP IN adapters */
+#define ADP_DP_CS_2_EBW			BITMASK(31, 24)
+
+/* DP common configuration space */
+#define DP_LOCAL_CAP			0x4
+#define DP_LOCAL_CAP_PAV		BITMASK(3, 0)
+#define DP_LOCAL_CAP_MLR		BITMASK(11, 8)
+#define DP_LOCAL_CAP_MLC		BITMASK(14, 12)
+#define DP_LOCAL_CAP_MST		BIT(15)
+#define DP_LOCAL_CAP_LTTPR		BIT(27)
+#define DP_LOCAL_CAP_IN_BW_ALLOC_SUP	BIT(28) /* Only for DP IN adapters */
+#define DP_LOCAL_CAP_DSC		BIT(29)
+#define DP_REMOTE_CAP			0x5
+#define DP_REMOTE_CAP_PAV		BITMASK(3, 0)
+#define DP_REMOTE_CAP_MLR		BITMASK(11, 8)
+#define DP_REMOTE_CAP_MLC		BITMASK(14, 12)
+#define DP_REMOTE_CAP_MST		BIT(15)
+#define DP_REMOTE_CAP_LTTPR		BIT(27)
+#define DP_REMOTE_CAP_DSC		BIT(29)
+
+/* Only for DP IN adapters */
+#define DP_STATUS			0x6
+#define DP_STATUS_LC			BITMASK(2, 0)
+#define DP_STATUS_LR			BITMASK(11, 8)
+#define DP_STATUS_ABW			BITMASK(31, 24)
+
+/* Only for DP OUT adapters */
+#define DP_STATUS_CTRL			0x6
+#define DP_STATUS_CTRL_LC		BITMASK(2, 0)
+#define DP_STATUS_CTRL_LR		BITMASK(11, 8)
+#define DP_STATUS_CTRL_CMHS		BIT(25)
+#define DP_STATUS_CTRL_UF		BIT(26)
+
+/* Common DP capability space */
+#define DP_COMMON_CAP			0x7
+#define DP_COMMON_CAP_PAV		BITMASK(3, 0)
+#define DP_COMMON_CAP_MDR		BITMASK(7, 4)
+#define DP_COMMON_CAP_MLR		BITMASK(11, 8)
+#define DP_COMMON_CAP_MLC		BITMASK(14, 12)
+#define DP_COMMON_CAP_MST		BIT(15)
+#define DP_COMMON_CAP_LTTPR		BIT(27)
+#define DP_COMMON_CAP_DSC		BIT(29)
+
+/* Only for DP IN adapters */
+#define ADP_DP_CS_8			0x8
+#define ADP_DP_CS_8_RBW			BITMASK(7, 0)
+#define ADP_DP_CS_8_DPME		BIT(30)
+#define ADP_DP_CS_8_DR			BIT(31)
