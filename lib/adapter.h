@@ -35,26 +35,42 @@
 /* Lane adapter configuration space */
 #define LANE_ADP_CS_0			0x0
 #define LANE_ADP_CS_0_SUP_SPEEDS	BITMASK(19, 16) /* Same for Lane-1 as well */
+#define LANE_ADP_CS_0_SUP_SPEEDS_SHIFT	16
 #define LANE_ADP_CS_0_SUP_WIDTH		BITMASK(25, 20)
+#define LANE_ADP_CS_0_SUP_WIDTH_SHIFT	20
 #define LANE_ADP_CS_0_CL0S_SUP		BIT(26)
+#define LANE_ADP_CS_0_CL0S_SUP_SHIFT	26
 #define LANE_ADP_CS_0_CL1_SUP		BIT(27)
+#define LANE_ADP_CS_0_CL1_SUP_SHIFT	27
 #define LANE_ADP_CS_0_CL2_SUP		BIT(28)
+#define LANE_ADP_CS_0_CL2_SUP_SHIFT	28
 
 #define LANE_ADP_CS_1			0x1
 #define LANE_ADP_CS_1_CL0S_EN		BIT(10)
+#define LANE_ADP_CS_1_CL0S_EN_SHIFT	10
 #define LANE_ADP_CS_1_CL1_EN		BIT(11)
+#define LANE_ADP_CS_1_CL1_EN_SHIFT	11
 #define LANE_ADP_CS_1_CL2_EN		BIT(12)
+#define LANE_ADP_CS_1_CL2_EN_SHIFT	12
 #define LANE_ADP_CS_1_LD		BIT(14)
+#define LANE_ADP_CS_1_LD_SHIFT		14
 #define LANE_ADP_CS_1_LB		BIT(15)
 #define LANE_ADP_CS_1_CUR_LINK_SPEED	BITMASK(19, 16) /* Same for Lane-1 as well */
 #define LANE_ADP_CS_1_NEG_LINK_WIDTH	BITMASK(25, 20) /* Same for Lane-1 as well */
 #define LANE_ADP_CS_1_ADP_STATE		BITMASK(29, 26)
+#define LANE_ADP_CS_1_ADP_STATE_SHIFT	26
 #define LANE_ADP_CS_1_PMS		BIT(30)
+#define LANE_ADP_CS_1_PMS_SHIFT		30
+
+#define LANE_ADP_CS_2			0x2
+#define LANE_ADP_CS_2_LLEE		BITMASK(22, 16)
 
 #define LANE_SPEED_GEN3			BIT(18)
 #define LANE_SPEED_GEN2			BIT(19)
 #define LANE_WIDTH_X1			BIT(20)
 #define LANE_WIDTH_X2			BIT(21)
+
+#define LANE_ADP_CAP_ID			0x1
 
 /* USB4 port configuration space (only for Lane-0 adapter) */
 #define PORT_CS_18			0x12
