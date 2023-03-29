@@ -29,4 +29,3 @@ bool is_router_depth(const char *router, u8 depth);
 void dump_vdid(const char *router);
 void dump_generation(const char *router);
 u8 depth_of_router(const char *router);
-//char* get_route_string(u64 top_id);

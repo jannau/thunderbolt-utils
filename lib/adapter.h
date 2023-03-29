@@ -3,14 +3,20 @@
 #define ADP_CS_2_SUB_TYPE		BITMASK(7, 0)
 #define ADP_CS_2_VERSION		BITMASK(15, 8)
 #define ADP_CS_2_PROTOCOL		BITMASK(23, 16)
+#define ADP_CS_2_PVS			BITMASK(23, 0)
 
 #define ADP_CS_3			0x3
 #define ADP_CS_3_NUM			BITMASK(25, 20)
-#define ADP_CS_3_PLUGGED		BIT(30)
-#define ADP_CS_3_LOCK			BIT(31)
+
+#define ADP_CS_4			0x4
+#define ADP_CS_4_PLUGGED		BIT(30)
+#define ADP_CS_4_PLUGGED_SHIFT		30
+#define ADP_CS_4_LOCK			BIT(31)
+#define ADP_CS_4_LOCK_SHIFT		31
 
 #define ADP_CS_5			0x5
 #define ADP_CS_5_DHP			BIT(31)
+#define ADP_CS_5_DHP_SHIFT		31
 
 /*
  * Protocol, version, and sub-type fields of the respective adapter.
