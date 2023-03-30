@@ -107,11 +107,13 @@
 #define ADP_USB3_CS_1			0x1
 #define ADP_USB3_CS_1_CUB		BITMASK(11, 0)
 #define ADP_USB3_CS_1_CDB		BITMASK(23, 12)
+#define ADP_USB3_CS_1_CDB_SHIFT		12
 #define ADP_USB3_CS_1_HCA		BIT(31)
 
 #define ADP_USB3_CS_2			0x2
 #define ADP_USB3_CS_2_AUB		BITMASK(11, 0)
 #define ADP_USB3_CS_2_ADB		BITMASK(23, 12)
+#define ADP_USB3_CS_2_ADB_SHIFT		12
 #define ADP_USB3_CS_2_CMR		BIT(31)
 
 #define ADP_USB3_CS_3			0x3
@@ -121,7 +123,11 @@
 #define ADP_USB3_CS_4_ALR		BITMASK(6, 0)
 #define ADP_USB3_CS_4_ULV		BIT(7)
 #define ADP_USB3_CS_4_PLS		BITMASK(11, 8)
+#define ADP_USB3_CS_4_PLS_SHIFT		8
 #define ADP_USB3_CS_4_MAX_SUP_LR	BITMASK(18, 12)
+#define ADP_USB3_CS_4_MAX_SUP_LR_SHIFT	12
+
+#define USB3_ADP_CAP_ID			0x4
 
 /* PCIe configuration space */
 #define ADP_PCIE_CS_0			0x0

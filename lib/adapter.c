@@ -22,6 +22,20 @@
 #define CABLE_VER_MAJ_USB4		0x1
 #define CABLE_VER_MAJ_TBT3		0x0
 
+#define USB3_LR_GEN2_SL			0x0 /* 10 Gbps (single-lane) */
+#define USB3_LR_GEN2_DL			0x1 /* 20 Gbps (dual-lane) */
+
+#define USB3_PLS_U0			0x0
+#define USB3_PLS_U2			0x2
+#define USB3_PLS_U3			0x3
+#define USB3_PLS_DISABLED		0x4
+#define USB3_PLS_RX_DETECT		0x5
+#define USB3_PLS_INACTIVE		0x6
+#define USB3_PLS_POLLING		0x7
+#define USB3_PLS_RECOVERY		0x8
+#define USB3_PLS_HOT_RESET		0x9
+#define USB3_PLS_RESUME			0xf
+
 /*
  * Returns the register value in the config. space of the provided router having
  * the provided cap. ID and VSEC cap. ID, at the given offset.
@@ -646,6 +660,269 @@ u64 get_usb4_wakes_en(const char *router, u8 adp)
 	return val;
 }
 
+/*
+ * Returns 'true' if the adapter is a USB3 adapter, 'false' otherwise.
+ * Caller needs to make sure that the adapter number is valid.
+ */
+bool is_adp_usb3(const char *router, u8 adp)
+{
+	u64 pvs;
+
+	pvs = get_adp_pvs(router, adp);
+	if (pvs == MAX_BIT32)
+		return false;
+
+	return (pvs == DOWN_USB3_PVS) || (pvs == UP_USB3_PVS);
+}
+
+/*
+ * Returns a positive number if the USB3 adapter is enabled, '0' otherwise.
+ * Return a value of 256 on any error.
+ *
+ * NOTE: This is only applicable for USB3 adapters.
+ */
+u16 is_usb3_adp_en(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT8;
+
+	if (!is_adp_usb3(router, adp))
+		return MAX_BIT8;
+
+	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_0);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT8;
+
+	return val & (ADP_USB3_CS_0_VALID | ADP_USB3_CS_0_PE);
+}
+
+/*
+ * Returns the consumed upstream bandwidth for USB3 traffic.
+ * Return a value of 2^16 on any error.
+ *
+ * NOTE: This is only applicable for USB3 adapters.
+ */
+u32 get_usb3_consumed_up_bw(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT16;
+
+	if (!is_adp_usb3(router, adp))
+		return MAX_BIT16;
+
+	if (!is_host_router(router))
+		return 0;
+
+	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_1);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT16;
+
+	return val & ADP_USB3_CS_1_CUB;
+}
+
+/*
+ * Returns the consumed downstream bandwidth for USB3 traffic.
+ * Return a value of 2^16 on any error.
+ *
+ * NOTE: This is only applicable for USB3 adapters.
+ */
+u32 get_usb3_consumed_down_bw(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT16;
+
+	if (!is_adp_usb3(router, adp))
+		return MAX_BIT16;
+
+	if (!is_host_router(router))
+		return 0;
+
+	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_1);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT16;
+
+	return (val & ADP_USB3_CS_1_CDB) >> ADP_USB3_CS_1_CDB_SHIFT;
+}
+
+/*
+ * Returns the allocated upstream bandwidth for USB3 traffic.
+ * Return a value of 2^16 on any error.
+ *
+ * NOTE: This is only applicable for USB3 adapters.
+ */
+u32 get_usb3_allocated_up_bw(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT16;
+
+	if (!is_adp_usb3(router, adp))
+		return MAX_BIT16;
+
+	if (!is_host_router(router))
+		return 0;
+
+	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_2);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT16;
+
+	return val & ADP_USB3_CS_2_AUB;
+}
+
+/*
+ * Returns the allocated downstream bandwidth for USB3 traffic.
+ * Return a value of 2^16 on any error.
+ *
+ * NOTE: This is only applicable for USB3 adapters.
+ */
+u32 get_usb3_allocated_down_bw(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT16;
+
+	if (!is_adp_usb3(router, adp))
+		return MAX_BIT16;
+
+	if (!is_host_router(router))
+		return 0;
+
+	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_2);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT16;
+
+	return (val & ADP_USB3_CS_2_ADB) >> ADP_USB3_CS_2_ADB_SHIFT;
+}
+
+/*
+ * Returns the granularity of USB3 bandwidth on the adapter.
+ * Return a value of 256 on any error.
+ *
+ * NOTE: This is only applicable for USB3 adapters.
+ */
+u16 get_usb3_scale(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT8;
+
+	if (!is_adp_usb3(router, adp))
+		return MAX_BIT8;
+
+	if (!is_host_router(router))
+		return 0;
+
+	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_3);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT8;
+
+	return val & ADP_USB3_CS_3_SCALE;
+}
+
+/*
+ * Returns the actual USB3 link rate.
+ * Check USB3_LR_X definitions in the file.
+ * Return a value of 256 on any error.
+ *
+ * NOTE: This is only applicable for USB3 adapters.
+ */
+u16 get_usb3_actual_lr(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT8;
+
+	if (!is_adp_usb3(router, adp))
+		return MAX_BIT8;
+
+	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_4);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT8;
+
+	return val & ADP_USB3_CS_4_ALR;
+}
+
+/*
+ * Returns a positive integer if the USB3 link is valid, '0' otherwise.
+ * Return a value of 256 on any error.
+ *
+ * NOTE: This is only applicable for USB3 adapters.
+ */
+u16 is_usb3_link_valid(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT8;
+
+	if (!is_adp_usb3(router, adp))
+		return MAX_BIT8;
+
+	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_4);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT8;
+
+	return val & ADP_USB3_CS_4_ULV;
+}
+
+/*
+ * Returns the USB3 port link state.
+ * Check the USB3_PLS_X definitions in the file.
+ * Return a value of 256 on any error.
+ *
+ * NOTE: This is only applicable for USB3 adapters.
+ */
+u16 get_usb3_port_link_state(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT8;
+
+	if (!is_adp_usb3(router, adp))
+		return MAX_BIT8;
+
+	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_4);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT8;
+
+	return (val & ADP_USB3_CS_4_PLS) >> ADP_USB3_CS_4_PLS_SHIFT;
+}
+
+/*
+ * Returns the max. supported USB3 link rate on the port.
+ * Check the USB3_LR_X definitions in the file.
+ * Return a value of 256 on any error.
+ *
+ * NOTE: This is only applicable for USB3 adapters.
+ */
+u16 get_usb3_max_sup_lr(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT8;
+
+	if (!is_adp_usb3(router, adp))
+		return MAX_BIT8;
+
+	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_4);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT8;
+	printf("%x\n", val);
+	return (val & ADP_USB3_CS_4_MAX_SUP_LR) >> ADP_USB3_CS_4_MAX_SUP_LR_SHIFT;
+}
+
 int main(void)
 {
 	char *router = "0-1";
@@ -657,5 +934,6 @@ int main(void)
 	printf("%x\n", get_sup_link_widths(router, 1));
 	printf("%x\n", get_usb4_cable_version(router, 1));
 	printf("is:%x\n", is_usb4_tbt3_compatible_mode(router, 1));
+	printf("usb3:%x\n", get_usb3_max_sup_lr(router, 17));
 	return 0;
 }
