@@ -75,9 +75,16 @@
 /* USB4 port configuration space (only for Lane-0 adapter) */
 #define PORT_CS_18			0x12
 #define PORT_CS_18_CUSB4_VER		BITMASK(7, 0)
+#define PORT_CS_18_CUSB4_VER_MAJ	BITMASK(7, 4)
+#define PORT_CS_18_CUSB4_VER_MAJ_SHIFT	4
 #define PORT_CS_18_BE			BIT(8)
+#define PORT_CS_18_BE_SHIFT		8
 #define PORT_CS_18_TCM			BIT(9)
+#define PORT_CS_18_TCM_SHIFT		9
 #define PORT_CS_18_CPS			BIT(10)
+#define PORT_CS_18_CPS_SHIFT		10
+#define PORT_CS_18_RD			BIT(13)
+#define PORT_CS_18_RD_SHIFT		13
 #define PORT_CS_18_WOCS			BIT(16)
 #define PORT_CS_18_WODS			BIT(17)
 #define PORT_CS_18_WOU4S		BIT(18)
@@ -85,9 +92,12 @@
 #define PORT_CS_19			0x13
 #define PORT_CS_19_DPR			BIT(0)
 #define PORT_CS_19_PC			BIT(3)
+#define PORT_CS_19_PC_SHIFT		3
 #define PORT_CS_19_EWOC			BIT(16)
 #define PORT_CS_19_EWOD			BIT(17)
 #define PORT_CS_19_EWOU4		BIT(18)
+
+#define USB4_PORT_CAP_ID		0x6
 
 /* USB3 configuration space */
 #define ADP_USB3_CS_0			0x0
