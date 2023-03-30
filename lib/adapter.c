@@ -919,7 +919,7 @@ u16 get_usb3_max_sup_lr(const char *router, u8 adp)
 	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_4);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
-	printf("%x\n", val);
+
 	return (val & ADP_USB3_CS_4_MAX_SUP_LR) >> ADP_USB3_CS_4_MAX_SUP_LR_SHIFT;
 }
 
