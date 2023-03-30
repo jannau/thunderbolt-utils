@@ -36,6 +36,18 @@
 #define USB3_PLS_HOT_RESET		0x9
 #define USB3_PLS_RESUME			0xf
 
+#define PCIE_LTSSM_DETECT		0x0
+#define PCIE_LTSSM_POLLING		0x1
+#define PCIE_LTSSM_CONFIGURATION	0x2
+#define PCIE_LTSSM_CONFIGURATION_IDLE	0x3
+#define PCIE_LTSSM_RECOVERY		0x4
+#define PCIE_LTSSM_RECOVERY_IDLE	0x5
+#define PCIE_LTSSM_L0			0x6
+#define PCIE_LTSSM_L1			0x7
+#define PCIE_LTSSM_L2			0x8
+#define PCIE_LTSSM_DISABLED		0x9
+#define PCIE_LTSSM_HOT_RESET		0xa
+
 /*
  * Returns the register value in the config. space of the provided router having
  * the provided cap. ID and VSEC cap. ID, at the given offset.
@@ -923,6 +935,164 @@ u16 get_usb3_max_sup_lr(const char *router, u8 adp)
 	return (val & ADP_USB3_CS_4_MAX_SUP_LR) >> ADP_USB3_CS_4_MAX_SUP_LR_SHIFT;
 }
 
+/*
+ * Returns 'true' if the adapter is a PCIe adapter, 'false' otherwise.
+ * Caller needs to ensure that the adapter no. is valid.
+ */
+bool is_adp_pcie(const char *router, u8 adp)
+{
+	u64 pvs;
+
+	pvs = get_adp_pvs(router, adp);
+	if (pvs == MAX_BIT32)
+		return false;
+
+	return (pvs == DOWN_PCIE_PVS) || (pvs == UP_PCIE_PVS);
+}
+
+/*
+ * Returns a positive integer if PCIe PHY layer is active, '0' otherwise.
+ * Return a value of 256 on any error.
+ *
+ * NOTE: This is only applicable for PCIe adapters.
+ */
+u16 is_pcie_link_up(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT8;
+
+	if (!is_adp_pcie(router, adp))
+		return MAX_BIT8;
+
+	val = get_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT8;
+
+	return val & ADP_PCIE_CS_0_LINK;
+}
+
+/*
+ * Returns a positive integer if PCIe PHY TX is in electrical idle state, '0'
+ * otherwise.
+ * Return a value of 256 on any error.
+ *
+ * NOTE: This is only applicable for PCIe adapters.
+ */
+u16 is_pcie_tx_ei(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT8;
+
+	if (!is_adp_pcie(router, adp))
+		return MAX_BIT8;
+
+	val = get_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT8;
+
+	return val & ADP_PCIE_CS_0_TX_EI;
+}
+
+/*
+ * Returns a positive integer if PCIe PHY RX is in electrical idle state, '0'
+ * otherwise.
+ * Return a value of 256 on any error.
+ *
+ * NOTE: This is only applicable for PCIe adapters.
+ */
+u16 is_pcie_rx_ei(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT8;
+
+	if (!is_adp_pcie(router, adp))
+		return MAX_BIT8;
+
+	val = get_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT8;
+
+	return val & ADP_PCIE_CS_0_RX_EI;
+}
+
+/*
+ * Returns a positive integer if the attached PCIe switch port is in warm reset,
+ * '0' otherwise.
+ * Return a value of 256 on any error.
+ *
+ * NOTE: This is only applicable for PCIe adapters.
+ */
+u16 is_pcie_switch_warm_reset(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT8;
+
+	if (!is_adp_pcie(router, adp))
+		return MAX_BIT8;
+
+	val = get_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT8;
+
+	return val & ADP_PCIE_CS_0_RST;
+}
+
+/*
+ * Returns the PCIe PHY LTSSM state.
+ * Check the PCIE_LTSSM_X definitions in the file.
+ * Return a value of 256 on any error.
+ *
+ * NOTE: This is only applicable for PCIe adapters.
+ */
+u16 get_pcie_ltssm(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT8;
+
+	if (!is_adp_pcie(router, adp))
+		return MAX_BIT8;
+
+	val = get_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT8;
+
+	return (val & ADP_PCIE_CS_0_LTSSM) >> ADP_PCIE_CS_0_LTSSM_SHIFT;
+}
+
+/*
+ * Returns a positive integer if the PCIe adapter is enabled to send tunneled
+ * packets, '0' otherwise.
+ * Return a value of 256 on any error.
+ *
+ * NOTE: This is only applicable for PCIe adapters.
+ */
+u16 is_pcie_adp_enabled(const char *router, u8 adp)
+{
+	u64 val;
+
+	if (!is_adp_present(router, adp))
+		return MAX_BIT8;
+
+	if (!is_adp_pcie(router, adp))
+		return MAX_BIT8;
+
+	val = get_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT8;
+
+	return val & ADP_PCIE_CS_0_PE;
+}
+
 int main(void)
 {
 	char *router = "0-1";
@@ -935,5 +1105,6 @@ int main(void)
 	printf("%x\n", get_usb4_cable_version(router, 1));
 	printf("is:%x\n", is_usb4_tbt3_compatible_mode(router, 1));
 	printf("usb3:%x\n", get_usb3_max_sup_lr(router, 17));
+	printf("pcie:%x\n", is_pcie_tx_ei(router, 11));
 	return 0;
 }

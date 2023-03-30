@@ -136,7 +136,10 @@
 #define ADP_PCIE_CS_0_RX_EI		BIT(18)
 #define ADP_PCIE_CS_0_RST		BIT(19)
 #define ADP_PCIE_CS_0_LTSSM		BITMASK(28, 25)
+#define ADP_PCIE_CS_0_LTSSM_SHIFT	25
 #define ADP_PCIE_CS_0_PE		BIT(31)
+
+#define PCIE_ADP_CAP_ID			0x4
 
 /* DP configuration space */
 #define ADP_DP_CS_0			0x0
