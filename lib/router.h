@@ -99,3 +99,33 @@
 #define ROUTER_VSEC6_LINK_ATTR_TCM_SHIFT	17
 #define ROUTER_VSEC6_LINK_ATTR_CPS		BIT(18)
 #define ROUTER_VSEC6_LINK_ATTR_CPS_SHIFT	18
+
+char* get_route_string(u64 top_id);
+u8 get_upstream_adp(const char *router);
+u8 get_total_adp(const char *router);
+u64 get_top_id_low(const char *router);
+u64 get_top_id_high(const char *router);
+u16 get_rev_no(const char *router);
+u16 is_router_configured(const char *router);
+u16 get_notification_timeout(const char *router);
+u16 get_cmuv(const char *router);
+u16 get_usb4v(const char *router);
+u16 is_wake_enabled(const char *router, u8 protocol);
+u16 is_tunneling_on(const char *router, u8 protocol);
+u16 is_tunneling_config_valid(const char *router);
+u16 is_router_sleep_ready(const char *router);
+u16 get_wake_status(const char *router, u8 protocol);
+u16 is_ihci_present(const char *router);
+u16 is_router_ready(const char *router);
+u16 is_tunneling_ready(const char *router);
+
+/* Below functions are applicable only for TBT3 routers */
+u16 get_tbt3_com_reg_dwords(const char *router);
+u32 get_tbt3_usb4_reg_dwords(const char *router);
+u16 get_tbt3_usb4_ports(const char *router);
+u16 is_tbt3_bonding_en(const char *router, u8 port);
+u32 get_tbt3_wake_events_en(const char *router, u8 port);
+u16 get_tbt3_lanes_configured(const char *router, u8 port);
+u16 is_tbt3_compatible_mode(const char *router, u8 port);
+u16 is_tbt3_clx_supported(const char *router, u8 port);
+

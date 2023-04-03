@@ -583,13 +583,13 @@ u16 is_tbt3_clx_supported(const char *router, u8 port)
 
 int main(void)
 {
-	u64 low = get_top_id_low("0-30501");
+	u64 low = get_top_id_low("0-30701");
 	if (low == MAX_BIT32) {
 		fprintf(stderr, "Not accessible\n");
 		return 0;
 	}
 	printf("low:%llx\n", low);
-	u64 high = get_top_id_high("0-30501");
+	u64 high = get_top_id_high("0-30701");
 	if (high == MAX_BIT32) {
 		fprintf(stderr, "Not accessible\n");
                 return 0;
@@ -598,12 +598,12 @@ int main(void)
 	printf("topid:%llx\n", (high << 23) | low);
 	printf("routestring:%s\n", get_route_string((high << 23) | low));
 
-	bool a = is_router_configured("0-30501");
+	bool a = is_router_configured("0-30701");
 	printf("conf:%d\n", a);
 
-	printf("%x\n", get_notification_timeout("0-30501"));
+	printf("%x\n", get_notification_timeout("0-30701"));
 
-	char *router = "0-30501";
+	char *router = "0-30701";
 	printf("%x\n", get_cmuv(router));
 	printf("%x\n", get_usb4v(router));
 	printf("%x\n", is_wake_enabled(router, 0));

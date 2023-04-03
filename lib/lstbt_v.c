@@ -14,7 +14,7 @@ static void dump_router_verbose(const char *router)
 	printf("%s ", route);
 }
 
-static bool dump_domain_verbose(u8 domain, const u8 *depth)
+static bool dump_domain_verbose(u8 domain, const u8 *depth, u8 num)
 {
 	struct list_item *router;
 	char path[MAX_LEN];
@@ -31,21 +31,25 @@ static bool dump_domain_verbose(u8 domain, const u8 *depth)
 				continue;
 
 			if (is_router_depth((char*)router->val, strtoud(depth)))
-				found |= dump_router_verbose((char*)router->val);
+				found |= dump_router_verbose((char*)router->val, num);
 		}
 	} else {
 		for(; router != NULL; router = router->next) {
 			if (!is_router_format((char*)router->val, domain))
 				continue;
 
-			found |= dump_router_verbose((char*)router->val);
+			found |= dump_router_verbose((char*)router->val, num);
 		}
 	}
 
 	return found;
 }
 
-void lstbt_v(const u8 *domain, const u8 *depth, const char *device)
+/*
+ * Function to be called with '-v' as the only additional argument.
+ * @num: Indicates the number of 'v' provided as the argument (caps to 'vv').
+ */
+void lstbt_v(const u8 *domain, const u8 *depth, const char *device, u8 num)
 {
 	u8 domains = total_domains();
 	bool found = false;
