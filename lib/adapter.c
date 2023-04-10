@@ -74,41 +74,6 @@
 #define DP_OUT_ADP_LC_X4		0x4 /* 4 lanes */
 
 /*
- * Returns the register value in the config. space of the provided router having
- * the provided cap. ID and VSEC cap. ID, at the given offset.
- *
- * @cap_id: Capability ID of the desired space.
- * @vcap_id: VSEC ID of the desired space.
- * @adp: Adapter no.
- * @off: Offset (in dwords).
- *
- * Returns (u64)~0 if the register is not accessible.
- */
-static u64 get_register_val(const char *router, u8 cap_id, u8 vcap_id, u8 adp, u64 off)
-{
-	char final_path[MAX_LEN];
-	char regs_path[MAX_LEN];
-	char path[MAX_LEN];
-	char *root_cmd;
-	char *output;
-
-	snprintf(regs_path, sizeof(regs_path), "%s/port%u", router, adp);
-
-	snprintf(path, sizeof(path), "%s | %s | %s | %s", cfg_space_tab, cap_vcap_search,
-		 print_row_num, print_col_in_row);
-	snprintf(final_path, sizeof(final_path), path, tbt_debugfs_path, regs_path, cap_id,
-		 vcap_id, off + 1);
-
-	root_cmd = switch_cmd_to_root(final_path);
-
-	output = do_bash_cmd(root_cmd);
-	if (!strlen(output))
-		return COMPLEMENT_BIT64;
-
-	return strtouh(output);
-}
-
-/*
  * Returns 'true' if the adapter is present in the router (more precisely,
  * if the adapter's debugfs is present under the provided router).
  */
@@ -141,7 +106,7 @@ u64 get_adp_pvs(const char *router, u8 adp)
 	if (!is_adp_present(router, adp))
 		return MAX_BIT32;
 
-	val = get_register_val(router, 0, 0, adp, ADP_CS_2);
+	val = get_adapter_register_val(router, 0, 0, adp, ADP_CS_2);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT32;
 
@@ -149,22 +114,22 @@ u64 get_adp_pvs(const char *router, u8 adp)
 }
 
 /*
- * Returns '1' if the adapter is plugged, '0' otherwise.
+ * Returns a positive integer if the adapter is plugged, '0' otherwise.
  * If config. space is inaccessible or adapter doesn't exist, return a
- * value of 256.
+ * value of 2^32.
  */
-u16 is_adp_plugged(const char *router, u8 adp)
+u64 is_adp_plugged(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
-	val = get_register_val(router, 0, 0, adp, ADP_CS_4);
+	val = get_adapter_register_val(router, 0, 0, adp, ADP_CS_4);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
-	return (val & ADP_CS_4_PLUGGED) >> ADP_CS_4_PLUGGED_SHIFT;
+	return val & ADP_CS_4_PLUGGED;
 }
 
 /*
@@ -180,7 +145,7 @@ u16 is_adp_locked(const char *router, u8 adp)
 	if (!is_adp_present(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, 0, 0, adp, ADP_CS_4);
+	val = get_adapter_register_val(router, 0, 0, adp, ADP_CS_4);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -199,7 +164,7 @@ u16 are_hot_events_disabled(const char *router, u8 adp)
 	if (!is_adp_present(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, 0, 0, adp, ADP_CS_5);
+	val = get_adapter_register_val(router, 0, 0, adp, ADP_CS_5);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -236,7 +201,7 @@ u16 get_sup_link_speeds(const char *router, u8 adp)
 	if (!is_adp_lane(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_0);
+	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_0);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -258,7 +223,7 @@ u16 get_sup_link_widths(const char *router, u8 adp)
 	if (!is_adp_lane(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_0);
+	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_0);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -279,7 +244,7 @@ u16 are_cl0s_supported(const char *router, u8 adp)
 	if (!is_adp_lane(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_0);
+	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_0);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -300,7 +265,7 @@ u16 is_cl1_supported(const char *router, u8 adp)
 	if (!is_adp_lane(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_0);
+	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_0);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -321,7 +286,7 @@ u16 is_cl2_supported(const char *router, u8 adp)
 	if (!is_adp_lane(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_0);
+	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_0);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -342,7 +307,7 @@ u16 are_cl0s_enabled(const char *router, u8 adp)
 	if (!is_adp_lane(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
+	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -363,7 +328,7 @@ u16 is_cl1_enabled(const char *router, u8 adp)
 	if (!is_adp_lane(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
+	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -384,7 +349,7 @@ u16 is_cl2_enabled(const char *router, u8 adp)
 	if (!is_adp_lane(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
+	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -405,7 +370,7 @@ u16 is_lane_disabled(const char *router, u8 adp)
 	if (!is_adp_lane(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
+	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -427,7 +392,7 @@ u16 cur_link_speed(const char *router, u8 adp)
 	if (!is_adp_lane(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
+	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -449,7 +414,7 @@ u16 neg_link_width(const char *router, u8 adp)
 	if (!is_adp_lane(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
+	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -471,7 +436,7 @@ u16 get_lane_adp_state(const char *router, u8 adp)
 	if (!is_adp_lane(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
+	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -492,7 +457,7 @@ u16 is_secondary_lane_adp(const char *router, u8 adp)
 	if (!is_adp_lane(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
+	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -526,7 +491,7 @@ u32 get_usb4_cable_version(const char *router, u8 adp)
 	if (!is_adp_lane_0(router, adp))
 		return MAX_BIT16;
 
-	val = get_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
+	val = get_adapter_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT16;
 
@@ -550,7 +515,7 @@ u16 is_usb4_bonding_en(const char *router, u8 adp)
 	if (!is_adp_lane_0(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
+	val = get_adapter_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -573,7 +538,7 @@ u16 is_usb4_tbt3_compatible_mode(const char *router, u8 adp)
 	if (!is_adp_lane_0(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
+	val = get_adapter_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -596,7 +561,7 @@ u16 is_usb4_clx_supported(const char *router, u8 adp)
 	if (!is_adp_lane_0(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
+	val = get_adapter_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -619,7 +584,7 @@ u16 is_usb4_router_detected(const char *router, u8 adp)
 	if (!is_adp_lane_0(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
+	val = get_adapter_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -643,7 +608,7 @@ u64 get_usb4_wake_status(const char *router, u8 adp)
 	if (!is_adp_lane_0(router, adp))
 		return MAX_BIT32;
 
-	val = get_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
+	val = get_adapter_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT32;
 
@@ -651,7 +616,7 @@ u64 get_usb4_wake_status(const char *router, u8 adp)
 }
 
 /*
- * Returns '1' if the USB4 port is configured, '0' otherwise.
+ * Returns a positive integer if the USB4 port is configured, '0' otherwise.
  * Return a value of 256 on any error.
  *
  * NOTE: This is only applicable for Lane-0 adapter on a USB4 port.
@@ -666,11 +631,11 @@ u16 is_usb4_port_configured(const char *router, u8 adp)
 	if (!is_adp_lane_0(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_19);
+	val = get_adapter_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_19);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
-	return (val & PORT_CS_19_PC) >> PORT_CS_19_PC_SHIFT;
+	return val & PORT_CS_19_PC;
 }
 
 /*
@@ -690,7 +655,7 @@ u64 get_usb4_wakes_en(const char *router, u8 adp)
 	if (!is_adp_lane_0(router, adp))
 		return MAX_BIT32;
 
-	val = get_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_19);
+	val = get_adapter_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_19);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT32;
 
@@ -728,7 +693,7 @@ u16 is_usb3_adp_en(const char *router, u8 adp)
 	if (!is_adp_usb3(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_0);
+	val = get_adapter_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_0);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -754,7 +719,7 @@ u32 get_usb3_consumed_up_bw(const char *router, u8 adp)
 	if (!is_host_router(router))
 		return 0;
 
-	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_1);
+	val = get_adapter_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_1);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT16;
 
@@ -780,7 +745,7 @@ u32 get_usb3_consumed_down_bw(const char *router, u8 adp)
 	if (!is_host_router(router))
 		return 0;
 
-	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_1);
+	val = get_adapter_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_1);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT16;
 
@@ -806,7 +771,7 @@ u32 get_usb3_allocated_up_bw(const char *router, u8 adp)
 	if (!is_host_router(router))
 		return 0;
 
-	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_2);
+	val = get_adapter_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_2);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT16;
 
@@ -832,7 +797,7 @@ u32 get_usb3_allocated_down_bw(const char *router, u8 adp)
 	if (!is_host_router(router))
 		return 0;
 
-	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_2);
+	val = get_adapter_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_2);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT16;
 
@@ -858,7 +823,7 @@ u16 get_usb3_scale(const char *router, u8 adp)
 	if (!is_host_router(router))
 		return 0;
 
-	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_3);
+	val = get_adapter_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_3);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -882,7 +847,7 @@ u16 get_usb3_actual_lr(const char *router, u8 adp)
 	if (!is_adp_usb3(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_4);
+	val = get_adapter_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_4);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -905,7 +870,7 @@ u16 is_usb3_link_valid(const char *router, u8 adp)
 	if (!is_adp_usb3(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_4);
+	val = get_adapter_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_4);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -929,7 +894,7 @@ u16 get_usb3_port_link_state(const char *router, u8 adp)
 	if (!is_adp_usb3(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_4);
+	val = get_adapter_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_4);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -953,7 +918,7 @@ u16 get_usb3_max_sup_lr(const char *router, u8 adp)
 	if (!is_adp_usb3(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_4);
+	val = get_adapter_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_4);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -991,7 +956,7 @@ u16 is_pcie_link_up(const char *router, u8 adp)
 	if (!is_adp_pcie(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
+	val = get_adapter_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1015,7 +980,7 @@ u16 is_pcie_tx_ei(const char *router, u8 adp)
 	if (!is_adp_pcie(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
+	val = get_adapter_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1039,7 +1004,7 @@ u16 is_pcie_rx_ei(const char *router, u8 adp)
 	if (!is_adp_pcie(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
+	val = get_adapter_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1063,7 +1028,7 @@ u16 is_pcie_switch_warm_reset(const char *router, u8 adp)
 	if (!is_adp_pcie(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
+	val = get_adapter_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1087,7 +1052,7 @@ u16 get_pcie_ltssm(const char *router, u8 adp)
 	if (!is_adp_pcie(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
+	val = get_adapter_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1111,7 +1076,7 @@ u16 is_pcie_adp_enabled(const char *router, u8 adp)
 	if (!is_adp_pcie(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
+	val = get_adapter_register_val(router, PCIE_ADP_CAP_ID, 0, adp, ADP_PCIE_CS_0);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1174,7 +1139,7 @@ u16 is_dp_aux_en(const char *router, u8 adp)
 	if (!is_adp_dp(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_0);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_0);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1198,7 +1163,7 @@ u16 is_dp_vid_en(const char *router, u8 adp)
 	if (!is_adp_dp(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_0);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_0);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1222,7 +1187,7 @@ u16 get_dp_in_nrd_max_lc(const char *router, u8 adp)
 	if (!is_adp_dp_in(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_2);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_2);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1245,7 +1210,7 @@ u16 get_dp_hpd_status(const char *router, u8 adp)
 	if (!is_adp_dp(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_2);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_2);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1269,7 +1234,7 @@ u16 get_dp_in_nrd_max_lr(const char *router, u8 adp)
 	if (!is_adp_dp_in(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_2);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_2);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1293,7 +1258,7 @@ u16 is_dp_in_cm_ack(const char *router, u8 adp)
 	if (!is_adp_dp_in(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_2);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_2);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1317,7 +1282,7 @@ u16 get_dp_in_granularity(const char *router, u8 adp)
 	if (!is_adp_dp_in(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_2);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_2);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1341,7 +1306,7 @@ u16 is_dp_in_cm_bw_alloc_support(const char *router, u8 adp)
 	if (!is_adp_dp_in(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_2);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_2);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1365,7 +1330,7 @@ u16 get_dp_in_estimated_bw(const char *router, u8 adp)
 	if (!is_adp_dp_in(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_2);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_2);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1392,9 +1357,9 @@ u16 get_dp_protocol_adp_ver(const char *router, u8 adp, bool remote)
 		return MAX_BIT8;
 
 	if (!remote)
-		val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
+		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
 	else
-		val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_REMOTE_CAP);
+		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_REMOTE_CAP);
 
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
@@ -1422,9 +1387,9 @@ u16 get_dp_max_link_rate(const char *router, u8 adp, bool remote)
 		return MAX_BIT8;
 
 	if (!remote)
-		val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
+		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
 	else
-		val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_REMOTE_CAP);
+		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_REMOTE_CAP);
 
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
@@ -1452,9 +1417,9 @@ u16 get_dp_max_lane_count(const char *router, u8 adp, bool remote)
 		return MAX_BIT8;
 
 	if (!remote)
-		val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
+		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
 	else
-		val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_REMOTE_CAP);
+		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_REMOTE_CAP);
 
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
@@ -1482,9 +1447,9 @@ u16 is_dp_mst_cap(const char *router, u8 adp, bool remote)
 		return MAX_BIT8;
 
 	if (!remote)
-		val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
+		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
 	else
-		val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_REMOTE_CAP);
+		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_REMOTE_CAP);
 
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
@@ -1512,9 +1477,9 @@ u16 is_dp_lttpr_sup(const char *router, u8 adp, bool remote)
 		return MAX_BIT8;
 
 	if (!remote)
-		val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
+		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
 	else
-		val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_REMOTE_CAP);
+		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_REMOTE_CAP);
 
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
@@ -1539,7 +1504,7 @@ u16 is_dp_in_bw_alloc_sup(const char *router, u8 adp)
 	if (!is_adp_dp_in(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1566,9 +1531,9 @@ u16 is_dp_dsc_sup(const char *router, u8 adp, bool remote)
 		return MAX_BIT8;
 
 	if (!remote)
-		val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
+		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
 	else
-		val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_REMOTE_CAP);
+		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_REMOTE_CAP);
 
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
@@ -1593,7 +1558,7 @@ u16 get_dp_in_lane_count(const char *router, u8 adp)
 	if (!is_adp_dp_in(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1617,7 +1582,7 @@ u16 get_dp_in_link_rate(const char *router, u8 adp)
 	if (!is_adp_dp_in(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1640,7 +1605,7 @@ u16 get_dp_in_alloc_bw(const char *router, u8 adp)
 	if (!is_adp_dp_in(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1664,7 +1629,7 @@ u16 get_dp_out_lane_count(const char *router, u8 adp)
 	if (!is_adp_dp_out(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS_CTRL);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS_CTRL);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1688,7 +1653,7 @@ u16 get_dp_out_link_rate(const char *router, u8 adp)
 	if (!is_adp_dp_out(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS_CTRL);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS_CTRL);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1711,7 +1676,7 @@ u16 is_dp_out_cm_handshake(const char *router, u8 adp)
 	if (!is_adp_dp_out(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS_CTRL);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS_CTRL);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1735,7 +1700,7 @@ u16 is_dp_out_dp_in_usb4(const char *router, u8 adp)
 	if (!is_adp_dp_out(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS_CTRL);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS_CTRL);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1759,7 +1724,7 @@ u16 is_dp_in_dprx_cap_read_done(const char *router, u8 adp)
 	if (!is_adp_dp_in(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS_CTRL);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS_CTRL);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1782,7 +1747,7 @@ u16 get_dp_in_req_bw(const char *router, u8 adp)
 	if (!is_adp_dp_in(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_8);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_8);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1806,7 +1771,7 @@ u16 is_dp_in_dptx_bw_alloc_en(const char *router, u8 adp)
 	if (!is_adp_dp_in(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_8);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_8);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -1830,17 +1795,17 @@ u16 is_dp_in_dptx_req(const char *router, u8 adp)
 	if (!is_adp_dp_in(router, adp))
 		return MAX_BIT8;
 
-	val = get_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_8);
+	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_8);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
 	return val & ADP_DP_CS_8_DR;
 }
 
-int main(void)
+/*int main(void)
 {
 	char *router = "0-1";
-	printf("%x\n", get_register_val(router, 0, 0, 1, ADP_CS_2));
+	printf("%x\n", get_adapter_register_val(router, 0, 0, 1, ADP_CS_2));
 	printf("%d\n", is_adp_present(router, 0));
 	printf("%x\n", get_adp_pvs(router, 11));
 	printf("%d\n", are_hot_events_disabled(router, 11));
@@ -1852,4 +1817,4 @@ int main(void)
 	printf("pcie:%x\n", is_pcie_tx_ei(router, 11));
 	printf("dp:%x\n", is_dp_aux_en(router, 13));
 	return 0;
-}
+}*/

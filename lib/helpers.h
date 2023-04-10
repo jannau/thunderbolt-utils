@@ -14,10 +14,17 @@
 static char *tbt_sysfs_path = "/sys/bus/thunderbolt/devices/";
 static char *tbt_debugfs_path = "/sys/kernel/debug/thunderbolt/";
 
-static char *cfg_space_tab = "cat %s%s/regs | awk -v OFS=',' '{\\$1=\\$1}1'";
-static char *cap_vcap_search = "awk -F',' '\\$3 ~ /0x%02x/' | awk -F',' '\\$4 ~ /0x%02x/'";
-static char *print_row_num = "sed -n '%up'";
-static char *print_col_in_row = "awk -F',' '{print \\$5}'";
+static struct adp_config {
+	u8 adp;
+	struct list_item *regs;
+};
+
+static struct router_config {
+	char *router;
+	struct list_item *regs;
+	struct adp_config *adps_config;
+};
+static struct router_config *routers_config;
 
 u8 total_domains(void);
 bool validate_args(const char *domain, const char *depth, const char *device);
@@ -29,3 +36,8 @@ bool is_router_depth(const char *router, u8 depth);
 void dump_vdid(const char *router);
 void dump_generation(const char *router);
 u8 depth_of_router(const char *router);
+u8 domain_of_router(const char *router);
+void debugfs_config_init(void);
+u64 get_router_register_val(const char *router, u8 cap_id, u8 vcap_id, u64 off);
+u64 get_adapter_register_val(const char *router, u8 adp, u8 cap_id,
+			     u8 vcap_id, u64 off);

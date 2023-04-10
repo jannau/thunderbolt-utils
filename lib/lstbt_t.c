@@ -3,12 +3,6 @@
 
 #include "helpers.h"
 
-/* Returns the domain of the valid router string */
-static inline u8 domain_of_router(const char *router)
-{
-	return strtoud(get_substr(router, 0, 1));
-}
-
 /* Returns 'true' if the router is in the provided domain, 'false' otherwise */
 static inline bool is_router_domain(const char *router, u8 domain)
 {

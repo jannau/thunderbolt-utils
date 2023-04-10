@@ -1,4 +1,3 @@
-
 /* Router configuration registers related to USB4 */
 #define ROUTER_CS_1				0x1
 #define ROUTER_CS_1_UPS_ADP			BITMASK(13, 8)
@@ -16,7 +15,6 @@
 #define ROUTER_CS_3				0x3
 #define ROUTER_CS_3_TOP_ID_HIGH			BITMASK(23, 0)
 #define ROUTER_CS_3_TOP_ID_VALID		BIT(31)
-#define ROUTER_CS_3_TOP_ID_VALID_SHIFT		31
 
 #define ROUTER_CS_4				0x4
 #define ROUTER_CS_4_NOT_TIMEOUT			BITMASK(7, 0)
@@ -24,26 +22,23 @@
 #define ROUTER_CS_4_CMUV_SHIFT			8
 #define ROUTER_CS_4_USB4V			BITMASK(31, 24)
 #define ROUTER_CS_4_USB4V_SHIFT			24
+#define USB4V_MAJOR_VER				BITMASK(7, 5)
+#define USB4V_MAJOR_VER_SHIFT			5
 
 #define ROUTER_CS_5				0x5
 #define ROUTER_CS_5_WOP				BIT(1)
-#define ROUTER_CS_5_WOP_SHIFT			1
 #define ROUTER_CS_5_WOU				BIT(2)
-#define ROUTER_CS_5_WOU_SHIFT			2
 #define ROUTER_CS_5_WOD				BIT(3)
-#define ROUTER_CS_5_WOD_SHIFT			3
 #define ROUTER_CS_5_C3S				BIT(23)
 #define ROUTER_CS_5_PTO				BIT(24)
-#define ROUTER_CS_5_PTO_SHIFT			24
 #define ROUTER_CS_5_UTO				BIT(25)
-#define ROUTER_CS_5_UTO_SHIFT			25
 #define ROUTER_CS_5_IHCO			BIT(26)
 #define ROUTER_CS_5_IHCO_SHIFT			26
 #define ROUTER_CS_5_CV				BIT(31)
-#define ROUTER_CS_5_CV_SHIFT			31
 
 #define ROUTER_CS_6				0x6
 #define ROUTER_CS_6_SR				BIT(0)
+#define ROUTER_CS_6_TNS				BIT(1)
 #define ROUTER_CS_6_WOPS			BIT(2)
 #define ROUTER_CS_6_WOPS_SHIFT			2
 #define ROUTER_CS_6_WOUS			BIT(3)
@@ -51,7 +46,6 @@
 #define ROUTER_CS_6_WODS			BIT(4)
 #define ROUTER_CS_6_WODS_SHIFT			4
 #define ROUTER_CS_6_IHCI			BIT(18)
-#define ROUTER_CS_6_IHCI_SHIFT			18
 #define ROUTER_CS_6_RR				BIT(24)
 #define ROUTER_CS_6_RR_SHIFT			24
 #define ROUTER_CS_6_CR				BIT(25)
@@ -100,24 +94,53 @@
 #define ROUTER_VSEC6_LINK_ATTR_CPS		BIT(18)
 #define ROUTER_VSEC6_LINK_ATTR_CPS_SHIFT	18
 
+/*
+ * Used to fetch the adapter numbers in each level the lower level is connected
+ * to in a topology ID.
+ * Check for route string format in control packets on how the topology ID is
+ * stored.
+ */
+#define LEVEL_0			BITMASK(5, 0)
+#define LEVEL_1			BITMASK(13, 8)
+#define LEVEL_2			BITMASK(21, 16)
+#define LEVEL_3			BITMASK(29, 24)
+#define LEVEL_4			BITMASK(37, 32)
+#define LEVEL_5			BITMASK(45, 40)
+#define LEVEL_6			BITMASK(53, 48)
+
+/*
+ * Wake events configured in a TBT3 router.
+ * Check for 'get_tbt3_wake_events_en' definition in 'router.c'.
+ */
+#define TBT3_HOT_PLUG_ROUTER	BIT(1)
+#define TBT3_HOT_UNPLUG_ROUTER	BIT(2)
+#define TBT3_HOT_PLUG_DP	BIT(3)
+#define TBT3_HOT_UNPLUG_DP	BIT(4)
+#define TBT3_USB4		BIT(5)
+#define TBT3_PCIE		BIT(6)
+#define TBT3_HOT_PLUG_USB	BIT(9)
+#define TBT3_HOT_UNPLUG_USB	BIT(10)
+
 char* get_route_string(u64 top_id);
 u8 get_upstream_adp(const char *router);
 u8 get_total_adp(const char *router);
 u64 get_top_id_low(const char *router);
 u64 get_top_id_high(const char *router);
 u16 get_rev_no(const char *router);
-u16 is_router_configured(const char *router);
+u64 is_router_configured(const char *router);
 u16 get_notification_timeout(const char *router);
 u16 get_cmuv(const char *router);
 u16 get_usb4v(const char *router);
 u16 is_wake_enabled(const char *router, u8 protocol);
-u16 is_tunneling_on(const char *router, u8 protocol);
-u16 is_tunneling_config_valid(const char *router);
+u64 is_tunneling_on(const char *router, u8 protocol);
+u64 is_ihci_on(const char *router);
+u64 is_tunneling_config_valid(const char *router);
 u16 is_router_sleep_ready(const char *router);
+u16 is_tbt3_not_supported(const char *router);
 u16 get_wake_status(const char *router, u8 protocol);
-u16 is_ihci_present(const char *router);
+u64 is_ihci_present(const char *router);
 u16 is_router_ready(const char *router);
-u16 is_tunneling_ready(const char *router);
+u64 is_tunneling_ready(const char *router);
 
 /* Below functions are applicable only for TBT3 routers */
 u16 get_tbt3_com_reg_dwords(const char *router);
@@ -125,7 +148,8 @@ u32 get_tbt3_usb4_reg_dwords(const char *router);
 u16 get_tbt3_usb4_ports(const char *router);
 u16 is_tbt3_bonding_en(const char *router, u8 port);
 u32 get_tbt3_wake_events_en(const char *router, u8 port);
-u16 get_tbt3_lanes_configured(const char *router, u8 port);
+u64 get_tbt3_lanes_configured(const char *router, u8 port);
 u16 is_tbt3_compatible_mode(const char *router, u8 port);
 u16 is_tbt3_clx_supported(const char *router, u8 port);
 
+u8 get_usb4_port_num(u8 lane_adp);

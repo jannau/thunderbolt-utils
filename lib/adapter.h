@@ -10,7 +10,6 @@
 
 #define ADP_CS_4			0x4
 #define ADP_CS_4_PLUGGED		BIT(30)
-#define ADP_CS_4_PLUGGED_SHIFT		30
 #define ADP_CS_4_LOCK			BIT(31)
 #define ADP_CS_4_LOCK_SHIFT		31
 
@@ -92,7 +91,6 @@
 #define PORT_CS_19			0x13
 #define PORT_CS_19_DPR			BIT(0)
 #define PORT_CS_19_PC			BIT(3)
-#define PORT_CS_19_PC_SHIFT		3
 #define PORT_CS_19_EWOC			BIT(16)
 #define PORT_CS_19_EWOD			BIT(17)
 #define PORT_CS_19_EWOU4		BIT(18)
@@ -204,7 +202,7 @@
 
 bool is_adp_present(const char *router, u8 adp);
 u64 get_adp_pvs(const char *router, u8 adp);
-u16 is_adp_plugged(const char *router, u8 adp);
+u64 is_adp_plugged(const char *router, u8 adp);
 u16 is_adp_locked(const char *router, u8 adp);
 u16 are_hot_events_disabled(const char *router, u8 adp);
 bool is_adp_lane(const char *router, u8 adp);
