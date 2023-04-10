@@ -110,17 +110,13 @@ struct list_item* list_add(struct list_item *tail, void *val)
 
 int strpos(const char *str, const char *substr, u64 offset)
 {
-	char strnew[strlen(str)];
 	char *pos_str;
 	int pos;
 
-	strncpy(strnew, str + offset, strlen(str) - offset);
-	strnew[strlen(str) - offset] = '\0';
-
-	pos_str = strstr(strnew, substr);
+	pos_str = strstr(str + offset, substr);
 
 	if (pos_str)
-		pos = pos_str - (strnew + offset);
+		pos = pos_str - str;
 	else
 		pos = -1;
 
@@ -360,4 +356,29 @@ char* get_substr(const char *str, u64 pos, u64 len)
 
 	substr[index] = '\0';
 	return substr;
+}
+
+/* Returns the total number of items in the list */
+u64 get_total_list_items(const struct list_item *head)
+{
+	u64 num = 0;
+
+	for (; head; head = head->next)
+		num++;
+
+	return num;
+}
+
+/*
+ * Returns 'true' if an item of type 'char*' is present in the provided list,
+ * 'false' otherwise.
+ */
+bool is_present_in_list(const struct list_item *head, const char *str)
+{
+	for (; head; head = head->next) {
+		if (!strcmp((char*)head->val, str))
+			return true;
+	}
+
+	return false;
 }
