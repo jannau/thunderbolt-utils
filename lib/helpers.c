@@ -139,13 +139,11 @@ static u64 get_register_val(const struct list_item *regs_list, u8 cap_id,
 	u64 row = 0;
 	char *regs;
 
-	regs = (char*)regs_list->val;
-	total_col = strlen(regs);
-
 	for (; regs_list; regs_list = regs_list->next) {
 		num_commas = 0;
 		col = 0;
 		regs = (char*)regs_list->val;
+		total_col = strlen(regs);
 
 		for (; col < total_col; col++) {
 			if (num_commas == 2) {
@@ -178,6 +176,7 @@ static u64 get_register_val(const struct list_item *regs_list, u8 cap_id,
 			if (is_offset_inaccessible(regs))
 				return COMPLEMENT_BIT64;
 
+			total_col = strlen(regs);
 			return strtouh(regs + (total_col - 10));
 		}
 	}
@@ -415,8 +414,8 @@ u64 get_router_register_val(const char *router, u8 cap_id, u8 vcap_id, u64 off)
  *
  * Caller needs to ensure that the arguments are valid.
  */
-u64 get_adapter_register_val(const char *router, u8 adp, u8 cap_id,
-			     u8 vcap_id, u64 off)
+u64 get_adapter_register_val(const char *router, u8 cap_id, u8 vcap_id, u8 adp,
+			     u64 off)
 {
 	struct router_config *router_config;
 	struct adp_config *adp_config;

@@ -294,7 +294,8 @@ u16 is_tbt3_not_supported(const char *router)
 }
 
 /*
- * Returns '1' if a wake was caused by the provided protocol, '0' otherwise.
+ * Returns a positive integer if a wake was caused by the provided protocol,
+ * '0' otherwise.
  * If config. space is inaccessible, return a value of 256.
  */
 u16 get_wake_status(const char *router, u8 protocol)
@@ -306,11 +307,11 @@ u16 get_wake_status(const char *router, u8 protocol)
 		return MAX_BIT8;
 
 	if (protocol == PROTOCOL_PCIE)
-		return (val & ROUTER_CS_6_WOPS) >> ROUTER_CS_6_WOPS_SHIFT;
+		return val & ROUTER_CS_6_WOPS;
 	else if (protocol == PROTOCOL_USB3)
-		return (val & ROUTER_CS_6_WOUS) >> ROUTER_CS_6_WOUS_SHIFT;
+		return val & ROUTER_CS_6_WOUS;
 	else
-		return (val & ROUTER_CS_6_WODS) >> ROUTER_CS_6_WODS_SHIFT;
+		return val & ROUTER_CS_6_WODS;
 }
 
 /*
@@ -458,17 +459,17 @@ u32 get_tbt3_wake_events_en(const char *router, u8 port)
 	com_len = get_tbt3_com_reg_dwords(router);
 	if (com_len == MAX_BIT8)
 		return MAX_BIT16;
-	printf("%d\n", com_len);
+
 	usb4_len = get_tbt3_usb4_reg_dwords(router);
 	if (usb4_len == MAX_BIT16)
 		return MAX_BIT16;
-	printf("%d\n", usb4_len);
+
 	off = (usb4_len * port) + com_len + ROUTER_VSEC6_LC_SX_CTRL;
-	printf("%d\n", off);
+
 	val = get_router_register_val(router, ROUTER_VCAP_ID, ROUTER_VSEC6_ID, off);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT16;
-	printf("%x\n", val);
+
 	return val & ROUTER_VSEC6_LC_SX_CTRL_EWE;
 }
 
@@ -560,13 +561,13 @@ u16 is_tbt3_clx_supported(const char *router, u8 port)
 /*
  * Returns the port number of the provided lane adapter number.
  * For e.g., lane adapters 2 and 4 will correspond to port numbers
- * 1 and 2 respectively.
+ * 0 and 1 respectively.
  *
  * Caller needs to ensure that the lane adapter number is valid.
  */
 u8 get_usb4_port_num(u8 lane_adp)
 {
-	return lane_adp / 2;
+	return (lane_adp - 1) / 2;
 }
 
 /*int main(void)

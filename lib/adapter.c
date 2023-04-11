@@ -107,6 +107,7 @@ u64 get_adp_pvs(const char *router, u8 adp)
 		return MAX_BIT32;
 
 	val = get_adapter_register_val(router, 0, 0, adp, ADP_CS_2);
+
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT32;
 
@@ -180,6 +181,7 @@ bool is_adp_lane(const char *router, u8 adp)
 	u64 pvs;
 
 	pvs = get_adp_pvs(router, adp);
+
 	if (pvs == MAX_BIT32)
 		return false;
 

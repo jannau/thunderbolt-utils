@@ -179,6 +179,11 @@ static void dump_power_states_compatibility(const char *router)
 	dump_spaces(VERBOSE_L2_SPACES);
 	printf("PWR-support: ");
 
+	if (is_host_router(router)) {
+		printf("Sleep+\n");
+		return;
+	}
+
 	ups_router = get_upstream_router(router);
 	down_port = get_ups_down_port(router);
 
@@ -404,24 +409,20 @@ static void dump_usb4_gen_wakes(const char *router)
 
 	wakes = is_wake_enabled(router, PROTOCOL_PCIE);
 	if (wakes == MAX_BIT8)
-		printf("<Not accessible> ");
+		printf("<Not accessible>\n");
 	else if (wakes)
 		printf("PCIe+ ");
 	else
 		printf("PCIe- ");
 
 	wakes = is_wake_enabled(router, PROTOCOL_USB3);
-	if (wakes == MAX_BIT8)
-		printf("<Not accessible> ");
-	else if (wakes)
+	if (wakes)
 		printf("USB3+ ");
 	else
 		printf("USB3- ");
 
 	wakes = is_wake_enabled(router, PROTOCOL_DP);
-	if (wakes == MAX_BIT8)
-		printf("<Not accessible>\n");
-	else if (wakes)
+	if (wakes)
 		printf("DP+\n");
 	else
 		printf("DP-\n");
@@ -488,7 +489,6 @@ static void dump_wakes(const char *router)
 	}
 
 	majv = (usb4v & USB4V_MAJOR_VER) >> USB4V_MAJOR_VER_SHIFT;
-
 	if (!majv) {
 		for (; i < total_adp; i++) {
 			if (!is_adp_lane_0(router, i))
@@ -501,8 +501,8 @@ static void dump_wakes(const char *router)
 
 			wakes = get_tbt3_wake_events_en(router, port);
 			if (wakes == MAX_BIT16) {
-				dump_spaces(VERBOSE_L3_SPACES);
 				printf("<Not accessible>\n");
+				continue;
 			}
 
 			dump_tbt3_wake_hot_events(wakes);
@@ -526,12 +526,121 @@ static void dump_wakes(const char *router)
 	}
 }
 
+/*
+ * Dumps the wake status (if any) from various protocols (PCIe/USB3/DP).
+ * This can be used for both USB4 and TBT3 routers.
+ */
+static void dump_gen_wake_status(const char *router)
+{
+	u16 sts;
+
+	dump_spaces(VERBOSE_L2_SPACES);
+	printf("Wake indication: ");
+
+	sts = get_wake_status(router, PROTOCOL_PCIE);
+	if (sts == MAX_BIT8)
+		printf("<Not accessible>\n");
+	else if (sts)
+		printf("PCIe+ ");
+	else
+		printf("PCIe- ");
+
+	sts = get_wake_status(router, PROTOCOL_USB3);
+	if (sts)
+		printf("USB3+ ");
+	else
+		printf("USB3- ");
+
+	sts = get_wake_status(router, PROTOCOL_DP);
+	if (sts)
+		printf("DP+\n");
+	else
+		printf("DP-\n");
+}
+
+/*
+ * Dumps the wake status (if any) from connects/disconnects, or
+ * from a USB4 wake indication.
+ * This is only applicable for USB4 routers.
+ */
+static void dump_usb4_port_wake_status(u64 status)
+{
+	printf("Hot events: ");
+
+	if (status & PORT_CS_18_WOCS)
+		printf("Connect+ ");
+	else
+		printf("Connect- ");
+
+	if (status & PORT_CS_18_WODS)
+		printf("Disconnect+\n");
+	else
+		printf("Disconnect-\n");
+
+	dump_spaces(VERBOSE_L3_SPACES);
+	printf("Wake indication: ");
+
+	if (status & PORT_CS_18_WOU4S)
+		printf("USB4+\n");
+	else
+		printf("USB4-\n");
+}
+
+/* Dumps the wake status from various events in the router */
+static void dump_wake_status(const char *router)
+{
+	u8 total_adp;
+	u64 status;
+	u16 usb4v;
+	u8 i = 0;
+	u8 majv;
+
+	total_adp = get_total_adp(router);
+	if (total_adp == MAX_ADAPTERS) {
+		dump_spaces(VERBOSE_L2_SPACES);
+		printf("<Not accessible>\n");
+
+		return;
+	}
+
+	if (!is_host_router(router))
+		dump_gen_wake_status(router);
+
+	usb4v = get_usb4v(router);
+	if (usb4v == MAX_BIT8) {
+		dump_spaces(VERBOSE_L2_SPACES);
+		printf("<Not accessible>\n");
+
+		return;
+	}
+
+	majv = (usb4v & USB4V_MAJOR_VER) >> USB4V_MAJOR_VER_SHIFT;
+	if (majv) {
+		for (; i < total_adp; i++) {
+			if (!is_adp_lane_0(router, i))
+				continue;
+
+			dump_spaces(VERBOSE_L2_SPACES);
+			printf("Port %u: ", i);
+
+			status = get_usb4_wake_status(router, i);
+			if (status == MAX_BIT32) {
+				printf("<Not accessible>\n");
+				continue;
+			}
+
+			dump_usb4_port_wake_status(status);
+		}
+        }
+}
+
 static bool dump_router_verbose(const char *router, u8 num)
 {
 	u64 topid_low, topid_high;
-	u8 total_adp;
+	u8 total_adp, majv;
+	u16 usb4v;
 
-	/*topid_low = get_top_id_low(router);
+	topid_low = get_top_id_low(router);
 	if (topid_low == MAX_BIT32)
 		return false;
 
@@ -558,10 +667,10 @@ static bool dump_router_verbose(const char *router, u8 num)
 		printf("%u\n", total_adp);
 
 	dump_spaces(VERBOSE_L1_SPACES);
-	printf("State: %s\n", get_router_state(router));*/
+	printf("State: %s\n", get_router_state(router));
 
 	/* Dump notification timeout in case of high verbosity */
-	/*if (num > 1)
+	if (num > 1)
 		dump_not_timeout(router);
 
 	dump_spaces(VERBOSE_L1_SPACES);
@@ -586,13 +695,27 @@ static bool dump_router_verbose(const char *router, u8 num)
 			dump_pcie_tunneling_status(router);
 			dump_usb3_tunneling_status(router);
 		}
-	}*/
+	}
 
 	dump_spaces(VERBOSE_L1_SPACES);
 	printf("Capabilities: Wakes\n");
 
 	if (num > 1)
 		dump_wakes(router);
+
+	usb4v = get_usb4v(router);
+	if (usb4v == MAX_BIT8)
+		majv = 0;
+	else
+		majv = (usb4v & USB4V_MAJOR_VER) >> USB4V_MAJOR_VER_SHIFT;
+
+	if (!is_host_router(router) || majv) {
+		dump_spaces(VERBOSE_L1_SPACES);
+		printf("Capabilities: Wake status\n");
+
+		if (num > 1)
+			dump_wake_status(router);
+	}
 
 	return true;
 }
@@ -680,9 +803,9 @@ void lstbt_v(const u8 *domain, const u8 *depth, const char *device, u8 num)
 int main(void)
 {
 	debugfs_config_init();
-	printf("%x\n", get_router_register_val("0-30701", 5, 7, 2));
-	printf("%x\n", get_adapter_register_val("0-30701", 10, 0, 0, 2));
-	return 0;
-	lstbt_v(NULL, NULL, NULL, 2);
+	/*printf("%x\n", get_router_register_val("0-0", 5, 6, 170));
+	printf("%x\n", get_adapter_register_val("0-0", 0, 0, 1, 2));
+	return 0;*/
+	lstbt_v(NULL, NULL, NULL, 1);
 	return 0;
 }

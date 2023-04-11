@@ -40,11 +40,8 @@
 #define ROUTER_CS_6_SR				BIT(0)
 #define ROUTER_CS_6_TNS				BIT(1)
 #define ROUTER_CS_6_WOPS			BIT(2)
-#define ROUTER_CS_6_WOPS_SHIFT			2
 #define ROUTER_CS_6_WOUS			BIT(3)
-#define ROUTER_CS_6_WOUS_SHIFT			3
 #define ROUTER_CS_6_WODS			BIT(4)
-#define ROUTER_CS_6_WODS_SHIFT			4
 #define ROUTER_CS_6_IHCI			BIT(18)
 #define ROUTER_CS_6_RR				BIT(24)
 #define ROUTER_CS_6_RR_SHIFT			24
