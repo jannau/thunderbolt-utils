@@ -156,7 +156,7 @@ static u64 get_register_val(const struct list_item *regs_list, u8 cap_id,
 
 				cap = strtouh(get_substr(regs, col, first - col));
 				vcap = strtouh(get_substr(regs, first + 1,
-					       second - first - 1));
+							  second - first - 1));
 				if (cap == cap_id && vcap == vcap_id)
 					found = true;
 
