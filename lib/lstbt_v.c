@@ -466,14 +466,14 @@ static void dump_usb4_port_wakes(const char *router, u8 adp)
 /* Dumps the wakes enabled in the router */
 static void dump_wakes(const char *router)
 {
-	u8 total_adp, port;
+	u8 max_adp, port;
 	u32 wakes;
 	u16 usb4v;
 	u8 i = 0;
 	u8 majv;
 
-	total_adp = get_total_adp(router);
-	if (total_adp == MAX_ADAPTERS) {
+	max_adp = get_max_adp(router);
+	if (max_adp == MAX_ADAPTERS) {
 		dump_spaces(VERBOSE_L2_SPACES);
 		printf("<Not accessible>\n");
 
@@ -490,7 +490,7 @@ static void dump_wakes(const char *router)
 
 	majv = (usb4v & USB4V_MAJOR_VER) >> USB4V_MAJOR_VER_SHIFT;
 	if (!majv) {
-		for (; i < total_adp; i++) {
+		for (; i <= max_adp; i++) {
 			if (!is_adp_lane_0(router, i))
 				continue;
 
@@ -514,7 +514,7 @@ static void dump_wakes(const char *router)
 		if (!is_host_router(router))
 			dump_usb4_gen_wakes(router);
 
-		for (; i < total_adp; i++) {
+		for (; i <= max_adp; i++) {
 			if (!is_adp_lane_0(router, i))
 				continue;
 
@@ -589,14 +589,14 @@ static void dump_usb4_port_wake_status(u64 status)
 /* Dumps the wake status from various events in the router */
 static void dump_wake_status(const char *router)
 {
-	u8 total_adp;
+	u8 max_adp;
 	u64 status;
 	u16 usb4v;
 	u8 i = 0;
 	u8 majv;
 
-	total_adp = get_total_adp(router);
-	if (total_adp == MAX_ADAPTERS) {
+	max_adp = get_max_adp(router);
+	if (max_adp == MAX_ADAPTERS) {
 		dump_spaces(VERBOSE_L2_SPACES);
 		printf("<Not accessible>\n");
 
@@ -616,7 +616,7 @@ static void dump_wake_status(const char *router)
 
 	majv = (usb4v & USB4V_MAJOR_VER) >> USB4V_MAJOR_VER_SHIFT;
 	if (majv) {
-		for (; i < total_adp; i++) {
+		for (; i <= max_adp; i++) {
 			if (!is_adp_lane_0(router, i))
 				continue;
 
@@ -634,10 +634,78 @@ static void dump_wake_status(const char *router)
         }
 }
 
+/* Returns the total no. of USB3 adapters */
+static u8 get_usb3_adps_num(const char *router)
+{
+	u8 i = 0, count = 0;
+	u8 max_adp;
+
+	max_adp = get_max_adp(router);
+	if (max_adp == MAX_ADAPTERS)
+		return 0;
+
+	for (; i <= max_adp; i++) {
+		if (is_adp_usb3(router, i))
+			count++;
+	}
+
+	return count;
+}
+
+
+/* Returns the total no. of PCIe adapters */
+static u8 get_pcie_adps_num(const char *router)
+{
+	u8 i = 0, count = 0;
+	u8 max_adp;
+
+	max_adp = get_max_adp(router);
+	if (max_adp == MAX_ADAPTERS)
+		return 0;
+
+	for (; i <= max_adp; i++) {
+		if (is_adp_pcie(router, i))
+			count++;
+	}
+
+	return count;
+}
+
+/* Returns the total no. of DP adapters */
+static u8 get_dp_adps_num(const char *router)
+{
+	u8 i = 0, count = 0;
+	u8 max_adp;
+
+	max_adp = get_max_adp(router);
+	if (max_adp == MAX_ADAPTERS)
+		return 0;
+
+	for (; i <= max_adp; i++) {
+		if (is_adp_dp(router, i))
+			count++;
+	}
+
+	return count;
+}
+
+/* Dumps the no. of protocol adapters in the router */
+static void dump_adapters_num(const char *router)
+{
+	u8 usb3, pcie, dp;
+
+	usb3 = get_usb3_adps_num(router);
+	pcie = get_pcie_adps_num(router);
+	dp = get_dp_adps_num(router);
+
+	dump_spaces(VERBOSE_L2_SPACES);
+	printf("USB3:%u PCIe:%u DP:%u\n", usb3, pcie, dp);
+}
+
 static bool dump_router_verbose(const char *router, u8 num)
 {
 	u64 topid_low, topid_high;
-	u8 total_adp, majv;
+	u8 max_adp, majv;
 	u16 usb4v;
 
 	topid_low = get_top_id_low(router);
@@ -660,11 +728,11 @@ static bool dump_router_verbose(const char *router, u8 num)
 	dump_spaces(VERBOSE_L1_SPACES);
 	printf("Total adapters: ");
 
-	total_adp = get_total_adp(router);
-	if (total_adp == MAX_ADAPTERS)
+	max_adp = get_max_adp(router);
+	if (max_adp == MAX_ADAPTERS)
 		printf("<Not accessible>\n");
 	else
-		printf("%u\n", total_adp);
+		printf("%u\n", max_adp + 1);
 
 	dump_spaces(VERBOSE_L1_SPACES);
 	printf("State: %s\n", get_router_state(router));
@@ -716,6 +784,11 @@ static bool dump_router_verbose(const char *router, u8 num)
 		if (num > 1)
 			dump_wake_status(router);
 	}
+
+	dump_spaces(VERBOSE_L1_SPACES);
+	printf("Capabilities: Adapters\n");
+
+	dump_adapters_num(router);
 
 	return true;
 }

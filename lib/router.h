@@ -120,7 +120,7 @@
 
 char* get_route_string(u64 top_id);
 u8 get_upstream_adp(const char *router);
-u8 get_total_adp(const char *router);
+u8 get_max_adp(const char *router);
 u64 get_top_id_low(const char *router);
 u64 get_top_id_high(const char *router);
 u16 get_rev_no(const char *router);

@@ -68,10 +68,10 @@ u8 get_upstream_adp(const char *router)
 }
 
 /*
- * Find the total no. of adapters in the router.
+ * Find the max. adapter number in the router.
  * If config. space is inaccessible, return a value of 64.
  */
-u8 get_total_adp(const char *router)
+u8 get_max_adp(const char *router)
 {
 	u64 val;
 
@@ -79,7 +79,7 @@ u8 get_total_adp(const char *router)
 	if (val == COMPLEMENT_BIT64)
 		return MAX_ADAPTERS;
 
-	return ((val & ROUTER_CS_1_MAX_ADP) >> ROUTER_CS_1_MAX_ADP_SHIFT) + 1;
+	return (val & ROUTER_CS_1_MAX_ADP) >> ROUTER_CS_1_MAX_ADP_SHIFT;
 }
 
 /*
