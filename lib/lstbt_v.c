@@ -810,9 +810,10 @@ static void dump_usb3_bws_lr(const char *router, u8 active[])
 /* Dumps the verbose output for downstream USB3 adapters in the router */
 static void dump_down_usb3_adapters(const char *router)
 {
-	u8 num, max_adp, last_num, i, j;
 	u8 active[MAX_ADAPTERS];
+	u8 num, max_adp, j;
 	bool found = false;
+	int i, last_num;
 	u64 en;
 
 	num = get_usb3_adps_num(router);
@@ -867,9 +868,10 @@ static void dump_down_usb3_adapters(const char *router)
 /* Dumps the verbose output for upstream USB3 adapters in the router */
 static void dump_up_usb3_adapters(const char *router)
 {
-	u8 num, max_adp, last_num, i, j;
 	u8 active[MAX_ADAPTERS];
+	u8 num, max_adp, j;
 	bool found = false;
+	int i, last_num;
 	u64 en;
 
 	num = get_usb3_adps_num(router);
@@ -919,6 +921,226 @@ static void dump_up_usb3_adapters(const char *router)
 	}
 
 	dump_usb3_bws_lr(router, active);
+}
+
+static void dump_pcie_ltssm(u16 ltssm)
+{
+	printf("LTSSM: ");
+
+	if (ltssm == MAX_BIT8)
+		printf("<Not accessible>\n");
+	else if (ltssm == PCIE_LTSSM_DETECT)
+		printf("Detect\n");
+	else if (ltssm == PCIE_LTSSM_POLLING)
+		printf("Polling\n");
+	else if (ltssm == PCIE_LTSSM_CONFIGURATION)
+		printf("Configuration\n");
+	else if (ltssm == PCIE_LTSSM_CONFIGURATION_IDLE)
+		printf("Configuration.Idle\n");
+	else if (ltssm == PCIE_LTSSM_RECOVERY)
+		printf("Recovery\n");
+	else if (ltssm == PCIE_LTSSM_RECOVERY_IDLE)
+		printf("Recovery.Idle\n");
+	else if (ltssm == PCIE_LTSSM_L0)
+		printf("L0\n");
+	else if (ltssm == PCIE_LTSSM_L1)
+		printf("L1\n");
+	else if (ltssm == PCIE_LTSSM_L2)
+		printf("L2\n");
+	else if (ltssm == PCIE_LTSSM_DISABLED)
+		printf("Disabled\n");
+	else if (ltssm == PCIE_LTSSM_HOT_RESET)
+		printf("Hot reset\n");
+}
+
+/*
+ * Dumps various PCIe attributes of the PCIe adapters in the router including:
+ * 1. PHY state
+ * 2. TX EI
+ * 3. RX EI
+ * 4. PCIe switch port state
+ * 5. LTSSM
+ *
+ * @active: Contains the active PCIe adapters in the router.
+ */
+static void dump_pcie_attributes(const char *router, u8 active[])
+{
+	u64 phy, tx_ei, rx_ei, wr;
+	u16 ltssm;
+	u8 i = 0;
+
+	for (; i <= MAX_ADAPTERS; i++) {
+		char num[MAX_LEN];
+		u64 spaces;
+
+		if (!active[i])
+			return;
+
+		dump_spaces(VERBOSE_L3_SPACES);
+		printf("%u: ", active[i]);
+
+		snprintf(num, sizeof(num), "%u: ", active[i]);
+		spaces = strlen(num);
+
+		phy = is_pcie_link_up(router, active[i]);
+		tx_ei = is_pcie_tx_ei(router, active[i]);
+		rx_ei = is_pcie_rx_ei(router, active[i]);
+		wr = is_pcie_switch_warm_reset(router, active[i]);
+		ltssm = get_pcie_ltssm(router, active[i]);
+
+		if (phy == MAX_BIT32)
+			printf("PHY:<Not accessible>\n");
+		else if (phy)
+			printf("PHY: Active\n");
+		else
+			printf("PHY: Inactive\n");
+
+		dump_spaces(VERBOSE_L3_SPACES + spaces);
+
+		if (tx_ei == MAX_BIT32)
+			printf("TX: Electrical idle (<Not accessible>)\n");
+		else if (tx_ei)
+			printf("TX: Electrical idle (yes)\n");
+		else
+			printf("TX: Electrical idle (no)\n");
+
+		dump_spaces(VERBOSE_L3_SPACES + spaces);
+
+		if (rx_ei == MAX_BIT32)
+			printf("RX: Electrical idle (<Not accessible>)\n");
+		else if (rx_ei)
+			printf("RX: Electrical idle (yes)\n");
+		else
+			printf("RX: Electrical idle (no)\n");
+
+		dump_spaces(VERBOSE_L3_SPACES + spaces);
+
+		if (wr == MAX_BIT32)
+			printf("PCIe switch port: Warm reset (<Not accessible>)\n");
+		else if (wr)
+			printf("PCIe switch port: Warm reset (yes)\n");
+		else
+			printf("PCIe switch port: Warm reset (no)\n");
+
+		dump_spaces(VERBOSE_L3_SPACES + spaces);
+		dump_pcie_ltssm(ltssm);
+	}
+}
+
+/* Dumps the verbose output of the downstream PCIe adapters in the router */
+static void dump_down_pcie_adapters(const char *router)
+{
+	u8 active[MAX_ADAPTERS];
+	u8 num, max_adp, j;
+	bool found = false;
+	int i, last_num;
+	u64 en;
+
+	num = get_pcie_adps_num(router);
+	if (!num)
+		return;
+
+	max_adp = get_max_adp(router);
+
+	for (i = max_adp; i >=0; i--) {
+		if (is_adp_down_pcie(router, i))
+			break;
+	}
+	last_num = i;
+
+	if (last_num < 0)
+		return;
+
+	memset(active, 0, MAX_ADAPTERS * sizeof(u8));;
+	j = 0;
+
+	for (i = 0; i <= max_adp; i++) {
+		if (!is_adp_down_pcie(router, i))
+			continue;
+
+		if (!found) {
+			dump_spaces(VERBOSE_L2_SPACES);
+			printf("Downstream PCIe: ");
+
+			found = true;
+		}
+
+		printf("%u", i);
+
+		en = is_pcie_adp_enabled(router, i);
+		if (en == MAX_BIT32)
+			printf("<Not accessible>");
+		else if (en) {
+			printf("+");
+			active[j++] = i;
+		} else
+			printf("-");
+
+		if (i == last_num)
+			printf("\n");
+		else
+			printf(" ");
+	}
+
+	dump_pcie_attributes(router, active);
+}
+
+/* Dumps the verbose output of the upstream PCIe adapters in the router */
+static void dump_up_pcie_adapters(const char *router)
+{
+	u8 active[MAX_ADAPTERS];
+	u8 num, max_adp, j;
+	bool found = false;
+	int i, last_num;
+	u64 en;
+
+	num = get_pcie_adps_num(router);
+	if (!num)
+		return;
+
+	max_adp = get_max_adp(router);
+
+	for (i = max_adp; i >=0; i--) {
+		if (is_adp_up_pcie(router, i))
+			break;
+	}
+	last_num = i;
+
+	if (last_num < 0)
+		return;
+
+	memset(active, 0, MAX_ADAPTERS * sizeof(u8));;
+	j = 0;
+
+	for (i = 0; i <= max_adp; i++) {
+		if (!is_adp_up_pcie(router, i))
+			continue;
+
+		if (!found) {
+			dump_spaces(VERBOSE_L2_SPACES);
+			printf("Upstream PCIe: ");
+
+			found = true;
+		}
+
+		printf("%u", i);
+
+		en = is_pcie_adp_enabled(router, i);
+		if (en == MAX_BIT32)
+			printf("<Not accessible>");
+		else if (en) {
+			printf("+");
+			active[j++] = i;
+		} else
+			printf("-");
+
+		if (i == last_num)
+			printf("\n");
+		else
+			printf(" ");
+	}
+
+	dump_pcie_attributes(router, active);
 }
 
 static bool dump_router_verbose(const char *router, u8 num)
@@ -1012,6 +1234,9 @@ static bool dump_router_verbose(const char *router, u8 num)
 	if (num > 1) {
 		dump_up_usb3_adapters(router);
 		dump_down_usb3_adapters(router);
+
+		dump_up_pcie_adapters(router);
+		dump_down_pcie_adapters(router);
 	}
 
 	return true;

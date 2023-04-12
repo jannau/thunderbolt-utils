@@ -142,6 +142,18 @@
 
 #define PCIE_ADP_CAP_ID			0x4
 
+#define PCIE_LTSSM_DETECT		0x0
+#define PCIE_LTSSM_POLLING		0x1
+#define PCIE_LTSSM_CONFIGURATION	0x2
+#define PCIE_LTSSM_CONFIGURATION_IDLE	0x3
+#define PCIE_LTSSM_RECOVERY		0x4
+#define PCIE_LTSSM_RECOVERY_IDLE	0x5
+#define PCIE_LTSSM_L0			0x6
+#define PCIE_LTSSM_L1			0x7
+#define PCIE_LTSSM_L2			0x8
+#define PCIE_LTSSM_DISABLED		0x9
+#define PCIE_LTSSM_HOT_RESET		0xa
+
 /* DP configuration space */
 #define ADP_DP_CS_0			0x0
 #define ADP_DP_CS_0_AE			BIT(30)
@@ -247,12 +259,12 @@ u16 get_usb3_max_sup_lr(const char *router, u8 adp);
 bool is_adp_up_pcie(const char *router, u8 adp);
 bool is_adp_down_pcie(const char *router, u8 adp);
 bool is_adp_pcie(const char *router, u8 adp);
-u16 is_pcie_link_up(const char *router, u8 adp);
-u16 is_pcie_tx_ei(const char *router, u8 adp);
-u16 is_pcie_rx_ei(const char *router, u8 adp);
-u16 is_pcie_switch_warm_reset(const char *router, u8 adp);
+u64 is_pcie_link_up(const char *router, u8 adp);
+u64 is_pcie_tx_ei(const char *router, u8 adp);
+u64 is_pcie_rx_ei(const char *router, u8 adp);
+u64 is_pcie_switch_warm_reset(const char *router, u8 adp);
 u16 get_pcie_ltssm(const char *router, u8 adp);
-u16 is_pcie_adp_enabled(const char *router, u8 adp);
+u64 is_pcie_adp_enabled(const char *router, u8 adp);
 bool is_adp_dp_in(const char *router, u8 adp);
 bool is_adp_dp_out(const char *router, u8 adp);
 bool is_adp_dp(const char *router, u8 adp);
