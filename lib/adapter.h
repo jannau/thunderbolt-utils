@@ -127,6 +127,9 @@
 
 #define USB3_ADP_CAP_ID			0x4
 
+#define USB3_LR_GEN2_SL			0x0 /* 10 Gbps (single-lane) */
+#define USB3_LR_GEN2_DL			0x1 /* 20 Gbps (dual-lane) */
+
 /* PCIe configuration space */
 #define ADP_PCIE_CS_0			0x0
 #define ADP_PCIE_CS_0_LINK		BIT(16)
@@ -231,7 +234,7 @@ u64 get_usb4_wakes_en(const char *router, u8 adp);
 bool is_adp_up_usb3(const char *router, u8 adp);
 bool is_adp_down_usb3(const char *router, u8 adp);
 bool is_adp_usb3(const char *router, u8 adp);
-u16 is_usb3_adp_en(const char *router, u8 adp);
+u64 is_usb3_adp_en(const char *router, u8 adp);
 u32 get_usb3_consumed_up_bw(const char *router, u8 adp);
 u32 get_usb3_consumed_down_bw(const char *router, u8 adp);
 u32 get_usb3_allocated_up_bw(const char *router, u8 adp);

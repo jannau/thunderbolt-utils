@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "helpers.h"
 #include "adapter.h"
@@ -702,6 +703,224 @@ static void dump_adapters_num(const char *router)
 	printf("USB3:%u PCIe:%u DP:%u\n", usb3, pcie, dp);
 }
 
+static u32 usb3_bw_to_mbps(u32 bw, u16 scale)
+{
+	u32 mbps;
+
+	mbps = (((bw * 512) << scale) * 8000) / (1000 * 1000);
+	return round(mbps);
+}
+
+/*
+ * Dumps the consumed and allocated upstream/downstream bandwidths of the
+ * provided USB3 adapters (only applicable for host routers), and their
+ * actual and max. supported link rates.
+ *
+ * @active: Array containing the active USB3 adapter numbers in the router.
+ */
+static void dump_usb3_bws_lr(const char *router, u8 active[])
+{
+	u16 scale, ulv, alr, mlr;
+	u32 cub, cdb, aub, adb;
+	u8 i = 0;
+
+	for (; i < MAX_ADAPTERS; i++) {
+		bool alr_dump = false;
+		bool host = false;
+		char num[MAX_LEN];
+		u64 spaces;
+
+		if (!active[i])
+			return;
+
+		dump_spaces(VERBOSE_L3_SPACES);
+		printf("%u: ", active[i]);
+
+		snprintf(num, sizeof(num), "%u: ", active[i]);
+		spaces = strlen(num);
+
+		if (is_host_router(router)) {
+			host = true;
+
+			scale = get_usb3_scale(router, active[i]);
+			cub = get_usb3_consumed_up_bw(router, active[i]);
+			cdb = get_usb3_consumed_down_bw(router, active[i]);
+			aub = get_usb3_allocated_up_bw(router, active[i]);
+			adb = get_usb3_allocated_down_bw(router, active[i]);
+
+			if (cub == MAX_BIT16 || scale == MAX_BIT8)
+				printf("Consumed UP b/w: <Not accessible>\n");
+			else
+				printf("Consumed UP b/w: %u\n",
+					usb3_bw_to_mbps(cub, scale));
+
+			dump_spaces(VERBOSE_L3_SPACES + spaces);
+
+			if (cdb == MAX_BIT16 || scale == MAX_BIT8)
+				printf("Consumed DOWN b/w: <Not accessible>\n");
+			else
+				printf("Consumed DOWN b/w: %u\n",
+					usb3_bw_to_mbps(cdb, scale));
+
+			dump_spaces(VERBOSE_L3_SPACES + spaces);
+
+			if (aub == MAX_BIT16 || scale == MAX_BIT8)
+				printf("Allocated UP b/w: <Not accessible>\n");
+			else
+				printf("Allocated UP b/w: %u\n",
+					usb3_bw_to_mbps(aub, scale));
+
+			dump_spaces(VERBOSE_L3_SPACES + spaces);
+
+			if (adb == MAX_BIT16 || scale == MAX_BIT8)
+				printf("Allocated DOWN b/w: <Not accessible>\n");
+			else
+				printf("Allocated DOWN b/w: %u\n",
+					usb3_bw_to_mbps(adb, scale));
+		}
+
+		ulv = is_usb3_link_valid(router, active[i]);
+		alr = get_usb3_actual_lr(router, active[i]);
+		mlr = get_usb3_max_sup_lr(router, active[i]);
+
+		if (host)
+			dump_spaces(VERBOSE_L3_SPACES + spaces);
+
+		if (ulv == MAX_BIT8 || alr == MAX_BIT8);
+		else if (ulv && alr == USB3_LR_GEN2_SL) {
+			printf("Actual link rate: 10Gbps\n");
+			alr_dump = true;
+		} else if (ulv && alr == USB3_LR_GEN2_DL) {
+			printf("Actual link rate: 20Gbps\n");
+			alr_dump = true;
+		}
+
+		if (alr_dump)
+			dump_spaces(VERBOSE_L3_SPACES + spaces);
+
+		if (mlr == MAX_BIT8)
+			printf("Max. supported link rate: <Not accessible>\n");
+		else if (mlr == USB3_LR_GEN2_SL)
+			printf("Max. supported link rate: 10Gbps\n");
+		else if (mlr == USB3_LR_GEN2_DL)
+			printf("Max. supported link rate: 20Gbps\n");
+	}
+}
+
+/* Dumps the verbose output for downstream USB3 adapters in the router */
+static void dump_down_usb3_adapters(const char *router)
+{
+	u8 num, max_adp, last_num, i, j;
+	u8 active[MAX_ADAPTERS];
+	bool found = false;
+	u64 en;
+
+	num = get_usb3_adps_num(router);
+	if (!num)
+		return;
+
+	max_adp = get_max_adp(router);
+
+	for (i = max_adp; i >=0; i--) {
+		if (is_adp_down_usb3(router ,i))
+			break;
+	}
+	last_num = i;
+
+	if (last_num < 0)
+		return;
+
+	memset(active, 0, MAX_ADAPTERS * sizeof(u8));
+	j = 0;
+
+	for (i = 0; i <= max_adp; i++) {
+		if (!is_adp_down_usb3(router, i))
+			continue;
+
+		if (!found) {
+			dump_spaces(VERBOSE_L2_SPACES);
+			printf("Downstream USB3: ");
+
+			found = true;
+                }
+
+		printf("%u", i);
+
+		en = is_usb3_adp_en(router, i);
+		if (en == MAX_BIT32)
+			printf("<Not accessible>");
+		else if (en) {
+			printf("+");
+			active[j++] = i;
+		} else
+			printf("-");
+
+		if (i == last_num)
+			printf("\n");
+		else
+			printf(" ");
+	}
+
+	dump_usb3_bws_lr(router, active);
+}
+
+/* Dumps the verbose output for upstream USB3 adapters in the router */
+static void dump_up_usb3_adapters(const char *router)
+{
+	u8 num, max_adp, last_num, i, j;
+	u8 active[MAX_ADAPTERS];
+	bool found = false;
+	u64 en;
+
+	num = get_usb3_adps_num(router);
+	if (!num)
+		return;
+
+	max_adp = get_max_adp(router);
+
+	for (i = max_adp; i >=0; i--) {
+		if (is_adp_up_usb3(router ,i))
+			break;
+	}
+	last_num = i;
+
+	if (last_num < 0)
+		return;
+
+	memset(active, 0, MAX_ADAPTERS * sizeof(u8));
+	j = 0;
+
+	for (i = 0; i <= max_adp; i++) {
+		if (!is_adp_up_usb3(router, i))
+			continue;
+
+		if (!found) {
+			dump_spaces(VERBOSE_L2_SPACES);
+			printf("Upstream USB3: ");
+
+			found = true;
+		}
+
+		printf("%u", i);
+
+		en = is_usb3_adp_en(router, i);
+		if (en == MAX_BIT32)
+			printf("<Not accessible>");
+		else if (en) {
+			printf("+");
+			active[j++] = i;
+		} else
+			printf("-");
+
+		if (i == last_num)
+			printf("\n");
+		else
+			printf(" ");
+	}
+
+	dump_usb3_bws_lr(router, active);
+}
+
 static bool dump_router_verbose(const char *router, u8 num)
 {
 	u64 topid_low, topid_high;
@@ -790,8 +1009,10 @@ static bool dump_router_verbose(const char *router, u8 num)
 
 	dump_adapters_num(router);
 
-	/*if (num > 1) {
-		dump_up_usb3_adapters(router);*/
+	if (num > 1) {
+		dump_up_usb3_adapters(router);
+		dump_down_usb3_adapters(router);
+	}
 
 	return true;
 }
@@ -882,6 +1103,6 @@ int main(void)
 	/*printf("%x\n", get_router_register_val("0-0", 5, 6, 170));
 	printf("%x\n", get_adapter_register_val("0-0", 0, 0, 1, 2));
 	return 0;*/
-	lstbt_v(NULL, NULL, NULL, 2);
+	lstbt_v(NULL, NULL, NULL, 1);
 	return 0;
 }

@@ -22,9 +22,6 @@
 #define CABLE_VER_MAJ_USB4		0x1
 #define CABLE_VER_MAJ_TBT3		0x0
 
-#define USB3_LR_GEN2_SL			0x0 /* 10 Gbps (single-lane) */
-#define USB3_LR_GEN2_DL			0x1 /* 20 Gbps (dual-lane) */
-
 #define USB3_PLS_U0			0x0
 #define USB3_PLS_U2			0x2
 #define USB3_PLS_U3			0x3
@@ -705,23 +702,23 @@ bool is_adp_usb3(const char *router, u8 adp)
 
 /*
  * Returns a positive number if the USB3 adapter is enabled, '0' otherwise.
- * Return a value of 256 on any error.
+ * Return a value of 2^32 on any error.
  *
  * NOTE: This is only applicable for USB3 adapters.
  */
-u16 is_usb3_adp_en(const char *router, u8 adp)
+u64 is_usb3_adp_en(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	if (!is_adp_usb3(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	val = get_adapter_register_val(router, USB3_ADP_CAP_ID, 0, adp, ADP_USB3_CS_0);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	return val & (ADP_USB3_CS_0_VALID | ADP_USB3_CS_0_PE);
 }
