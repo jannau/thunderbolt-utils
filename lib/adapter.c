@@ -665,10 +665,10 @@ u64 get_usb4_wakes_en(const char *router, u8 adp)
 }
 
 /*
- * Returns 'true' if the adapter is a USB3 adapter, 'false' otherwise.
+ * Returns 'true' if the adapter is an upstream USB3 adapter, 'false' otherwise.
  * Caller needs to make sure that the adapter number is valid.
  */
-bool is_adp_usb3(const char *router, u8 adp)
+bool is_adp_up_usb3(const char *router, u8 adp)
 {
 	u64 pvs;
 
@@ -676,7 +676,31 @@ bool is_adp_usb3(const char *router, u8 adp)
 	if (pvs == MAX_BIT32)
 		return false;
 
-	return (pvs == DOWN_USB3_PVS) || (pvs == UP_USB3_PVS);
+	return pvs == UP_USB3_PVS;
+}
+
+/*
+ * Returns 'true' if the adapter is a downstream USB3 adapter, 'false' otherwise.
+ * Caller needs to make sure that the adapter number is valid.
+ */
+bool is_adp_down_usb3(const char *router, u8 adp)
+{
+	u64 pvs;
+
+	pvs = get_adp_pvs(router, adp);
+	if (pvs == MAX_BIT32)
+		return false;
+
+	return pvs == DOWN_USB3_PVS;
+}
+
+/*
+ * Returns 'true' if the adapter is a USB3 adapter, 'false' otherwise.
+ * Caller needs to make sure that the adapter number is valid.
+ */
+bool is_adp_usb3(const char *router, u8 adp)
+{
+	return is_adp_up_usb3(router, adp) || is_adp_down_usb3(router, adp);
 }
 
 /*
@@ -928,10 +952,10 @@ u16 get_usb3_max_sup_lr(const char *router, u8 adp)
 }
 
 /*
- * Returns 'true' if the adapter is a PCIe adapter, 'false' otherwise.
+ * Returns 'true' if the adapter is an upstream PCIe adapter, 'false' otherwise.
  * Caller needs to ensure that the adapter no. is valid.
  */
-bool is_adp_pcie(const char *router, u8 adp)
+bool is_adp_up_pcie(const char *router, u8 adp)
 {
 	u64 pvs;
 
@@ -939,7 +963,31 @@ bool is_adp_pcie(const char *router, u8 adp)
 	if (pvs == MAX_BIT32)
 		return false;
 
-	return (pvs == DOWN_PCIE_PVS) || (pvs == UP_PCIE_PVS);
+	return pvs == UP_PCIE_PVS;
+}
+
+/*
+ * Returns 'true' if the adapter is a downstream PCIe adapter, 'false' otherwise.
+ * Caller needs to ensure that the adapter no. is valid.
+ */
+bool is_adp_down_pcie(const char *router, u8 adp)
+{
+	u64 pvs;
+
+	pvs = get_adp_pvs(router, adp);
+	if (pvs == MAX_BIT32)
+		return false;
+
+	return pvs == DOWN_PCIE_PVS;
+}
+
+/*
+ * Returns 'true' if the adapter is a PCIe adapter, 'false' otherwise.
+ * Caller needs to ensure that the adapter no. is valid.
+ */
+bool is_adp_pcie(const char *router, u8 adp)
+{
+	return is_adp_up_pcie(router, adp) || is_adp_down_pcie(router, adp);
 }
 
 /*

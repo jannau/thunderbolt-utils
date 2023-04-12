@@ -790,6 +790,9 @@ static bool dump_router_verbose(const char *router, u8 num)
 
 	dump_adapters_num(router);
 
+	/*if (num > 1) {
+		dump_up_usb3_adapters(router);*/
+
 	return true;
 }
 
@@ -879,6 +882,6 @@ int main(void)
 	/*printf("%x\n", get_router_register_val("0-0", 5, 6, 170));
 	printf("%x\n", get_adapter_register_val("0-0", 0, 0, 1, 2));
 	return 0;*/
-	lstbt_v(NULL, NULL, NULL, 1);
+	lstbt_v(NULL, NULL, NULL, 2);
 	return 0;
 }
