@@ -1005,7 +1005,7 @@ static bool dump_router_verbose(const char *router, u8 num)
 	}
 
 	dump_spaces(VERBOSE_L1_SPACES);
-	printf("Capabilities: Adapters\n");
+	printf("Capabilities: Protocol adapters\n");
 
 	dump_adapters_num(router);
 
