@@ -705,9 +705,9 @@ static void dump_adapters_num(const char *router)
 
 static u32 usb3_bw_to_mbps(u32 bw, u16 scale)
 {
-	u32 mbps;
+	double mbps;
 
-	mbps = (((bw * 512) << scale) * 8000) / (1000 * 1000);
+	mbps = ((double)((bw * 512) << scale) * 8000) / (1000 * 1000);
 	return round(mbps);
 }
 
