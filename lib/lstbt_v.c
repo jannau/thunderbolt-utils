@@ -1143,6 +1143,289 @@ static void dump_up_pcie_adapters(const char *router)
 	dump_pcie_attributes(router, active);
 }
 
+/*
+ * Returns a positive integer if the DP adapter is enabled, '0' otherwise.
+ * Return a value of 2^32 on any error.
+ */
+static u64 is_dp_adp_enabled(const char *router, u8 adp)
+{
+	u64 aux_en, vid_en;
+
+	aux_en = is_dp_aux_en(router, adp);
+	if (aux_en == MAX_BIT32)
+		return MAX_BIT32;
+
+	vid_en = is_dp_vid_en(router, adp);
+	return aux_en || vid_en;
+}
+
+static void dump_lr(u32 lr)
+{
+	if (lr == MAX_BIT16)
+		printf("<Not accessible> ");
+	else if (lr == DP_ADP_LR_RBR)
+		printf("RBR(1.62GHz) ");
+	else if (lr == DP_ADP_LR_HBR)
+		printf("HBR(2.7GHz) ");
+	else if (lr == DP_ADP_LR_HBR2)
+		printf("HBR2(5.4GHz) ");
+	else if (lr == DP_ADP_LR_HBR3)
+		printf("HBR3(8.1GHz) ");
+}
+
+static dump_lc(u32 lc)
+{
+	if (lc == MAX_BIT16)
+		printf("<Not accessible>\n");
+	else if (lc == DP_ADP_MAX_LC_X1)
+		printf("x1\n");
+	else if (lc == DP_ADP_MAX_LC_X2)
+		printf("x2\n");
+	else if (lc == DP_ADP_MAX_LC_X4)
+		printf("x4\n");
+}
+
+/*
+ * Dumps various DP attributes of the DP adapters in the router provided,
+ * including:
+ * 1. MST and DSC capability
+ * 2. HPD status
+ * 3. Max. link rate and lane count
+ * 4. LTTPR capability
+ * 5. Dynamic b/w allocation parameters (for DP IN adapters only)
+ *
+ * @active: Contains the active DP adapters of the router.
+ */
+static void dump_dp_attributes(const char *router, u8 active[])
+{
+	u64 dsc, lttpr, bwsup, cmms, dpme;
+	u32 mst, mlc, mlr;
+	u16 hpd, ebw, nrd_mlc, nrd_mlr;
+	u8 i = 0;
+
+	for (; i < MAX_ADAPTERS; i++) {
+		char num[MAX_LEN];
+		u64 spaces;
+
+		if (!active[i])
+			return;
+
+		dump_spaces(VERBOSE_L3_SPACES);
+		printf("%u: ", active[i]);
+
+		snprintf(num, sizeof(num), "%u: ", active[i]);
+		spaces = strlen(num);
+
+		mst = is_dp_mst_cap(router, active[i], false);
+		dsc = is_dp_dsc_sup(router, active[i], false);
+		hpd = get_dp_hpd_status(router, active[i]);
+		mlr = get_dp_max_link_rate(router, active[i], false);
+		mlc = get_dp_max_lane_count(router, active[i], false);
+		lttpr = is_dp_lttpr_sup(router, active[i], false);
+
+		if (mst == MAX_BIT16)
+			printf("MST: <Not accessible> ");
+		else if (mst)
+			printf("MST+ ");
+		else
+			printf("MST- ");
+
+		if (dsc == MAX_BIT32)
+			printf("DSC: <Not accessible>\n");
+		else if (dsc)
+			printf("DSC-\n");
+		else
+			printf("DSC+\n");
+
+		dump_spaces(VERBOSE_L3_SPACES + spaces);
+
+		if (hpd == MAX_BIT8)
+			printf("HPD: <Not accessible>\n");
+		else if (hpd)
+			printf("HPD+\n");
+		else
+			printf("HPD-\n");
+
+		dump_spaces(VERBOSE_L3_SPACES + spaces);
+
+		printf("Max. link rate: ");
+		dump_lr(mlr);
+
+		printf("Max. lane count: ");
+		dump_lc(mlc);
+
+		dump_spaces(VERBOSE_L3_SPACES + spaces);
+
+		if (lttpr == MAX_BIT32)
+			printf("<Not accessible>\n");
+		else if (lttpr)
+			printf("LTTPR-\n");
+		else
+			printf("LTTPR+\n");
+
+		if (!is_adp_dp_in(router, active[i]))
+			continue;
+
+		bwsup = is_dp_in_bw_alloc_sup(router, active[i]);
+		cmms = is_dp_in_cm_bw_alloc_support(router, active[i]);
+		dpme = is_dp_in_dptx_bw_alloc_en(router, active[i]);
+		ebw = get_dp_in_estimated_bw(router, active[i]);
+		nrd_mlc = get_dp_in_nrd_max_lc(router, active[i]);
+		nrd_mlr = get_dp_in_nrd_max_lr(router, active[i]);
+
+		dump_spaces(VERBOSE_L3_SPACES + spaces);
+
+		if (bwsup == MAX_BIT32 || cmms == MAX_BIT32 ||
+		    dpme == MAX_BIT32)
+			printf("Bandwidth-alloc: <Not accessible>\n");
+		else if (bwsup && dpme) {
+			u64 bw_spaces;
+
+			printf("Bandwidth-alloc: Pres+ ");
+
+			if (cmms) {
+				printf("En+\n");
+
+				snprintf(num, sizeof(num), "Bandwidth-alloc: ");
+				bw_spaces = strlen(num);
+
+				dump_spaces(VERBOSE_L3_SPACES + spaces + bw_spaces);
+
+				if (ebw == MAX_BIT8)
+					printf("Estimated b/w: <Not accessible>\n");
+				else
+					printf("Estimated b/w: %uMbps\n");
+
+				dump_spaces(VERBOSE_L3_SPACES + spaces + bw_spaces);
+
+				printf("Non reduced max. link rate: ");
+				dump_lr(nrd_mlr);
+
+				printf("Non reduced max. lane count: ");
+				dump_lc(nrd_mlc);
+			} else
+				printf("En-\n");
+		} else
+			printf("Bandwidth-alloc: Pres-\n");
+	}
+}
+
+/* Dumps the verbose output for DP OUT adapters */
+static void dump_dp_out_adapters(const char *router)
+{
+	u8 active[MAX_ADAPTERS];
+	u8 num, max_adp, j;
+	bool found = false;
+	int i, last_num;
+	u64 en;
+
+	num = get_dp_adps_num(router);
+	if (!num)
+		return;
+
+	max_adp = get_max_adp(router);
+
+	for (i = max_adp; i >=0; i--) {
+		if (is_adp_dp_out(router, i))
+			break;
+	}
+	last_num = i;
+
+	if (last_num < 0)
+		return;
+
+	memset(active, 0, MAX_ADAPTERS * sizeof(u8));;
+	j = 0;
+
+	for (i = 0; i <= max_adp; i++) {
+		if (!is_adp_dp_out(router, i))
+			continue;
+
+		if (!found) {
+			dump_spaces(VERBOSE_L2_SPACES);
+			printf("DP OUT: ");
+
+			found = true;
+		}
+
+		printf("%u", i);
+
+		en = is_dp_adp_enabled(router, i);
+		if (en == MAX_BIT32)
+			printf("<Not accessible>");
+		else if (en) {
+			printf("+");
+			active[j++] = i;
+		} else
+			printf("-");
+
+		if (i == last_num)
+			printf("\n");
+		else
+			printf(" ");
+	}
+
+	dump_dp_attributes(router, active);
+}
+
+/* Dumps the verbose output for DP IN adapters */
+static void dump_dp_in_adapters(const char *router)
+{
+	u8 active[MAX_ADAPTERS];
+	u8 num, max_adp, j;
+	bool found = false;
+	int i, last_num;
+	u64 en;
+
+	num = get_dp_adps_num(router);
+	if (!num)
+		return;
+
+	max_adp = get_max_adp(router);
+
+	for (i = max_adp; i >=0; i--) {
+		if (is_adp_dp_in(router, i))
+			break;
+	}
+	last_num = i;
+
+	if (last_num < 0)
+		return;
+
+	memset(active, 0, MAX_ADAPTERS * sizeof(u8));;
+	j = 0;
+
+	for (i = 0; i <= max_adp; i++) {
+		if (!is_adp_dp_in(router, i))
+			continue;
+
+		if (!found) {
+			dump_spaces(VERBOSE_L2_SPACES);
+			printf("DP IN: ");
+
+			found = true;
+		}
+
+		printf("%u", i);
+
+		en = is_dp_adp_enabled(router, i);
+		if (en == MAX_BIT32)
+			printf("<Not accessible>");
+		else if (en) {
+			printf("+");
+			active[j++] = i;
+		} else
+			printf("-");
+
+		if (i == last_num)
+			printf("\n");
+		else
+			printf(" ");
+	}
+
+	dump_dp_attributes(router, active);
+}
+
 static bool dump_router_verbose(const char *router, u8 num)
 {
 	u64 topid_low, topid_high;
@@ -1237,6 +1520,9 @@ static bool dump_router_verbose(const char *router, u8 num)
 
 		dump_up_pcie_adapters(router);
 		dump_down_pcie_adapters(router);
+
+		dump_dp_in_adapters(router);
+		dump_dp_out_adapters(router);
 	}
 
 	return true;
@@ -1328,6 +1614,6 @@ int main(void)
 	/*printf("%x\n", get_router_register_val("0-0", 5, 6, 170));
 	printf("%x\n", get_adapter_register_val("0-0", 0, 0, 1, 2));
 	return 0;*/
-	lstbt_v(NULL, NULL, NULL, 1);
+	lstbt_v(NULL, NULL, NULL, 2);
 	return 0;
 }

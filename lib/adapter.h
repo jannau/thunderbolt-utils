@@ -215,6 +215,15 @@
 
 #define DP_ADP_CAP_ID			0x4
 
+#define DP_ADP_LR_RBR			0x0 /* 1.62 GHz */
+#define DP_ADP_LR_HBR			0x1 /* 2.7 GHz */
+#define DP_ADP_LR_HBR2			0x2 /* 5.4 GHz */
+#define DP_ADP_LR_HBR3			0x3 /* 8.1 GHz */
+
+#define DP_ADP_MAX_LC_X1		0x0 /* 1 lane */
+#define DP_ADP_MAX_LC_X2		0x1 /* 2 lanes */
+#define DP_ADP_MAX_LC_X4		0x2 /* 4 lanes */
+
 bool is_adp_present(const char *router, u8 adp);
 u64 get_adp_pvs(const char *router, u8 adp);
 u64 is_adp_plugged(const char *router, u8 adp);
@@ -268,22 +277,22 @@ u64 is_pcie_adp_enabled(const char *router, u8 adp);
 bool is_adp_dp_in(const char *router, u8 adp);
 bool is_adp_dp_out(const char *router, u8 adp);
 bool is_adp_dp(const char *router, u8 adp);
-u16 is_dp_aux_en(const char *router, u8 adp);
-u16 is_dp_vid_en(const char *router, u8 adp);
+u64 is_dp_aux_en(const char *router, u8 adp);
+u64 is_dp_vid_en(const char *router, u8 adp);
 u16 get_dp_in_nrd_max_lc(const char *router, u8 adp);
 u16 get_dp_hpd_status(const char *router, u8 adp);
 u16 get_dp_in_nrd_max_lr(const char *router, u8 adp);
 u16 is_dp_in_cm_ack(const char *router, u8 adp);
 u16 get_dp_in_granularity(const char *router, u8 adp);
-u16 is_dp_in_cm_bw_alloc_support(const char *router, u8 adp);
+u64 is_dp_in_cm_bw_alloc_support(const char *router, u8 adp);
 u16 get_dp_in_estimated_bw(const char *router, u8 adp);
 u16 get_dp_protocol_adp_ver(const char *router, u8 adp, bool remote);
-u16 get_dp_max_link_rate(const char *router, u8 adp, bool remote);
-u16 get_dp_max_lane_count(const char *router, u8 adp, bool remote);
-u16 is_dp_mst_cap(const char *router, u8 adp, bool remote);
-u16 is_dp_lttpr_sup(const char *router, u8 adp, bool remote);
-u16 is_dp_in_bw_alloc_sup(const char *router, u8 adp);
-u16 is_dp_dsc_sup(const char *router, u8 adp, bool remote);
+u32 get_dp_max_link_rate(const char *router, u8 adp, bool remote);
+u32 get_dp_max_lane_count(const char *router, u8 adp, bool remote);
+u32 is_dp_mst_cap(const char *router, u8 adp, bool remote);
+u64 is_dp_lttpr_sup(const char *router, u8 adp, bool remote);
+u64 is_dp_in_bw_alloc_sup(const char *router, u8 adp);
+u64 is_dp_dsc_sup(const char *router, u8 adp, bool remote);
 u16 get_dp_in_lane_count(const char *router, u8 adp);
 u16 get_dp_in_link_rate(const char *router, u8 adp);
 u16 get_dp_in_alloc_bw(const char *router, u8 adp);
@@ -293,5 +302,5 @@ u16 is_dp_out_cm_handshake(const char *router, u8 adp);
 u16 is_dp_out_dp_in_usb4(const char *router, u8 adp);
 u16 is_dp_in_dprx_cap_read_done(const char *router, u8 adp);
 u16 get_dp_in_req_bw(const char *router, u8 adp);
-u16 is_dp_in_dptx_bw_alloc_en(const char *router, u8 adp);
+u64 is_dp_in_dptx_bw_alloc_en(const char *router, u8 adp);
 u16 is_dp_in_dptx_req(const char *router, u8 adp);
