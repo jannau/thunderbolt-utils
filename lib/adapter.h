@@ -79,13 +79,9 @@
 #define PORT_CS_18_CUSB4_VER_MAJ		BITMASK(7, 4)
 #define PORT_CS_18_CUSB4_VER_MAJ_SHIFT		4
 #define PORT_CS_18_BE				BIT(8)
-#define PORT_CS_18_BE_SHIFT			8
 #define PORT_CS_18_TCM				BIT(9)
-#define PORT_CS_18_TCM_SHIFT			9
 #define PORT_CS_18_CPS				BIT(10)
-#define PORT_CS_18_CPS_SHIFT			10
 #define PORT_CS_18_RD				BIT(13)
-#define PORT_CS_18_RD_SHIFT			13
 #define PORT_CS_18_WOCS				BIT(16)
 #define PORT_CS_18_WODS				BIT(17)
 #define PORT_CS_18_WOU4S			BIT(18)
@@ -96,6 +92,9 @@
 #define PORT_CS_19_EWOC				BIT(16)
 #define PORT_CS_19_EWOD				BIT(17)
 #define PORT_CS_19_EWOU4			BIT(18)
+
+#define CABLE_VER_MAJ_TBT3			0x0
+#define CABLE_VER_MAJ_USB4			0x1
 
 #define USB4_PORT_CAP_ID			0x6
 
@@ -246,11 +245,11 @@ u16 neg_link_width(const char *router, u8 adp);
 u16 get_lane_adp_state(const char *router, u8 adp);
 u64 is_secondary_lane_adp(const char *router, u8 adp);
 bool is_adp_lane_0(const char *router, u8 adp);
-u32 get_usb4_cable_version(const char *router, u8 adp);
-u16 is_usb4_bonding_en(const char *router, u8 adp);
-u16 is_usb4_tbt3_compatible_mode(const char *router, u8 adp);
-u16 is_usb4_clx_supported(const char *router, u8 adp);
-u16 is_usb4_router_detected(const char *router, u8 adp);
+u16 get_usb4_cable_version(const char *router, u8 adp);
+u32 is_usb4_bonding_en(const char *router, u8 adp);
+u32 is_usb4_tbt3_compatible_mode(const char *router, u8 adp);
+u32 is_usb4_clx_supported(const char *router, u8 adp);
+u32 is_usb4_router_detected(const char *router, u8 adp);
 u64 get_usb4_wake_status(const char *router, u8 adp);
 u16 is_usb4_port_configured(const char *router, u8 adp);
 u64 get_usb4_wakes_en(const char *router, u8 adp);

@@ -4,9 +4,6 @@
 #include "helpers.h"
 #include "adapter.h"
 
-#define CABLE_VER_MAJ_USB4		0x1
-#define CABLE_VER_MAJ_TBT3		0x0
-
 #define USB3_PLS_U0			0x0
 #define USB3_PLS_U2			0x2
 #define USB3_PLS_U3			0x3
@@ -449,127 +446,117 @@ bool is_adp_lane_0(const char *router, u8 adp)
 
 /*
  * Returns the USB4 version supported by the type-C cable plugged in.
- * Check CABLE_VER_MAJ_X definitions in the file.
- * Return a value of 2^16 on any error.
+ * Return a value of 256 on any error.
  *
- * NOTE: This is only applicable for Lane-0 adapter on a USB4 port.
+ * Check the 'CABLE_VER_MAJ_X' definitions in 'adapter.h'._
  */
-u32 get_usb4_cable_version(const char *router, u8 adp)
+u16 get_usb4_cable_version(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT16;
+		return MAX_BIT8;
 
 	if (!is_adp_lane_0(router, adp))
-		return MAX_BIT16;
+		return MAX_BIT8;
 
 	val = get_adapter_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT16;
+		return MAX_BIT8;
 
 	return (val & PORT_CS_18_CUSB4_VER_MAJ) >> PORT_CS_18_CUSB4_VER_MAJ_SHIFT;
 }
 
 /*
- * Returns '1' if conditions for lane bonding are met on the respective port,
- * '0' otherwise.
- * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for Lane-0 adapter on a USB4 port.
+ * Returns a positive integer if conditions for lane bonding are met on the respective
+ * port, '0' otherwise.
+ * Return a value of 2^16 on any error.
  */
-u16 is_usb4_bonding_en(const char *router, u8 adp)
+u32 is_usb4_bonding_en(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	if (!is_adp_lane_0(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	val = get_adapter_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT16;
 
-	return (val & PORT_CS_18_BE) >> PORT_CS_18_BE_SHIFT;
+	return val & PORT_CS_18_BE;
 }
 
 /*
- * Returns '1' if the link is operating in TBT3 mode, '0' otherwise.
- * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for Lane-0 adapter on a USB4 port.
+ * Returns a positive integer if the link is operating in TBT3 mode, '0' otherwise.
+ * Return a value of 2^16 on any error.
  */
-u16 is_usb4_tbt3_compatible_mode(const char *router, u8 adp)
+u32 is_usb4_tbt3_compatible_mode(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	if (!is_adp_lane_0(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	val = get_adapter_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT16;
 
-	return (val & PORT_CS_18_TCM) >> PORT_CS_18_TCM_SHIFT;
+	return val & PORT_CS_18_TCM;
 }
 
 /*
- * Returns '1' if CLx is supported on the lane, '0' otherwise.
- * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for Lane-0 adapter on a USB4 port.
+ * Returns a positive integer if CLx is supported on the lane, '0' otherwise.
+ * Return a value of 2^16 on any error.
  */
-u16 is_usb4_clx_supported(const char *router, u8 adp)
+u32 is_usb4_clx_supported(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	if (!is_adp_lane_0(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	val = get_adapter_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT16;
 
-	return (val & PORT_CS_18_CPS) >> PORT_CS_18_CPS_SHIFT;
+	return val & PORT_CS_18_CPS;
 }
 
 /*
- * Returns '1' if a router is detected on the port, '0' otherwise.
- * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for Lane-0 adapter on a USB4 port.
+ * Returns a positive integer if a router is detected on the port, '0' otherwise.
+ * Return a value of 2^16 on any error.
  */
-u16 is_usb4_router_detected(const char *router, u8 adp)
+u32 is_usb4_router_detected(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	if (!is_adp_lane_0(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	val = get_adapter_register_val(router, USB4_PORT_CAP_ID, 0, adp, PORT_CS_18);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT16;
 
-	return (val & PORT_CS_18_RD) >> PORT_CS_18_RD_SHIFT;
+	return val & PORT_CS_18_RD;
 }
 
 /*
  * Returns the wake status on the USB4 port.
- * Check PORT_CS_18_WX definitions in the file.
  * Return a value of 2^32 on any error.
  *
- * NOTE: This is only applicable for Lane-0 adapter on a USB4 port.
+ * Check the 'PORT_CS_18_WX' defintions in 'adapter.h'.
  */
 u64 get_usb4_wake_status(const char *router, u8 adp)
 {
@@ -591,8 +578,6 @@ u64 get_usb4_wake_status(const char *router, u8 adp)
 /*
  * Returns a positive integer if the USB4 port is configured, '0' otherwise.
  * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for Lane-0 adapter on a USB4 port.
  */
 u16 is_usb4_port_configured(const char *router, u8 adp)
 {
@@ -613,10 +598,9 @@ u16 is_usb4_port_configured(const char *router, u8 adp)
 
 /*
  * Returns the wake events enabled on the USB4 port.
- * Check PORT_CS_19_EX definitions in the file.
  * Return a value of 2^32 on any error.
  *
- * NOTE: This is only applicable for Lane-0 adapter on a USB4 port.
+ * Check the 'PORT_CS_19_EX' definitions in 'adapter.h'.
  */
 u64 get_usb4_wakes_en(const char *router, u8 adp)
 {
