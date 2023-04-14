@@ -4,17 +4,6 @@
 #include "helpers.h"
 #include "adapter.h"
 
-#define USB3_PLS_U0			0x0
-#define USB3_PLS_U2			0x2
-#define USB3_PLS_U3			0x3
-#define USB3_PLS_DISABLED		0x4
-#define USB3_PLS_RX_DETECT		0x5
-#define USB3_PLS_INACTIVE		0x6
-#define USB3_PLS_POLLING		0x7
-#define USB3_PLS_RECOVERY		0x8
-#define USB3_PLS_HOT_RESET		0x9
-#define USB3_PLS_RESUME			0xf
-
 #define DP_IN_BW_GR_QUARTER		0x0 /* 0.25 Gbps */
 #define DP_IN_BW_GR_HALF		0x1 /* 0.5 Gbps */
 #define DP_IN_BW_GR_FULL		0x2 /* 1.0 Gbps */
@@ -621,7 +610,7 @@ u64 get_usb4_wakes_en(const char *router, u8 adp)
 
 /*
  * Returns 'true' if the adapter is an upstream USB3 adapter, 'false' otherwise.
- * Caller needs to make sure that the adapter number is valid.
+ * Return 'false' on any error.
  */
 bool is_adp_up_usb3(const char *router, u8 adp)
 {
@@ -636,7 +625,7 @@ bool is_adp_up_usb3(const char *router, u8 adp)
 
 /*
  * Returns 'true' if the adapter is a downstream USB3 adapter, 'false' otherwise.
- * Caller needs to make sure that the adapter number is valid.
+ * Return 'false' on any error.
  */
 bool is_adp_down_usb3(const char *router, u8 adp)
 {
@@ -651,7 +640,7 @@ bool is_adp_down_usb3(const char *router, u8 adp)
 
 /*
  * Returns 'true' if the adapter is a USB3 adapter, 'false' otherwise.
- * Caller needs to make sure that the adapter number is valid.
+ * Return 'false' on any error.
  */
 bool is_adp_usb3(const char *router, u8 adp)
 {
@@ -659,10 +648,8 @@ bool is_adp_usb3(const char *router, u8 adp)
 }
 
 /*
- * Returns a positive number if the USB3 adapter is enabled, '0' otherwise.
+ * Returns a positive integer if the USB3 adapter is enabled, '0' otherwise.
  * Return a value of 2^32 on any error.
- *
- * NOTE: This is only applicable for USB3 adapters.
  */
 u64 is_usb3_adp_en(const char *router, u8 adp)
 {
@@ -684,8 +671,6 @@ u64 is_usb3_adp_en(const char *router, u8 adp)
 /*
  * Returns the consumed upstream bandwidth for USB3 traffic.
  * Return a value of 2^16 on any error.
- *
- * NOTE: This is only applicable for USB3 adapters.
  */
 u32 get_usb3_consumed_up_bw(const char *router, u8 adp)
 {
@@ -710,8 +695,6 @@ u32 get_usb3_consumed_up_bw(const char *router, u8 adp)
 /*
  * Returns the consumed downstream bandwidth for USB3 traffic.
  * Return a value of 2^16 on any error.
- *
- * NOTE: This is only applicable for USB3 adapters.
  */
 u32 get_usb3_consumed_down_bw(const char *router, u8 adp)
 {
@@ -736,8 +719,6 @@ u32 get_usb3_consumed_down_bw(const char *router, u8 adp)
 /*
  * Returns the allocated upstream bandwidth for USB3 traffic.
  * Return a value of 2^16 on any error.
- *
- * NOTE: This is only applicable for USB3 adapters.
  */
 u32 get_usb3_allocated_up_bw(const char *router, u8 adp)
 {
@@ -762,8 +743,6 @@ u32 get_usb3_allocated_up_bw(const char *router, u8 adp)
 /*
  * Returns the allocated downstream bandwidth for USB3 traffic.
  * Return a value of 2^16 on any error.
- *
- * NOTE: This is only applicable for USB3 adapters.
  */
 u32 get_usb3_allocated_down_bw(const char *router, u8 adp)
 {
@@ -788,8 +767,6 @@ u32 get_usb3_allocated_down_bw(const char *router, u8 adp)
 /*
  * Returns the granularity of USB3 bandwidth on the adapter.
  * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for USB3 adapters.
  */
 u16 get_usb3_scale(const char *router, u8 adp)
 {
@@ -813,10 +790,9 @@ u16 get_usb3_scale(const char *router, u8 adp)
 
 /*
  * Returns the actual USB3 link rate.
- * Check USB3_LR_X definitions in the file.
  * Return a value of 256 on any error.
  *
- * NOTE: This is only applicable for USB3 adapters.
+ * Check the 'USB3_LR_X' definitions in 'adapter.h'.
  */
 u16 get_usb3_actual_lr(const char *router, u8 adp)
 {
@@ -838,8 +814,6 @@ u16 get_usb3_actual_lr(const char *router, u8 adp)
 /*
  * Returns a positive integer if the USB3 link is valid, '0' otherwise.
  * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for USB3 adapters.
  */
 u16 is_usb3_link_valid(const char *router, u8 adp)
 {
@@ -860,10 +834,9 @@ u16 is_usb3_link_valid(const char *router, u8 adp)
 
 /*
  * Returns the USB3 port link state.
- * Check the USB3_PLS_X definitions in the file.
  * Return a value of 256 on any error.
  *
- * NOTE: This is only applicable for USB3 adapters.
+ * Check the 'USB3_PLS_X' definitions in 'adapter.h'.
  */
 u16 get_usb3_port_link_state(const char *router, u8 adp)
 {
@@ -884,10 +857,9 @@ u16 get_usb3_port_link_state(const char *router, u8 adp)
 
 /*
  * Returns the max. supported USB3 link rate on the port.
- * Check the USB3_LR_X definitions in the file.
  * Return a value of 256 on any error.
  *
- * NOTE: This is only applicable for USB3 adapters.
+ * Check the 'USB3_LR_X' definitions in 'adapter.h'.
  */
 u16 get_usb3_max_sup_lr(const char *router, u8 adp)
 {

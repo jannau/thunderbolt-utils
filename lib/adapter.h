@@ -126,10 +126,21 @@
 #define ADP_USB3_CS_4_MAX_SUP_LR		BITMASK(18, 12)
 #define ADP_USB3_CS_4_MAX_SUP_LR_SHIFT		12
 
-#define USB3_ADP_CAP_ID				0x4
-
 #define USB3_LR_GEN2_SL				0x0 /* 10 Gbps (single-lane) */
 #define USB3_LR_GEN2_DL				0x1 /* 20 Gbps (dual-lane) */
+
+#define USB3_PLS_U0				0x0
+#define USB3_PLS_U2				0x2
+#define USB3_PLS_U3				0x3
+#define USB3_PLS_DISABLED			0x4
+#define USB3_PLS_RX_DETECT			0x5
+#define USB3_PLS_INACTIVE			0x6
+#define USB3_PLS_POLLING			0x7
+#define USB3_PLS_RECOVERY			0x8
+#define USB3_PLS_HOT_RESET			0x9
+#define USB3_PLS_RESUME				0xf
+
+#define USB3_ADP_CAP_ID				0x4
 
 /* PCIe configuration space */
 #define ADP_PCIE_CS_0				0x0
