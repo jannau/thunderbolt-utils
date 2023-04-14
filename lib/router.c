@@ -98,7 +98,7 @@ u64 get_top_id_low(const char *router)
 }
 
 /*
- * Return the most significant 24 bits of the router.
+ * Return the most significant 24 bits of the topology ID.
  * If config. space is inaccessible, return a value of 2^32.
  */
 u64 get_top_id_high(const char *router)
@@ -330,19 +330,19 @@ u64 is_ihci_present(const char *router)
 }
 
 /*
- * Returns '1' if router is ready after CMUV bit gets set to '1', '0'
- * otherwise.
- * If config. space is inaccessible, return a value of 256.
+ * Returns a positive integer if router is ready after CMUV bit gets set to '1',
+ * '0' otherwise.
+ * If config. space is inaccessible, return a value of 2^32.
  */
-u16 is_router_ready(const char *router)
+u64 is_router_ready(const char *router)
 {
 	u64 val;
 
 	val = get_router_register_val(router, 0, 0, ROUTER_CS_6);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
-	return (val & ROUTER_CS_6_RR) >> ROUTER_CS_6_RR_SHIFT;
+	return val & ROUTER_CS_6_RR;
 }
 
 /*
@@ -373,7 +373,7 @@ u16 get_tbt3_com_reg_dwords(const char *router)
 	u64 val;
 
 	val = get_router_register_val(router, ROUTER_VCAP_ID, ROUTER_VSEC6_ID,
-			       ROUTER_VSEC6_COM);
+				      ROUTER_VSEC6_COM);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -392,7 +392,7 @@ u32 get_tbt3_usb4_reg_dwords(const char *router)
 	u64 val;
 
 	val = get_router_register_val(router, ROUTER_VCAP_ID, ROUTER_VSEC6_ID,
-			       ROUTER_VSEC6_COM);
+				      ROUTER_VSEC6_COM);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT16;
 
@@ -410,7 +410,7 @@ u16 get_tbt3_usb4_ports(const char *router)
 	u64 val;
 
 	val = get_router_register_val(router, ROUTER_VCAP_ID, ROUTER_VSEC6_ID,
-			       ROUTER_VSEC6_COM);
+				      ROUTER_VSEC6_COM);
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
@@ -418,31 +418,31 @@ u16 get_tbt3_usb4_ports(const char *router)
 }
 
 /*
- * Returns '1' if conditions for lane bonding are met, '0' otherwise.
- * If config. space is inaccessible, return a value of 256.
+ * Returns a positive integer if conditions for lane bonding are met, '0' otherwise.
+ * If config. space is inaccessible, return a value of 2^16.
  *
  * Valid only for TBT3 routers.
  */
-u16 is_tbt3_bonding_en(const char *router, u8 port)
+u32 is_tbt3_bonding_en(const char *router, u8 port)
 {
 	u64 com_len, usb4_len;
 	u64 off, val;
 
 	com_len = get_tbt3_com_reg_dwords(router);
 	if (com_len == MAX_BIT8)
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	usb4_len = get_tbt3_usb4_reg_dwords(router);
 	if (usb4_len == MAX_BIT16)
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	off = (usb4_len * port) + com_len + ROUTER_VSEC6_PORT_ATTR;
 
 	val = get_router_register_val(router, ROUTER_VCAP_ID, ROUTER_VSEC6_ID, off);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT16;
 
-	return (val & ROUTER_VSEC6_PORT_ATTR_BE) >> ROUTER_VSEC6_PORT_ATTR_BE_SHIFT;
+	return val & ROUTER_VSEC6_PORT_ATTR_BE;
 }
 
 /*
@@ -475,7 +475,7 @@ u32 get_tbt3_wake_events_en(const char *router, u8 port)
 
 /*
  * Returns the status of the configuration of lanes 0 and 1.
- * If config. space is inaccessible, return a value of 256.
+ * If config. space is inaccessible, return a value of 2^32.
  *
  * Valid only for TBT3 routers.
  */
@@ -502,60 +502,60 @@ u64 get_tbt3_lanes_configured(const char *router, u8 port)
 }
 
 /*
- * Returns '1' if the link connected to the port is operating in TBT3
- * compatible mode, '0' otherwise.
- * If config. space is inaccessible, return a value of 256.
+ * Returns a positive integer if the link connected to the port is operating in
+ * TBT3 compatible mode, '0' otherwise.
+ * If config. space is inaccessible, return a value of 2^32.
  *
  * Valid only for TBT3 routers.
  */
-u16 is_tbt3_compatible_mode(const char *router, u8 port)
+u64 is_tbt3_compatible_mode(const char *router, u8 port)
 {
 	u64 com_len, usb4_len;
 	u64 off, val;
 
 	com_len = get_tbt3_com_reg_dwords(router);
 	if (com_len == MAX_BIT8)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	usb4_len = get_tbt3_usb4_reg_dwords(router);
 	if (usb4_len == MAX_BIT16)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	off = (usb4_len * port) + com_len + ROUTER_VSEC6_LINK_ATTR;
 
 	val = get_router_register_val(router, ROUTER_VCAP_ID, ROUTER_VSEC6_ID, off);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
-	return (val & ROUTER_VSEC6_LINK_ATTR_TCM) >> ROUTER_VSEC6_LINK_ATTR_TCM_SHIFT;
+	return val & ROUTER_VSEC6_LINK_ATTR_TCM;
 }
 
 /*
- * Returns '1' if CLx is supported on the lane, '0' otherwise.
- * If config. space is inaccessible, return a value of 256.
+ * Returns a positive integer if CLx is supported on the lane, '0' otherwise.
+ * If config. space is inaccessible, return a value of 2^32.
  *
  * Valid only for TBT3 routers.
  */
-u16 is_tbt3_clx_supported(const char *router, u8 port)
+u64 is_tbt3_clx_supported(const char *router, u8 port)
 {
 	u64 com_len, usb4_len;
 	u64 off, val;
 
 	com_len = get_tbt3_com_reg_dwords(router);
 	if (com_len == MAX_BIT8)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	usb4_len = get_tbt3_usb4_reg_dwords(router);
 	if (usb4_len == MAX_BIT16)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	off = (usb4_len * port) + com_len + ROUTER_VSEC6_LINK_ATTR;
 
 	val = get_router_register_val(router, ROUTER_VCAP_ID, ROUTER_VSEC6_ID, off);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
-	return (val & ROUTER_VSEC6_LINK_ATTR_CPS) >> ROUTER_VSEC6_LINK_ATTR_CPS_SHIFT;
+	return val & ROUTER_VSEC6_LINK_ATTR_CPS;
 }
 
 /*

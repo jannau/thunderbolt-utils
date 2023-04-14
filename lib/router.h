@@ -33,7 +33,6 @@
 #define ROUTER_CS_5_PTO				BIT(24)
 #define ROUTER_CS_5_UTO				BIT(25)
 #define ROUTER_CS_5_IHCO			BIT(26)
-#define ROUTER_CS_5_IHCO_SHIFT			26
 #define ROUTER_CS_5_CV				BIT(31)
 
 #define ROUTER_CS_6				0x6
@@ -44,9 +43,7 @@
 #define ROUTER_CS_6_WODS			BIT(4)
 #define ROUTER_CS_6_IHCI			BIT(18)
 #define ROUTER_CS_6_RR				BIT(24)
-#define ROUTER_CS_6_RR_SHIFT			24
 #define ROUTER_CS_6_CR				BIT(25)
-#define ROUTER_CS_6_CR_SHIFT			25
 
 /* Router configuration registers related to TBT3 */
 #define ROUTER_VCAP_ID				0x05
@@ -76,7 +73,6 @@
 /* VSEC6 port attributes */
 #define ROUTER_VSEC6_PORT_ATTR			0x8d
 #define ROUTER_VSEC6_PORT_ATTR_BE		BIT(12)
-#define ROUTER_VSEC6_PORT_ATTR_BE_SHIFT		12
 
 /* VSEC6 lane control */
 #define ROUTER_VSEC6_LC_SX_CTRL			0x96
@@ -87,9 +83,7 @@
 /* VSEC6 link attributes */
 #define ROUTER_VSEC6_LINK_ATTR			0x97
 #define ROUTER_VSEC6_LINK_ATTR_TCM		BIT(17)
-#define ROUTER_VSEC6_LINK_ATTR_TCM_SHIFT	17
 #define ROUTER_VSEC6_LINK_ATTR_CPS		BIT(18)
-#define ROUTER_VSEC6_LINK_ATTR_CPS_SHIFT	18
 
 /*
  * Used to fetch the adapter numbers in each level the lower level is connected
@@ -136,17 +130,17 @@ u16 is_router_sleep_ready(const char *router);
 u16 is_tbt3_not_supported(const char *router);
 u16 get_wake_status(const char *router, u8 protocol);
 u64 is_ihci_present(const char *router);
-u16 is_router_ready(const char *router);
+u64 is_router_ready(const char *router);
 u64 is_tunneling_ready(const char *router);
 
 /* Below functions are applicable only for TBT3 routers */
 u16 get_tbt3_com_reg_dwords(const char *router);
 u32 get_tbt3_usb4_reg_dwords(const char *router);
 u16 get_tbt3_usb4_ports(const char *router);
-u16 is_tbt3_bonding_en(const char *router, u8 port);
+u32 is_tbt3_bonding_en(const char *router, u8 port);
 u32 get_tbt3_wake_events_en(const char *router, u8 port);
 u64 get_tbt3_lanes_configured(const char *router, u8 port);
-u16 is_tbt3_compatible_mode(const char *router, u8 port);
-u16 is_tbt3_clx_supported(const char *router, u8 port);
+u64 is_tbt3_compatible_mode(const char *router, u8 port);
+u64 is_tbt3_clx_supported(const char *router, u8 port);
 
 u8 get_usb4_port_num(u8 lane_adp);
