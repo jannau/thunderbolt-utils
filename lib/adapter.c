@@ -4,21 +4,6 @@
 #include "helpers.h"
 #include "adapter.h"
 
-#define LANE_SPEED_GEN3			BIT(18)
-#define LANE_SPEED_GEN2			BIT(19)
-
-#define WIDTH_X1			BIT(20)
-#define WIDTH_X2			BIT(21)
-
-#define LANE_ADP_STATE_DISABLED		0x0
-#define LANE_ADP_STATE_TRAINING		0x1
-#define LANE_ADP_STATE_CL0		0x2
-#define LANE_ADP_STATE_TRANS_CL0S	0x3
-#define LANE_ADP_STATE_RECEIVE_CL0S	0x4
-#define LANE_ADP_STATE_CL1		0x5
-#define LANE_ADP_STATE_CL2		0x6
-#define LANE_ADP_STATE_CLD		0x7
-
 #define CABLE_VER_MAJ_USB4		0x1
 #define CABLE_VER_MAJ_TBT3		0x0
 
@@ -51,7 +36,8 @@
 
 /*
  * Returns 'true' if the adapter is present in the router (more precisely,
- * if the adapter's debugfs is present under the provided router).
+ * if the adapter's debugfs is present under the provided router), 'false'
+ * otherwise.
  */
 bool is_adp_present(const char *router, u8 adp)
 {
@@ -110,47 +96,48 @@ u64 is_adp_plugged(const char *router, u8 adp)
 }
 
 /*
- * Returns '1' if control packets can be forwarded via this adapter, '0'
- * otherwise.
+ * Returns a positive integer if control packets can't be forwarded via this
+ * adapter, '0' otherwise.
  * If config. space is inaccessible or adapter doesn't exist, return a
- * value of 256.
+ * value of 2^32.
  */
-u16 is_adp_locked(const char *router, u8 adp)
+u64 is_adp_locked(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	val = get_adapter_register_val(router, 0, 0, adp, ADP_CS_4);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
-	return (val & ADP_CS_4_LOCK) >> ADP_CS_4_LOCK_SHIFT;
+	return val & ADP_CS_4_LOCK;
 }
 
 /*
- * Returns '1' if hot events are disabled on this adapter, '0' otherwise.
+ * Returns a positive integer if hot events are disabled on this adapter,
+ * '0' otherwise.
  * If config. space is inaccessible or adapter doesn't exist, return a
- * value of 256.
+ * value of 2^32.
  */
-u16 are_hot_events_disabled(const char *router, u8 adp)
+u64 are_hot_events_disabled(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	val = get_adapter_register_val(router, 0, 0, adp, ADP_CS_5);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
-	return (val & ADP_CS_5_DHP) >> ADP_CS_5_DHP_SHIFT;
+	return val & ADP_CS_5_DHP;
 }
 
 /*
  * Returns 'true' if the adapter is a lane adapter, 'false' otherwise.
- * Caller needs to make sure that the adapter no. is valid.
+ * Return 'false' on any error.
  */
 bool is_adp_lane(const char *router, u8 adp)
 {
@@ -166,8 +153,9 @@ bool is_adp_lane(const char *router, u8 adp)
 
 /*
  * Fetch supported link speeds on the given lane adapter.
- * Check the SPEED_GENX definitions in the file.
  * Return a value of 256 on any error.
+ *
+ * Check the 'LANE_SPEED_GENX' definitions in 'adapter.h'.
  */
 u16 get_sup_link_speeds(const char *router, u8 adp)
 {
@@ -188,8 +176,9 @@ u16 get_sup_link_speeds(const char *router, u8 adp)
 
 /*
  * Fetch supported link widths on the given lane adapter.
- * Check the WIDTH_XX definitions in the file.
  * Return a value of 256 on any error.
+ *
+ * Check the 'LANE_WIDTH_XX' definitions in 'adapter.h'.
  */
 u16 get_sup_link_widths(const char *router, u8 adp)
 {
@@ -209,156 +198,157 @@ u16 get_sup_link_widths(const char *router, u8 adp)
 }
 
 /*
- * Returns '1' if CL0s are supported on the given lane, '0' otherwise.
- * Return a value of 256 on any error.
+ * Returns a positive integer if CL0s are supported on the given lane, '0' otherwise.
+ * Return a value of 2^32 on any error.
  */
-u16 are_cl0s_supported(const char *router, u8 adp)
+u64 are_cl0s_supported(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	if (!is_adp_lane(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_0);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
-	return (val & LANE_ADP_CS_0_CL0S_SUP) >> LANE_ADP_CS_0_CL0S_SUP_SHIFT;
+	return val & LANE_ADP_CS_0_CL0S_SUP;
 }
 
 /*
- * Returns '1' if CL1 is supported on the given lane, '0' otherwise.
- * Return a value of 256 on any error.
+ * Returns a positive integer if CL1 is supported on the given lane, '0' otherwise.
+ * Return a value of 2^32 on any error.
  */
-u16 is_cl1_supported(const char *router, u8 adp)
+u64 is_cl1_supported(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	if (!is_adp_lane(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_0);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
-	return (val & LANE_ADP_CS_0_CL1_SUP) >> LANE_ADP_CS_0_CL1_SUP_SHIFT;
+	return val & LANE_ADP_CS_0_CL1_SUP;
 }
 
 /*
- * Returns '1' if CL2 is supported on the given lane, '0' otherwise.
- * Return a value of 256 on any error.
+ * Returns a positive integer if CL2 is supported on the given lane, '0' otherwise.
+ * Return a value of 2^32 on any error.
  */
-u16 is_cl2_supported(const char *router, u8 adp)
+u64 is_cl2_supported(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	if (!is_adp_lane(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_0);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
-	return (val & LANE_ADP_CS_0_CL2_SUP) >> LANE_ADP_CS_0_CL2_SUP_SHIFT;
+	return val & LANE_ADP_CS_0_CL2_SUP;
 }
 
 /*
- * Returns '1' is CL0s are enabled on the given lane, '0' otherwise.
- * Return a value of 256 on any error.
+ * Returns a positive integer if CL0s are enabled on the given lane, '0' otherwise.
+ * Return a value of 2^16 on any error.
  */
-u16 are_cl0s_enabled(const char *router, u8 adp)
+u32 are_cl0s_enabled(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	if (!is_adp_lane(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT16;
 
-	return (val & LANE_ADP_CS_1_CL0S_EN) >> LANE_ADP_CS_1_CL0S_EN_SHIFT;
+	return val & LANE_ADP_CS_1_CL0S_EN;
 }
 
 /*
- * Returns '1' if CL1 is enabled on the given lane, '0' otherwise.
- * Return a value of 256 on any error.
+ * Returns a positive integer if CL1 is enabled on the given lane, '0' otherwise.
+ * Return a value of 2^16 on any error.
  */
-u16 is_cl1_enabled(const char *router, u8 adp)
+u32 is_cl1_enabled(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	if (!is_adp_lane(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT16;
 
-	return (val & LANE_ADP_CS_1_CL1_EN) >> LANE_ADP_CS_1_CL1_EN_SHIFT;
+	return val & LANE_ADP_CS_1_CL1_EN;
 }
 
 /*
- * Returns '1' if CL2 is enabled on the given lane, '0' otherwise.
- * Return a value of 256 on any error.
+ * Returns a positive integer if CL2 is enabled on the given lane, '0' otherwise.
+ * Return a value of 2^16 on any error.
  */
-u16 is_cl2_enabled(const char *router, u8 adp)
+u32 is_cl2_enabled(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	if (!is_adp_lane(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT16;
 
-	return (val & LANE_ADP_CS_1_CL2_EN) >> LANE_ADP_CS_1_CL2_EN_SHIFT;
+	return val & LANE_ADP_CS_1_CL2_EN;
 }
 
 /*
- * Returns '1' if the lane is disabled, '0' otherwise.
- * Return a value of 256 on any error.
+ * Returns a positive integer if the lane is disabled, '0' otherwise.
+ * Return a value of 2^16 on any error.
  */
-u16 is_lane_disabled(const char *router, u8 adp)
+u32 is_lane_disabled(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	if (!is_adp_lane(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT16;
 
 	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT16;
 
-	return (val & LANE_ADP_CS_1_LD) >> LANE_ADP_CS_1_LD_SHIFT;
+	return val & LANE_ADP_CS_1_LD;
 }
 
 /*
  * Fetch current link speeds on the given lane adapter.
- * Check the SPEED_GENX definitions in the file.
  * Return a value of 256 on any error.
+ *
+ * Check the 'LANE_SPEED_GENX' definitions in 'adapter.h'.
  */
 u16 cur_link_speed(const char *router, u8 adp)
 {
@@ -374,13 +364,14 @@ u16 cur_link_speed(const char *router, u8 adp)
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
-	return val & LANE_ADP_CS_1_CUR_LINK_SPEED;
+	return (val & LANE_ADP_CS_1_CUR_LINK_SPEED) >> LANE_ADP_CS_1_CUR_LINK_SPEED_SHIFT;
 }
 
 /*
  * Fetch negotiated link widths on the given lane adapter.
- * Check the WIDTH_XX definitions in the file.
  * Return a value of 256 on any error.
+ *
+ * Check the 'LANE_WIDTH_XX' definitions in 'adapter.h'.
  */
 u16 neg_link_width(const char *router, u8 adp)
 {
@@ -396,13 +387,14 @@ u16 neg_link_width(const char *router, u8 adp)
 	if (val == COMPLEMENT_BIT64)
 		return MAX_BIT8;
 
-	return val & LANE_ADP_CS_1_NEG_LINK_WIDTH;
+	return (val & LANE_ADP_CS_1_NEG_LINK_WIDTH) >> LANE_ADP_CS_1_NEG_LINK_WIDTH_SHIFT;
 }
 
 /*
  * Fetch the lane adapter state.
- * Check the LANE_ADP_STATE_X definitions in the file.
  * Return a value of 256 on any error.
+ *
+ * Check the 'LANE_ADP_STATE_X' definitions in 'adapter.h'.
  */
 u16 get_lane_adp_state(const char *router, u8 adp)
 {
@@ -422,28 +414,31 @@ u16 get_lane_adp_state(const char *router, u8 adp)
 }
 
 /*
- * Returns '1' if the lane adapter is PM secondary, '0' otherwise.
- * Return a value of 256 on any error.
+ * Returns a positive integer if the lane adapter is PM secondary, '0' otherwise.
+ * Return a value of 2^32 on any error.
  */
-u16 is_secondary_lane_adp(const char *router, u8 adp)
+u64 is_secondary_lane_adp(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	if (!is_adp_lane(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	val = get_adapter_register_val(router, LANE_ADP_CAP_ID, 0, adp, LANE_ADP_CS_1);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
-	return (val & LANE_ADP_CS_1_PMS) >> LANE_ADP_CS_1_PMS_SHIFT;
+	return val & LANE_ADP_CS_1_PMS;
 }
 
 
-/* Returns 'true' if the given adapter is Lane-0 adapter, 'false' otherwise */
+/*
+ * Returns 'true' if the given adapter is Lane-0 adapter, 'false' otherwise.
+ * Return 'false' on any error.
+ */
 bool is_adp_lane_0(const char *router, u8 adp)
 {
 	if (!is_adp_lane(router, adp))
