@@ -880,7 +880,7 @@ u16 get_usb3_max_sup_lr(const char *router, u8 adp)
 
 /*
  * Returns 'true' if the adapter is an upstream PCIe adapter, 'false' otherwise.
- * Caller needs to ensure that the adapter no. is valid.
+ * Return 'false' on any error.
  */
 bool is_adp_up_pcie(const char *router, u8 adp)
 {
@@ -895,7 +895,7 @@ bool is_adp_up_pcie(const char *router, u8 adp)
 
 /*
  * Returns 'true' if the adapter is a downstream PCIe adapter, 'false' otherwise.
- * Caller needs to ensure that the adapter no. is valid.
+ * Return 'false' on any error.
  */
 bool is_adp_down_pcie(const char *router, u8 adp)
 {
@@ -910,7 +910,7 @@ bool is_adp_down_pcie(const char *router, u8 adp)
 
 /*
  * Returns 'true' if the adapter is a PCIe adapter, 'false' otherwise.
- * Caller needs to ensure that the adapter no. is valid.
+ * Return 'false' on any error.
  */
 bool is_adp_pcie(const char *router, u8 adp)
 {
@@ -920,8 +920,6 @@ bool is_adp_pcie(const char *router, u8 adp)
 /*
  * Returns a positive integer if PCIe PHY layer is active, '0' otherwise.
  * Return a value of 2^32 on any error.
- *
- * NOTE: This is only applicable for PCIe adapters.
  */
 u64 is_pcie_link_up(const char *router, u8 adp)
 {
@@ -944,8 +942,6 @@ u64 is_pcie_link_up(const char *router, u8 adp)
  * Returns a positive integer if PCIe PHY TX is in electrical idle state, '0'
  * otherwise.
  * Return a value of 2^32 on any error.
- *
- * NOTE: This is only applicable for PCIe adapters.
  */
 u64 is_pcie_tx_ei(const char *router, u8 adp)
 {
@@ -968,8 +964,6 @@ u64 is_pcie_tx_ei(const char *router, u8 adp)
  * Returns a positive integer if PCIe PHY RX is in electrical idle state, '0'
  * otherwise.
  * Return a value of 2^32 on any error.
- *
- * NOTE: This is only applicable for PCIe adapters.
  */
 u64 is_pcie_rx_ei(const char *router, u8 adp)
 {
@@ -992,8 +986,6 @@ u64 is_pcie_rx_ei(const char *router, u8 adp)
  * Returns a positive integer if the attached PCIe switch port is in warm reset,
  * '0' otherwise.
  * Return a value of 2^32 on any error.
- *
- * NOTE: This is only applicable for PCIe adapters.
  */
 u64 is_pcie_switch_warm_reset(const char *router, u8 adp)
 {
@@ -1014,10 +1006,9 @@ u64 is_pcie_switch_warm_reset(const char *router, u8 adp)
 
 /*
  * Returns the PCIe PHY LTSSM state.
- * Check the PCIE_LTSSM_X definitions in the file.
  * Return a value of 256 on any error.
  *
- * NOTE: This is only applicable for PCIe adapters.
+ * Check the 'PCIE_LTSSM_X' definitions in 'adapter.h'.
  */
 u16 get_pcie_ltssm(const char *router, u8 adp)
 {
@@ -1040,8 +1031,6 @@ u16 get_pcie_ltssm(const char *router, u8 adp)
  * Returns a positive integer if the PCIe adapter is enabled to send tunneled
  * packets, '0' otherwise.
  * Return a value of 2^32 on any error.
- *
- * NOTE: This is only applicable for PCIe adapters.
  */
 u64 is_pcie_adp_enabled(const char *router, u8 adp)
 {

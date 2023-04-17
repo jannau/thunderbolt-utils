@@ -152,8 +152,6 @@
 #define ADP_PCIE_CS_0_LTSSM_SHIFT		25
 #define ADP_PCIE_CS_0_PE			BIT(31)
 
-#define PCIE_ADP_CAP_ID				0x4
-
 #define PCIE_LTSSM_DETECT			0x0
 #define PCIE_LTSSM_POLLING			0x1
 #define PCIE_LTSSM_CONFIGURATION		0x2
@@ -165,6 +163,8 @@
 #define PCIE_LTSSM_L2				0x8
 #define PCIE_LTSSM_DISABLED			0x9
 #define PCIE_LTSSM_HOT_RESET			0xa
+
+#define PCIE_ADP_CAP_ID				0x4
 
 /* DP configuration space */
 #define ADP_DP_CS_0				0x0
