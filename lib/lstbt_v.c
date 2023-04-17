@@ -186,7 +186,12 @@ static void dump_power_states_compatibility(const char *router)
 	}
 
 	ups_router = get_upstream_router(router);
+
 	down_port = get_ups_down_port(router);
+	if (down_port == MAX_ADAPTERS) {
+		printf("<Not accessible>\n");
+		return;
+	}
 
 	usb4v = get_usb4v(router);
 	if (usb4v == MAX_BIT8) {
@@ -260,8 +265,7 @@ static void dump_ihci_status(const char *router)
  */
 static void dump_pcie_tunneling_status(const char *router)
 {
-	u64 pcie;
-	u64 cv, cr;
+	u64 pcie, cv, cr;
 
 	dump_spaces(VERBOSE_L2_SPACES);
 	printf("PCIe: ");
@@ -293,8 +297,7 @@ static void dump_pcie_tunneling_status(const char *router)
  */
 static void dump_usb3_tunneling_status(const char *router)
 {
-	u64 usb3;
-	u64 cv, cr;
+	u64 usb3, cv, cr;
 
 	dump_spaces(VERBOSE_L2_SPACES);
 	printf("USB3: ");
@@ -337,7 +340,7 @@ static void dump_not_timeout(const char *router)
 
 /*
  * Dumps the wakes enabled on various hot events in the router.
- * Caller needs to ensure the parameter passed is a TBT3 router.
+ * Only applicable for TBT3 routers.
  */
 static void dump_tbt3_wake_hot_events(u32 wakes)
 {
@@ -379,7 +382,7 @@ static void dump_tbt3_wake_hot_events(u32 wakes)
 
 /*
  * Dumps the wakes enabled on various event indications.
- * Caller needs to ensure the parameter passed is a TBT3 router.
+ * Only applicable for TBT3 routers.
  */
 static void dump_tbt3_gen_wakes(u32 wakes)
 {
@@ -409,9 +412,10 @@ static void dump_usb4_gen_wakes(const char *router)
 	printf("Wake indication: ");
 
 	wakes = is_wake_enabled(router, PROTOCOL_PCIE);
-	if (wakes == MAX_BIT8)
+	if (wakes == MAX_BIT8) {
 		printf("<Not accessible>\n");
-	else if (wakes)
+		return;
+	} else if (wakes)
 		printf("PCIe+ ");
 	else
 		printf("PCIe- ");
@@ -529,7 +533,7 @@ static void dump_wakes(const char *router)
 
 /*
  * Dumps the wake status (if any) from various protocols (PCIe/USB3/DP).
- * This can be used for both USB4 and TBT3 routers.
+ * Applicable for both USB4 and TBT3 routers.
  */
 static void dump_gen_wake_status(const char *router)
 {
@@ -539,9 +543,10 @@ static void dump_gen_wake_status(const char *router)
 	printf("Wake indication: ");
 
 	sts = get_wake_status(router, PROTOCOL_PCIE);
-	if (sts == MAX_BIT8)
+	if (sts == MAX_BIT8) {
 		printf("<Not accessible>\n");
-	else if (sts)
+		return;
+	} else if (sts)
 		printf("PCIe+ ");
 	else
 		printf("PCIe- ");
@@ -562,7 +567,7 @@ static void dump_gen_wake_status(const char *router)
 /*
  * Dumps the wake status (if any) from connects/disconnects, or
  * from a USB4 wake indication.
- * This is only applicable for USB4 routers.
+ * Only applicable for USB4 routers.
  */
 static void dump_usb4_port_wake_status(u64 status)
 {
@@ -610,7 +615,7 @@ static void dump_wake_status(const char *router)
 	usb4v = get_usb4v(router);
 	if (usb4v == MAX_BIT8) {
 		dump_spaces(VERBOSE_L2_SPACES);
-		printf("<Not accessible>\n");
+		printf("Ports: <Not accessible>\n");
 
 		return;
 	}
@@ -643,7 +648,7 @@ static u8 get_usb3_adps_num(const char *router)
 
 	max_adp = get_max_adp(router);
 	if (max_adp == MAX_ADAPTERS)
-		return 0;
+		return MAX_ADAPTERS;
 
 	for (; i <= max_adp; i++) {
 		if (is_adp_usb3(router, i))
@@ -662,7 +667,7 @@ static u8 get_pcie_adps_num(const char *router)
 
 	max_adp = get_max_adp(router);
 	if (max_adp == MAX_ADAPTERS)
-		return 0;
+		return MAX_ADAPTERS;
 
 	for (; i <= max_adp; i++) {
 		if (is_adp_pcie(router, i))
@@ -680,7 +685,7 @@ static u8 get_dp_adps_num(const char *router)
 
 	max_adp = get_max_adp(router);
 	if (max_adp == MAX_ADAPTERS)
-		return 0;
+		return MAX_ADAPTERS;
 
 	for (; i <= max_adp; i++) {
 		if (is_adp_dp(router, i))
@@ -700,7 +705,25 @@ static void dump_adapters_num(const char *router)
 	dp = get_dp_adps_num(router);
 
 	dump_spaces(VERBOSE_L2_SPACES);
-	printf("USB3:%u PCIe:%u DP:%u\n", usb3, pcie, dp);
+
+	if (usb3 == MAX_ADAPTERS)
+		printf("USB3: <Not accessible>\n");
+	else
+		printf("USB3:%u\n", usb3);
+
+	dump_spaces(VERBOSE_L2_SPACES);
+
+	if (pcie == MAX_ADAPTERS)
+		printf("PCIe: <Not accessible>\n");
+	else
+		printf("PCIe:%u\n", pcie);
+
+	dump_spaces(VERBOSE_L2_SPACES);
+
+	if (dp == MAX_ADAPTERS)
+		printf("DP: <Not accessible>\n");
+	else
+		printf("DP:%u\n", dp);
 }
 
 static u32 usb3_bw_to_mbps(u32 bw, u16 scale)
@@ -711,22 +734,48 @@ static u32 usb3_bw_to_mbps(u32 bw, u16 scale)
 	return round(mbps);
 }
 
+static void dump_usb3_pls(u16 pls)
+{
+	printf("Port link state: ");
+
+	if (pls == MAX_BIT8)
+		printf("<Not accessible>\n");
+	else if (pls == USB3_PLS_U0)
+		printf("U0\n");
+	else if (pls == USB3_PLS_U2)
+		printf("U2\n");
+	else if (pls == USB3_PLS_U3)
+		printf("U3\n");
+	else if (pls == USB3_PLS_DISABLED)
+		printf("Disabled\n");
+	else if (pls == USB3_PLS_RX_DETECT)
+		printf("RX.Detect\n");
+	else if (pls == USB3_PLS_INACTIVE)
+		printf("Inactive\n");
+	else if (pls == USB3_PLS_POLLING)
+		printf("Polling\n");
+	else if (pls == USB3_PLS_RECOVERY)
+		printf("Recovery\n");
+	else if (pls == USB3_PLS_HOT_RESET)
+		printf("Hot.Reset\n");
+	else if (USB3_PLS_RESUME)
+		printf("Resume\n");
+}
+
 /*
  * Dumps the consumed and allocated upstream/downstream bandwidths of the
- * provided USB3 adapters (only applicable for host routers), and their
- * actual and max. supported link rates.
+ * provided USB3 adapters (only applicable for host routers), their
+ * actual and max. supported link rates, and their port link states.
  *
  * @active: Array containing the active USB3 adapter numbers in the router.
  */
-static void dump_usb3_bws_lr(const char *router, u8 active[])
+static void dump_usb3_bws_lr_pls(const char *router, u8 active[])
 {
-	u16 scale, ulv, alr, mlr;
+	u16 scale, ulv, alr, mlr, pls;
 	u32 cub, cdb, aub, adb;
 	u8 i = 0;
 
 	for (; i < MAX_ADAPTERS; i++) {
-		bool alr_dump = false;
-		bool host = false;
 		char num[MAX_LEN];
 		u64 spaces;
 
@@ -740,8 +789,6 @@ static void dump_usb3_bws_lr(const char *router, u8 active[])
 		spaces = strlen(num);
 
 		if (is_host_router(router)) {
-			host = true;
-
 			scale = get_usb3_scale(router, active[i]);
 			cub = get_usb3_consumed_up_bw(router, active[i]);
 			cdb = get_usb3_consumed_down_bw(router, active[i]);
@@ -777,33 +824,32 @@ static void dump_usb3_bws_lr(const char *router, u8 active[])
 			else
 				printf("Allocated DOWN b/w: %u\n",
 					usb3_bw_to_mbps(adb, scale));
+
+			dump_spaces(VERBOSE_L3_SPACES + spaces);
 		}
 
 		ulv = is_usb3_link_valid(router, active[i]);
 		alr = get_usb3_actual_lr(router, active[i]);
 		mlr = get_usb3_max_sup_lr(router, active[i]);
 
-		if (host)
-			dump_spaces(VERBOSE_L3_SPACES + spaces);
-
-		if (ulv == MAX_BIT8 || alr == MAX_BIT8);
-		else if (ulv && alr == USB3_LR_GEN2_SL) {
+		if (ulv == MAX_BIT8 || alr == MAX_BIT8)
+			printf("Actual link rate: <Not accessible>\n");
+		else if (ulv && alr == USB3_LR_GEN2_SL)
 			printf("Actual link rate: 10Gbps\n");
-			alr_dump = true;
-		} else if (ulv && alr == USB3_LR_GEN2_DL) {
+		else if (ulv && alr == USB3_LR_GEN2_DL)
 			printf("Actual link rate: 20Gbps\n");
-			alr_dump = true;
-		}
 
-		if (alr_dump)
-			dump_spaces(VERBOSE_L3_SPACES + spaces);
-
-		if (mlr == MAX_BIT8)
+		if (ulv == MAX_BIT8 || mlr == MAX_BIT8)
 			printf("Max. supported link rate: <Not accessible>\n");
 		else if (mlr == USB3_LR_GEN2_SL)
 			printf("Max. supported link rate: 10Gbps\n");
 		else if (mlr == USB3_LR_GEN2_DL)
 			printf("Max. supported link rate: 20Gbps\n");
+
+		pls = get_usb3_port_link_state(router, active[i]);
+
+		dump_spaces(VERBOSE_L3_SPACES + spaces);
+		dump_usb3_pls(pls);
 	}
 }
 
@@ -811,18 +857,20 @@ static void dump_usb3_bws_lr(const char *router, u8 active[])
 static void dump_down_usb3_adapters(const char *router)
 {
 	u8 active[MAX_ADAPTERS];
-	u8 num, max_adp, j;
 	bool found = false;
 	int i, last_num;
+	u8 num, j;
 	u64 en;
 
 	num = get_usb3_adps_num(router);
-	if (!num)
+	if (num == MAX_ADAPTERS) {
+		dump_spaces(VERBOSE_L2_SPACES);
+		printf("Downstream USB3: <Not accessible>\n");
+
 		return;
+	}
 
-	max_adp = get_max_adp(router);
-
-	for (i = max_adp; i >=0; i--) {
+	for (i = MAX_ADAPTERS - 1; i >=0; i--) {
 		if (is_adp_down_usb3(router ,i))
 			break;
 	}
@@ -834,7 +882,7 @@ static void dump_down_usb3_adapters(const char *router)
 	memset(active, 0, MAX_ADAPTERS * sizeof(u8));
 	j = 0;
 
-	for (i = 0; i <= max_adp; i++) {
+	for (i = 0; i < MAX_ADAPTERS; i++) {
 		if (!is_adp_down_usb3(router, i))
 			continue;
 
@@ -862,25 +910,27 @@ static void dump_down_usb3_adapters(const char *router)
 			printf(" ");
 	}
 
-	dump_usb3_bws_lr(router, active);
+	dump_usb3_bws_lr_pls(router, active);
 }
 
 /* Dumps the verbose output for upstream USB3 adapters in the router */
 static void dump_up_usb3_adapters(const char *router)
 {
 	u8 active[MAX_ADAPTERS];
-	u8 num, max_adp, j;
 	bool found = false;
 	int i, last_num;
+	u8 num, j;
 	u64 en;
 
 	num = get_usb3_adps_num(router);
-	if (!num)
+	if (num == MAX_ADAPTERS) {
+		dump_spaces(VERBOSE_L2_SPACES);
+		printf("Upstream USB3: <Not accessible>\n");
+
 		return;
+	}
 
-	max_adp = get_max_adp(router);
-
-	for (i = max_adp; i >=0; i--) {
+	for (i = MAX_ADAPTERS - 1; i >=0; i--) {
 		if (is_adp_up_usb3(router ,i))
 			break;
 	}
@@ -892,7 +942,7 @@ static void dump_up_usb3_adapters(const char *router)
 	memset(active, 0, MAX_ADAPTERS * sizeof(u8));
 	j = 0;
 
-	for (i = 0; i <= max_adp; i++) {
+	for (i = 0; i < MAX_ADAPTERS; i++) {
 		if (!is_adp_up_usb3(router, i))
 			continue;
 
@@ -920,7 +970,7 @@ static void dump_up_usb3_adapters(const char *router)
 			printf(" ");
 	}
 
-	dump_usb3_bws_lr(router, active);
+	dump_usb3_bws_lr_pls(router, active);
 }
 
 static void dump_pcie_ltssm(u16 ltssm)
@@ -969,7 +1019,7 @@ static void dump_pcie_attributes(const char *router, u8 active[])
 	u16 ltssm;
 	u8 i = 0;
 
-	for (; i <= MAX_ADAPTERS; i++) {
+	for (; i < MAX_ADAPTERS; i++) {
 		char num[MAX_LEN];
 		u64 spaces;
 
@@ -989,7 +1039,7 @@ static void dump_pcie_attributes(const char *router, u8 active[])
 		ltssm = get_pcie_ltssm(router, active[i]);
 
 		if (phy == MAX_BIT32)
-			printf("PHY:<Not accessible>\n");
+			printf("PHY: <Not accessible>\n");
 		else if (phy)
 			printf("PHY: Active\n");
 		else
@@ -1031,18 +1081,20 @@ static void dump_pcie_attributes(const char *router, u8 active[])
 static void dump_down_pcie_adapters(const char *router)
 {
 	u8 active[MAX_ADAPTERS];
-	u8 num, max_adp, j;
 	bool found = false;
 	int i, last_num;
+	u8 num, j;
 	u64 en;
 
 	num = get_pcie_adps_num(router);
-	if (!num)
+	if (num == MAX_ADAPTERS) {
+		dump_spaces(VERBOSE_L2_SPACES);
+		printf("Downstream PCIe: <Not accessible>\n");
+
 		return;
+	}
 
-	max_adp = get_max_adp(router);
-
-	for (i = max_adp; i >=0; i--) {
+	for (i = MAX_ADAPTERS - 1; i >=0; i--) {
 		if (is_adp_down_pcie(router, i))
 			break;
 	}
@@ -1054,7 +1106,7 @@ static void dump_down_pcie_adapters(const char *router)
 	memset(active, 0, MAX_ADAPTERS * sizeof(u8));;
 	j = 0;
 
-	for (i = 0; i <= max_adp; i++) {
+	for (i = 0; i < MAX_ADAPTERS; i++) {
 		if (!is_adp_down_pcie(router, i))
 			continue;
 
@@ -1089,18 +1141,20 @@ static void dump_down_pcie_adapters(const char *router)
 static void dump_up_pcie_adapters(const char *router)
 {
 	u8 active[MAX_ADAPTERS];
-	u8 num, max_adp, j;
 	bool found = false;
 	int i, last_num;
+	u8 num, j;
 	u64 en;
 
 	num = get_pcie_adps_num(router);
-	if (!num)
+	if (num == MAX_ADAPTERS) {
+		dump_spaces(VERBOSE_L2_SPACES);
+		printf("Upstream PCIe: <Not accessible>\n");
+
 		return;
+	}
 
-	max_adp = get_max_adp(router);
-
-	for (i = max_adp; i >=0; i--) {
+	for (i = MAX_ADAPTERS - 1; i >=0; i--) {
 		if (is_adp_up_pcie(router, i))
 			break;
 	}
@@ -1112,7 +1166,7 @@ static void dump_up_pcie_adapters(const char *router)
 	memset(active, 0, MAX_ADAPTERS * sizeof(u8));;
 	j = 0;
 
-	for (i = 0; i <= max_adp; i++) {
+	for (i = 0; i < MAX_ADAPTERS; i++) {
 		if (!is_adp_up_pcie(router, i))
 			continue;
 
@@ -1162,15 +1216,15 @@ static u64 is_dp_adp_enabled(const char *router, u8 adp)
 static void dump_lr(u32 lr)
 {
 	if (lr == MAX_BIT16)
-		printf("<Not accessible> ");
+		printf("<Not accessible>\n");
 	else if (lr == DP_ADP_LR_RBR)
-		printf("RBR(1.62GHz) ");
+		printf("RBR(1.62GHz)\n");
 	else if (lr == DP_ADP_LR_HBR)
-		printf("HBR(2.7GHz) ");
+		printf("HBR(2.7GHz)\n");
 	else if (lr == DP_ADP_LR_HBR2)
-		printf("HBR2(5.4GHz) ");
+		printf("HBR2(5.4GHz)\n");
 	else if (lr == DP_ADP_LR_HBR3)
-		printf("HBR3(8.1GHz) ");
+		printf("HBR3(8.1GHz)\n");
 }
 
 static dump_lc(u32 lc)
@@ -1183,6 +1237,16 @@ static dump_lc(u32 lc)
 		printf("x2\n");
 	else if (lc == DP_ADP_MAX_LC_X4)
 		printf("x4\n");
+}
+
+static double dp_ebw_to_bw(u16 ebw, u16 gr)
+{
+	if (gr == DP_IN_BW_GR_QUARTER)
+		return 0.25 * ebw;
+	else if (gr == DP_IN_BW_GR_HALF)
+		return 0.5 * ebw;
+	else if (gr == DP_IN_BW_GR_FULL)
+		return ebw;
 }
 
 /*
@@ -1198,10 +1262,10 @@ static dump_lc(u32 lc)
  */
 static void dump_dp_attributes(const char *router, u8 active[])
 {
-	u64 dsc, lttpr, bwsup, cmms, dpme;
-	u32 mst, mlc, mlr;
-	u16 hpd, ebw, nrd_mlc, nrd_mlr;
+	u16 hpd, ebw, nrd_mlc, nrd_mlr, mlr, mlc, gr, abw, rbw;
+	u64 dsc, lttpr, bwsup, cmms, dpme, dr;
 	u8 i = 0;
+	u32 mst;
 
 	for (; i < MAX_ADAPTERS; i++) {
 		char num[MAX_LEN];
@@ -1251,6 +1315,8 @@ static void dump_dp_attributes(const char *router, u8 active[])
 		printf("Max. link rate: ");
 		dump_lr(mlr);
 
+		dump_spaces(VERBOSE_L3_SPACES + spaces);
+
 		printf("Max. lane count: ");
 		dump_lc(mlc);
 
@@ -1272,6 +1338,10 @@ static void dump_dp_attributes(const char *router, u8 active[])
 		ebw = get_dp_in_estimated_bw(router, active[i]);
 		nrd_mlc = get_dp_in_nrd_max_lc(router, active[i]);
 		nrd_mlr = get_dp_in_nrd_max_lr(router, active[i]);
+		gr = get_dp_in_granularity(router, active[i]);
+		abw = get_dp_in_alloc_bw(router, active[i]);
+		rbw = get_dp_in_req_bw(router, active[i]);
+		dr = is_dp_in_dptx_req(router, active[i]);
 
 		dump_spaces(VERBOSE_L3_SPACES + spaces);
 
@@ -1291,10 +1361,11 @@ static void dump_dp_attributes(const char *router, u8 active[])
 
 				dump_spaces(VERBOSE_L3_SPACES + spaces + bw_spaces);
 
-				if (ebw == MAX_BIT8)
+				if (ebw == MAX_BIT8 || gr == MAX_BIT8)
 					printf("Estimated b/w: <Not accessible>\n");
 				else
-					printf("Estimated b/w: %uMbps\n");
+					printf("Estimated b/w: %lfMbps\n",
+						dp_ebw_to_bw(ebw, gr));
 
 				dump_spaces(VERBOSE_L3_SPACES + spaces + bw_spaces);
 
@@ -1303,6 +1374,26 @@ static void dump_dp_attributes(const char *router, u8 active[])
 
 				printf("Non reduced max. lane count: ");
 				dump_lc(nrd_mlc);
+
+				dump_spaces(VERBOSE_L3_SPACES + spaces + bw_spaces);
+
+				if (abw == MAX_BIT8 || gr == MAX_BIT8)
+					printf("Allocated b/w: <Not accessible>\n");
+				else
+					printf("Allocated b/w: %lfMbps\n",
+						dp_ebw_to_bw(ebw, gr));
+
+				dump_spaces(VERBOSE_L3_SPACES + spaces + bw_spaces);
+
+				if (rbw == MAX_BIT8 || gr == MAX_BIT8 ||
+				    dr == MAX_BIT32)
+					printf("Requested b/w: <Not accessible>\n");
+				else if (!dr)
+					printf("Requested b/w: %lfMbps (served)\n",
+						dp_ebw_to_bw(ebw, gr));
+				else
+					printf("Requested b/w: %lfMbps (unserved)\n",
+						dp_ebw_to_bw(ebw, gr));
 			} else
 				printf("En-\n");
 		} else
@@ -1314,18 +1405,20 @@ static void dump_dp_attributes(const char *router, u8 active[])
 static void dump_dp_out_adapters(const char *router)
 {
 	u8 active[MAX_ADAPTERS];
-	u8 num, max_adp, j;
 	bool found = false;
 	int i, last_num;
+	u8 num, j;
 	u64 en;
 
 	num = get_dp_adps_num(router);
-	if (!num)
+	if (!num) {
+		dump_spaces(VERBOSE_L2_SPACES);
+		printf("DP OUT: <Not accessible>\n");
+
 		return;
+	}
 
-	max_adp = get_max_adp(router);
-
-	for (i = max_adp; i >=0; i--) {
+	for (i = MAX_ADAPTERS - 1; i >=0; i--) {
 		if (is_adp_dp_out(router, i))
 			break;
 	}
@@ -1337,7 +1430,7 @@ static void dump_dp_out_adapters(const char *router)
 	memset(active, 0, MAX_ADAPTERS * sizeof(u8));;
 	j = 0;
 
-	for (i = 0; i <= max_adp; i++) {
+	for (i = 0; i < MAX_ADAPTERS; i++) {
 		if (!is_adp_dp_out(router, i))
 			continue;
 
@@ -1372,18 +1465,20 @@ static void dump_dp_out_adapters(const char *router)
 static void dump_dp_in_adapters(const char *router)
 {
 	u8 active[MAX_ADAPTERS];
-	u8 num, max_adp, j;
 	bool found = false;
 	int i, last_num;
+	u8 num, j;
 	u64 en;
 
 	num = get_dp_adps_num(router);
-	if (!num)
+	if (!num) {
+		dump_spaces(VERBOSE_L2_SPACES);
+		printf("DP IN: <Not accessible>\n");
+
 		return;
+	}
 
-	max_adp = get_max_adp(router);
-
-	for (i = max_adp; i >=0; i--) {
+	for (i = MAX_ADAPTERS - 1; i >=0; i--) {
 		if (is_adp_dp_in(router, i))
 			break;
 	}
@@ -1395,7 +1490,7 @@ static void dump_dp_in_adapters(const char *router)
 	memset(active, 0, MAX_ADAPTERS * sizeof(u8));;
 	j = 0;
 
-	for (i = 0; i <= max_adp; i++) {
+	for (i = 0; i < MAX_ADAPTERS; i++) {
 		if (!is_adp_dp_in(router, i))
 			continue;
 
@@ -1605,7 +1700,7 @@ void lstbt_v(const u8 *domain, const u8 *depth, const char *device, u8 num)
 		found = dump_domain_verbose(strtoud(domain), depth, num);
 
 	if (!found)
-		printf("no device(s) found\n");
+		fprintf(stderr, "no routers accessible\n");
 }
 
 int main(void)
