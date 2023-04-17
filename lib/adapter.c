@@ -4,22 +4,6 @@
 #include "helpers.h"
 #include "adapter.h"
 
-#define DP_IN_BW_GR_QUARTER		0x0 /* 0.25 Gbps */
-#define DP_IN_BW_GR_HALF		0x1 /* 0.5 Gbps */
-#define DP_IN_BW_GR_FULL		0x2 /* 1.0 Gbps */
-
-#define DP_USB4_SPEC_TBT3		0x3
-#define DP_USB4_SPEC_USB4_1		0x4
-
-#define DP_IN_ADP_LC_X1			0x1 /* 1 lane */
-#define DP_IN_ADP_LC_X2			0x2 /* 2 lanes */
-#define DP_IN_ADP_LC_X4			0x4 /* 4 lanes */
-
-#define DP_OUT_ADP_LC_X0		0x0 /* DP main link is inactive */
-#define DP_OUT_ADP_LC_X1		0x1 /* 1 lane */
-#define DP_OUT_ADP_LC_X2		0x2 /* 2 lanes */
-#define DP_OUT_ADP_LC_X4		0x4 /* 4 lanes */
-
 /*
  * Returns 'true' if the adapter is present in the router (more precisely,
  * if the adapter's debugfs is present under the provided router), 'false'
@@ -1051,7 +1035,7 @@ u64 is_pcie_adp_enabled(const char *router, u8 adp)
 
 /*
  * Returns 'true' if the adapter is a DP IN adapter, 'false' otherwise.
- * Caller needs to ensure that the adapter no. is valid.
+ * Return 'false' on any error.
  */
 bool is_adp_dp_in(const char *router, u8 adp)
 {
@@ -1066,7 +1050,7 @@ bool is_adp_dp_in(const char *router, u8 adp)
 
 /*
  * Returns 'true' if the adapter is a DP OUT adapter, 'false' otherwise.
- * Caller needs to ensure that the adapter no. is valid.
+ * Return 'false' on any error.
  */
 bool is_adp_dp_out(const char *router, u8 adp)
 {
@@ -1081,7 +1065,7 @@ bool is_adp_dp_out(const char *router, u8 adp)
 
 /*
  * Returns 'true' if the adapter is a DP adapter, 'false' otherwise.
- * Caller needs to ensure that the adapter no. is valid.
+ * Return 'false' on any error.
  */
 bool is_adp_dp(const char *router, u8 adp)
 {
@@ -1092,8 +1076,6 @@ bool is_adp_dp(const char *router, u8 adp)
  * Returns a positive integer if AUX path is enabled on the DP adapter, '0'
  * otherwise.
  * Return a value of 2^32 on any error.
- *
- * NOTE: This is only applicable for DP adapters.
  */
 u64 is_dp_aux_en(const char *router, u8 adp)
 {
@@ -1116,8 +1098,6 @@ u64 is_dp_aux_en(const char *router, u8 adp)
  * Returns a positive integer if video path is enabled on the DP adapter, '0'
  * otherwise.
  * Return a value of 2^32 on any error.
- *
- * NOTE: This is only applicable for DP adapters.
  */
 u64 is_dp_vid_en(const char *router, u8 adp)
 {
@@ -1140,8 +1120,6 @@ u64 is_dp_vid_en(const char *router, u8 adp)
  * Returns the highest common max. lane count b/w two adapters, regardless of
  * bandwidth availability.
  * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for DP IN adapters.
  */
 u16 get_dp_in_nrd_max_lc(const char *router, u8 adp)
 {
@@ -1163,8 +1141,6 @@ u16 get_dp_in_nrd_max_lc(const char *router, u8 adp)
 /*
  * Returns a positive integer if HPD is set in the DP adapter, '0' otherwise.
  * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for DP adapters.
  */
 u16 get_dp_hpd_status(const char *router, u8 adp)
 {
@@ -1187,8 +1163,6 @@ u16 get_dp_hpd_status(const char *router, u8 adp)
  * Returns the highest common max. link rate b/w two adapters, regardless of
  * bandwidth availability.
  * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for DP IN adapters.
  */
 u16 get_dp_in_nrd_max_lr(const char *router, u8 adp)
 {
@@ -1211,8 +1185,6 @@ u16 get_dp_in_nrd_max_lr(const char *router, u8 adp)
  * Returns a positive integer if bandwidth allocation is done by the CM, '0'
  * otherwise.
  * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for DP IN adapters.
  */
 u16 is_dp_in_cm_ack(const char *router, u8 adp)
 {
@@ -1233,10 +1205,9 @@ u16 is_dp_in_cm_ack(const char *router, u8 adp)
 
 /*
  * Get the bandwidth granularity for the DP adapter.
- * Check the DP_IN_BW_GR_X definitions in the file.
  * Return a value of 256 on any error.
  *
- * NOTE: This is only applicable for DP IN adapters.
+ * Check the 'DP_IN_BW_GR_X' definitions in 'adapter.h'.
  */
 u16 get_dp_in_granularity(const char *router, u8 adp)
 {
@@ -1259,8 +1230,6 @@ u16 get_dp_in_granularity(const char *router, u8 adp)
  * Returns a positive integer if CM bandwidth allocation is supported on the
  * DP adapter, '0' otherwise.
  * Return a value of 2^32 on any error.
- *
- * NOTE: This is only applicable for DP IN adapters.
  */
 u64 is_dp_in_cm_bw_alloc_support(const char *router, u8 adp)
 {
@@ -1283,8 +1252,6 @@ u64 is_dp_in_cm_bw_alloc_support(const char *router, u8 adp)
  * Get the estimated available bandwidth indicated by the CM for the DP
  * adapter.
  * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for DP IN adapters.
  */
 u16 get_dp_in_estimated_bw(const char *router, u8 adp)
 {
@@ -1305,12 +1272,11 @@ u16 get_dp_in_estimated_bw(const char *router, u8 adp)
 
 /*
  * Get the USB4 spec. version the DP adapter supports.
- * Check the DP_USB4_SPEC_X definitions in the file.
  * Return a value of 256 on any error.
  *
  * @remote: 'true' if the access is for the remote capability.
  *
- * NOTE: This is only applicable for DP adapters.
+ * Check the 'DP_USB4_SPEC_X' definitions in 'adapter.h'.
  */
 u16 get_dp_protocol_adp_ver(const char *router, u8 adp, bool remote)
 {
@@ -1335,22 +1301,21 @@ u16 get_dp_protocol_adp_ver(const char *router, u8 adp, bool remote)
 
 /*
  * Get the max. link rate of the DP adapter.
- * Check the DP_ADP_LR_X definitions in the file.
- * Return a value of 2^16 on any error.
+ * Return a value of 256 on any error.
  *
  * @remote: 'true' if the access is for the remote capability.
  *
- * NOTE: This is only applicable for DP adapters.
+ * Check the 'DP_ADP_LR_X' definitions in 'adapter.h'.
  */
-u32 get_dp_max_link_rate(const char *router, u8 adp, bool remote)
+u16 get_dp_max_link_rate(const char *router, u8 adp, bool remote)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT16;
+		return MAX_BIT8;
 
 	if (!is_adp_dp(router, adp))
-		return MAX_BIT16;
+		return MAX_BIT8;
 
 	if (!remote)
 		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
@@ -1358,29 +1323,28 @@ u32 get_dp_max_link_rate(const char *router, u8 adp, bool remote)
 		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_REMOTE_CAP);
 
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT16;
+		return MAX_BIT8;
 
 	return (val & DP_CAP_MLR) >> DP_CAP_MLR_SHIFT;
 }
 
 /*
  * Get the max. lane count of the DP adapter.
- * Check the DP_ADP_MAX_LC_XX definitions in the file.
- * Return a value of 2^16 on any error.
+ * Return a value of 256 on any error.
  *
  * @remote: 'true' if the access is for the remote capability.
  *
- * NOTE: This is only applicable for DP adapters.
+ * Check the 'DP_ADP_MAX_LC_XX' definitions in 'adapter.h'.
  */
-u32 get_dp_max_lane_count(const char *router, u8 adp, bool remote)
+u16 get_dp_max_lane_count(const char *router, u8 adp, bool remote)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT16;
+		return MAX_BIT8;
 
 	if (!is_adp_dp(router, adp))
-		return MAX_BIT16;
+		return MAX_BIT8;
 
 	if (!remote)
 		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_LOCAL_CAP);
@@ -1388,7 +1352,7 @@ u32 get_dp_max_lane_count(const char *router, u8 adp, bool remote)
 		val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_REMOTE_CAP);
 
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT16;
+		return MAX_BIT8;
 
 	return (val & DP_CAP_MLC) >> DP_CAP_MLC_SHIFT;
 }
@@ -1399,8 +1363,6 @@ u32 get_dp_max_lane_count(const char *router, u8 adp, bool remote)
  * Return a value of 2^16 on any error.
  *
  * @remote: 'true' if the access is for the remote capability.
- *
- * NOTE: This is only applicable for DP adapters.
  */
 u32 is_dp_mst_cap(const char *router, u8 adp, bool remote)
 {
@@ -1429,8 +1391,6 @@ u32 is_dp_mst_cap(const char *router, u8 adp, bool remote)
  * Return a value of 2^32 on any error.
  *
  * @remote: 'true' if the access is for the remote capability.
- *
- * NOTE: This is only applicable for DP adapters.
  */
 u64 is_dp_lttpr_sup(const char *router, u8 adp, bool remote)
 {
@@ -1457,8 +1417,6 @@ u64 is_dp_lttpr_sup(const char *router, u8 adp, bool remote)
  * Returns a positive integer if bandwidth allocation is supported on the DP
  * adapter, '0' otherwise.
  * Return a value of 2^32 on any error.
- *
- * NOTE: This is only applicable for DP IN adapters.
  */
 u64 is_dp_in_bw_alloc_sup(const char *router, u8 adp)
 {
@@ -1483,8 +1441,6 @@ u64 is_dp_in_bw_alloc_sup(const char *router, u8 adp)
  * Return a value of 2^32 on any error.
  *
  * @remote: 'true' if the access is for the remote capability.
- *
- * NOTE: This is only applicable for DP adapters.
  */
 u64 is_dp_dsc_sup(const char *router, u8 adp, bool remote)
 {
@@ -1509,10 +1465,9 @@ u64 is_dp_dsc_sup(const char *router, u8 adp, bool remote)
 
 /*
  * Get the lane count of the DP adapter.
- * Check the DP_IN_ADP_LC_XX definitions in the file.
  * Return a value of 256 on any error.
  *
- * NOTE: This is only applicable for DP IN adapters.
+ * Check the 'DP_IN_ADP_LC_XX' definitions in 'adapter.h'.
  */
 u16 get_dp_in_lane_count(const char *router, u8 adp)
 {
@@ -1533,10 +1488,9 @@ u16 get_dp_in_lane_count(const char *router, u8 adp)
 
 /*
  * Get the link rate of the DP adapter.
- * Check the DP_ADP_LR_X definitions in the file.
  * Return a value of 256 on any error.
  *
- * NOTE: This is only applicable for DP IN adapters.
+ * Check the 'DP_ADP_LR_X' definitions in 'adapter.h'.
  */
 u16 get_dp_in_link_rate(const char *router, u8 adp)
 {
@@ -1558,8 +1512,6 @@ u16 get_dp_in_link_rate(const char *router, u8 adp)
 /*
  * Get the allocated bandwidth on the DP adapter.
  * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for DP IN adapters.
  */
 u16 get_dp_in_alloc_bw(const char *router, u8 adp)
 {
@@ -1580,10 +1532,9 @@ u16 get_dp_in_alloc_bw(const char *router, u8 adp)
 
 /*
  * Get the lane count of the DP adapter.
- * Check the DP_OUT_ADP_LC_XX definitions in the file.
  * Return a value of 256 on any error.
  *
- * NOTE: This is only applicable for DP OUT adapters.
+ * Check the 'DP_OUT_ADP_LC_XX' definitions in 'adapter.h'.
  */
 u16 get_dp_out_lane_count(const char *router, u8 adp)
 {
@@ -1604,10 +1555,9 @@ u16 get_dp_out_lane_count(const char *router, u8 adp)
 
 /*
  * Get the link rate of the DP adapter.
- * Check the DP_ADP_LR_X definitions in the file.
  * Return a value of 256 on any error.
  *
- * NOTE: This is only applicable for DP OUT adapters.
+ * Check the 'DP_ADP_LR_X' definitions in 'adapter.h'.
  */
 u16 get_dp_out_link_rate(const char *router, u8 adp)
 {
@@ -1628,23 +1578,21 @@ u16 get_dp_out_link_rate(const char *router, u8 adp)
 
 /*
  * Returns a positive integer if CM has issued handshake, '0' otherwise.
- * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for DP OUT adapters.
+ * Return a value of 2^32 on any error.
  */
-u16 is_dp_out_cm_handshake(const char *router, u8 adp)
+u64 is_dp_out_cm_handshake(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	if (!is_adp_dp_out(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS_CTRL);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	return val & DP_STATUS_CTRL_CMHS;
 }
@@ -1652,23 +1600,21 @@ u16 is_dp_out_cm_handshake(const char *router, u8 adp)
 /*
  * Returns a positive integer if the paired DP IN adapter is a USB4 DP IN adapter,
  * '0' if the adapter is a TBT3 DP IN adapter.
- * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for DP OUT adapters.
+ * Return a value of 2^32 on any error.
  */
-u16 is_dp_out_dp_in_usb4(const char *router, u8 adp)
+u64 is_dp_out_dp_in_usb4(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	if (!is_adp_dp_out(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS_CTRL);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	return val & DP_STATUS_CTRL_UF;
 }
@@ -1676,23 +1622,21 @@ u16 is_dp_out_dp_in_usb4(const char *router, u8 adp)
 /*
  * Returns a positive integer if DPRX capabilities are read by the DP
  * adapter, '0' otherwise.
- * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for DP IN adapters.
+ * Return a value of 2^32 on any error.
  */
-u16 is_dp_in_dprx_cap_read_done(const char *router, u8 adp)
+u64 is_dp_in_dprx_cap_read_done(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	if (!is_adp_dp_in(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, DP_STATUS_CTRL);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	return val & DP_COMMON_CAP_DPRX_CRD;
 }
@@ -1700,8 +1644,6 @@ u16 is_dp_in_dprx_cap_read_done(const char *router, u8 adp)
 /*
  * Get the requested bandwidth by DPTX of the DP adapter to the CM.
  * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for DP IN adapters.
  */
 u16 get_dp_in_req_bw(const char *router, u8 adp)
 {
@@ -1724,8 +1666,6 @@ u16 get_dp_in_req_bw(const char *router, u8 adp)
  * Returns a positive integer if DPTX bandwidth allocation mode is enabled
  * for the DP adapter, '0' otherwise.
  * Return a value of 2^32 on any error.
- *
- * NOTE: This is only applicable for DP IN adapters.
  */
 u64 is_dp_in_dptx_bw_alloc_en(const char *router, u8 adp)
 {
@@ -1747,23 +1687,21 @@ u64 is_dp_in_dptx_bw_alloc_en(const char *router, u8 adp)
 /*
  * Returns a positive integer if DPTX of the DP adapter requests the bandwidth
  * to the CM, '0' if CM has set the 'CM Ack' bit to '1'.
- * Return a value of 256 on any error.
- *
- * NOTE: This is only applicable for DP IN adapters.
+ * Return a value of 2^32 on any error.
  */
-u16 is_dp_in_dptx_req(const char *router, u8 adp)
+u64 is_dp_in_dptx_req(const char *router, u8 adp)
 {
 	u64 val;
 
 	if (!is_adp_present(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	if (!is_adp_dp_in(router, adp))
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	val = get_adapter_register_val(router, DP_ADP_CAP_ID, 0, adp, ADP_DP_CS_8);
 	if (val == COMPLEMENT_BIT64)
-		return MAX_BIT8;
+		return MAX_BIT32;
 
 	return val & ADP_DP_CS_8_DR;
 }
