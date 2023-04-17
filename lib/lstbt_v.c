@@ -1521,6 +1521,91 @@ static void dump_dp_in_adapters(const char *router)
 	dump_dp_attributes(router, active);
 }
 
+/*
+ * Dumps the verbose output for lane adapters including:
+ * 1. Lock status of the adapter
+ * 2. Enablement of the hot events on the adapter
+ * 3. CLx support on the adapter
+ */
+static void dump_lane_adapters(const char *router)
+{
+	u64 locked, usb4_dh, clx;
+	u8 i = 0, majv;
+	u16 usb4v, dh;
+	u32 usb4_clx;
+
+	for (; i < MAX_ADAPTERS - 1; i++) {
+		if (!is_adp_lane(router, i))
+			continue;
+
+		dump_spaces(VERBOSE_L2_SPACES);
+
+		printf("Port %u: ", i);
+
+		locked = is_adp_locked(router, i);
+		if (locked == MAX_BIT32)
+			printf("Locked: <Not accessible>\n");
+		else if (locked)
+			printf("Locked: yes\n");
+		else
+			printf("Locked: no\n");
+
+		dump_spaces(VERBOSE_L3_SPACES);
+
+		usb4v = get_usb4v(router);
+		if (usb4v == MAX_BIT8)
+			printf("Hot events: <Not accessible>\n");
+
+		majv = (usb4v & USB4V_MAJOR_VER) >> USB4V_MAJOR_VER_SHIFT;
+		if (!majv) {
+			dh = get_tbt3_hot_events_disabled(router,
+							  get_usb4_port_num(i));
+			if (dh == MAX_BIT8)
+				printf("Hot events: <Not accessible>\n");
+			else if (dh)
+				printf("Hot events: disabled\n");
+			else
+				printf("Hot events: enabled\n");
+		} else {
+			usb4_dh = are_hot_events_disabled(router, i);
+			if (usb4_dh == MAX_BIT32)
+				printf("Hot events: <Not accessible>\n");
+			else if (usb4_dh)
+				printf("Hot events: disabled\n");
+			else
+				printf("Hot events: enabled\n");
+		}
+
+		if (usb4v == MAX_BIT8) {
+			dump_spaces(VERBOSE_L3_SPACES);
+			printf("CLx support: <Not accessible>\n");
+		}
+
+		if (!majv) {
+			dump_spaces(VERBOSE_L3_SPACES);
+
+			clx = is_tbt3_clx_supported(router,
+						    get_usb4_port_num(i));
+			if (clx == MAX_BIT32)
+				printf("CLx support: <Not accessible>\n");
+			else if (clx)
+				printf("CLx support: Pres+\n");
+			else
+				printf("CLx support: Pres-\n");
+		} else if (is_adp_lane_0(router, i)) {
+			dump_spaces(VERBOSE_L3_SPACES);
+
+			usb4_clx = is_usb4_clx_supported(router, i);
+			if (usb4_clx == MAX_BIT16)
+				printf("CLx support: <Not accessible>\n");
+			else if (usb4_clx)
+				printf("CLx support: Pres+\n");
+			else
+				printf("CLx support: Pres-\n");
+		}
+	}
+}
+
 static bool dump_router_verbose(const char *router, u8 num)
 {
 	u64 topid_low, topid_high;
@@ -1603,6 +1688,12 @@ static bool dump_router_verbose(const char *router, u8 num)
 		if (num > 1)
 			dump_wake_status(router);
 	}
+
+	dump_spaces(VERBOSE_L1_SPACES);
+	printf("Capabilities: Lane adapters\n");
+
+	if (num > 1)
+		dump_lane_adapters(router);
 
 	dump_spaces(VERBOSE_L1_SPACES);
 	printf("Capabilities: Protocol adapters\n");
@@ -1709,6 +1800,6 @@ int main(void)
 	/*printf("%x\n", get_router_register_val("0-0", 5, 6, 170));
 	printf("%x\n", get_adapter_register_val("0-0", 0, 0, 1, 2));
 	return 0;*/
-	lstbt_v(NULL, NULL, NULL, 2);
+	lstbt_v(NULL, NULL, NULL, 1);
 	return 0;
 }

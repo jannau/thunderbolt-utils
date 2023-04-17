@@ -52,6 +52,7 @@
 
 #define ROUTER_VSEC1_1				0x1
 #define ROUTER_VSEC1_1_PED			BITMASK(6, 3)
+#define ROUTER_VSEC1_1_PED_LANE			BIT(3)
 
 #define ROUTER_VSEC3_ID				0x03
 
@@ -134,6 +135,7 @@ u64 is_router_ready(const char *router);
 u64 is_tunneling_ready(const char *router);
 
 /* Below functions are applicable only for TBT3 routers */
+u16 get_tbt3_hot_events_disabled(const char *router, u8 port);
 u16 get_tbt3_com_reg_dwords(const char *router);
 u32 get_tbt3_usb4_reg_dwords(const char *router);
 u16 get_tbt3_usb4_ports(const char *router);

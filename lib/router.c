@@ -362,6 +362,23 @@ u64 is_tunneling_ready(const char *router)
 }
 
 /*
+ * Returns a positive integer if hot events are disabled on the port '0'
+ * otherwise.
+ * If config. space is inaccessible, return a value of 256.
+ */
+u16 get_tbt3_hot_events_disabled(const char *router, u8 port)
+{
+	u64 val;
+
+	val = get_router_register_val(router, ROUTER_VCAP_ID, ROUTER_VSEC1_ID,
+				      ROUTER_VSEC1_1);
+	if (val == COMPLEMENT_BIT64)
+		return MAX_BIT8;
+
+	return val & ROUTER_VSEC1_1_PED_LANE;
+}
+
+/*
  * Returns the no. of doublewords in the common region of the VSEC6 capability
  * of the router.
  * If config. space is inaccessible, return a value of 256.
