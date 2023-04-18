@@ -198,7 +198,7 @@ u8 total_domains(void)
 	return strtoud(output);
 }
 
-/* Validate the arguments for 'lstbt' and 'lstbt -t'  */
+/* Validate the arguments for 'lstbt', 'lstbt -t', and 'lstbt -v' */
 bool validate_args(const char *domain, const char *depth, const char *device)
 {
 	u8 domains = total_domains();
