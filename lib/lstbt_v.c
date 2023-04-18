@@ -1791,7 +1791,7 @@ void lstbt_v(const u8 *domain, const u8 *depth, const char *device, u8 num)
 		found = dump_domain_verbose(strtoud(domain), depth, num);
 
 	if (!found)
-		fprintf(stderr, "no routers accessible\n");
+		fprintf(stderr, "no routers found/accessible\n");
 }
 
 int main(void)
