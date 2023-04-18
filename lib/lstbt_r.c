@@ -45,6 +45,19 @@ static bool is_retimer_in_router(const char *retimer, const char *router)
 	return true;
 }
 
+/* Dumps the retimer f/w version */
+static void dump_retimer_version(const char *retimer)
+{
+	char path[MAX_LEN];
+	char *ver;
+
+	snprintf(path, sizeof(path), "cat %s%s/nvm_version", tbt_sysfs_path,
+		 retimer);
+
+	ver = do_bash_cmd(path);
+	printf("NVM %s\n", ver);
+}
+
 /* Dumps the retimer */
 static bool dump_retimer(const char *retimer)
 {
@@ -70,7 +83,9 @@ static bool dump_retimer(const char *retimer)
 	snprintf(did_path, sizeof(did_path), "cat %s%s/device", tbt_sysfs_path, retimer);
 	did = do_bash_cmd(did_path);
 
-	printf("ID %04x:%04x\n", strtouh(vid), strtouh(did));
+	printf("ID %04x:%04x ", strtouh(vid), strtouh(did));
+
+	dump_nvm_version(retimer);
 
 	return true;
 }
@@ -154,7 +169,7 @@ static bool validate_args_r(const char *domain, const char *depth, const char *d
 	return true;
 }
 
-/* Function to be called with singular 'lstbt' (no retimers/extra arguments) */
+/* Function to be called with '-r' as the extra argument */
 void lstbt_r(const u8 *domain, const u8 *depth, const char *device)
 {
 	u8 domains = total_domains();
