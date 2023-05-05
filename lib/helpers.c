@@ -134,7 +134,7 @@ static u64 get_register_val(const struct list_item *regs_list, u8 cap_id,
 {
 	u64 num_commas, col;
 	bool found = false;
-	u64 first, second;
+	s64 first, second;
 	u64 total_col;
 	u64 row = 0;
 	char *regs;
