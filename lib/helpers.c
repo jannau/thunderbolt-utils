@@ -150,7 +150,12 @@ static u64 get_register_val(const struct list_item *regs_list, u8 cap_id,
 				u8 cap, vcap;
 
 				first = strpos(regs, ",", col);
+				if (first == -1)
+					break;
+
 				second = strpos(regs, ",", first + 1);
+				if (second == -1)
+					break;
 
 				cap = strtouh(get_substr(regs, col, first - col));
 				vcap = strtouh(get_substr(regs, first + 1,
