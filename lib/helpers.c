@@ -40,9 +40,55 @@ static u8 get_total_adps_debugfs(const char *router)
 	return 0;
 }
 
-/* Fetches the router config. space of the provided router */
-static struct list_item* get_router_regs(const char *router)
+static struct list_item* get_cap_vcap_start(const struct list_item *regs_list,
+					    u8 cap_id, u8 vcap_id)
 {
+	u64 num_commas, col;
+	bool found = false;
+	s64 first, second;
+	u64 total_col;
+	char *regs;
+
+	for (; regs_list; regs_list = regs_list->next) {
+		num_commas = 0;
+		col = 0;
+		regs = (char*)regs_list->val;
+		total_col = strlen(regs);
+
+		for (; col < total_col; col++) {
+			if (num_commas == 2) {
+				u8 cap, vcap;
+
+				first = strpos(regs, ",", col);
+				if (first == -1)
+					break;
+
+				second = strpos(regs, ",", first + 1);
+				if (second == -1)
+					break;
+
+				cap = strtouh(get_substr(regs, col, first - col));
+				vcap = strtouh(get_substr(regs, first + 1,
+							  second - first - 1));
+				if (cap == cap_id && vcap == vcap_id)
+					found = true;
+
+				break;
+			} else if (regs[col] == ',')
+				num_commas++;
+		}
+
+		if (found)
+			return regs_list;
+	}
+
+	return NULL;
+}
+
+/* Fetches the router config. space of the provided router */
+static void get_router_regs(const char *router, struct router_config *config)
+{
+	struct list_item *item, *router_regs;
 	char path[MAX_LEN];
 	char *root_cmd;
 
@@ -50,7 +96,25 @@ static struct list_item* get_router_regs(const char *router)
 		 tbt_debugfs_path, router);
 	root_cmd = switch_cmd_to_root(path);
 
-	return do_bash_cmd_list(root_cmd);
+	router_regs = do_bash_cmd_list(root_cmd);
+	item = get_cap_vcap_start(router_regs, 0x0, 0x0);
+	config->regs = list_to_numbered_array(item);
+
+	item = get_cap_vcap_start(router_regs, ROUTER_VCAP_ID,
+				  ROUTER_VSEC1_ID);
+	config->vsec1_regs = list_to_numbered_array(item);
+
+	item = get_cap_vcap_start(router_regs, ROUTER_VCAP_ID,
+				  ROUTER_VSEC3_ID);
+	config->vsec3_regs = list_to_numbered_array(item);
+
+	item = get_cap_vcap_start(router_regs, ROUTER_VCAP_ID,
+				  ROUTER_VSEC4_ID);
+	config->vsec4_regs = list_to_numbered_array(item);
+
+	item = get_cap_vcap_start(router_regs, ROUTER_VCAP_ID,
+				  ROUTER_VSEC6_ID);
+	config->vsec6_regs = list_to_numbered_array(item);
 }
 
 /*
@@ -62,6 +126,7 @@ static struct list_item* get_router_regs(const char *router)
  */
 static void get_adps_config(const char *router, struct adp_config *config)
 {
+	struct list_item *item, *adp_regs;
 	u8 total_adps;
 	u8 i = 1;
 
@@ -78,7 +143,29 @@ static void get_adps_config(const char *router, struct adp_config *config)
 			 tbt_debugfs_path, router, i);
 		root_cmd = switch_cmd_to_root(path);
 
-		config[i].regs = do_bash_cmd_list(root_cmd);
+		adp_regs = do_bash_cmd_list(root_cmd);
+		item = get_cap_vcap_start(adp_regs, 0, 0);
+		config[i].regs = list_to_numbered_array(item);
+
+		item = get_cap_vcap_start(adp_regs,
+					  LANE_ADP_CAP_ID, 0);
+		config[i].lane_regs = list_to_numbered_array(item);
+
+		item = get_cap_vcap_start(adp_regs,
+					  PCIE_ADP_CAP_ID, 0);
+		config[i].pcie_regs = list_to_numbered_array(item);
+
+		item = get_cap_vcap_start(adp_regs,
+					  DP_ADP_CAP_ID, 0);
+		config[i].dp_regs = list_to_numbered_array(item);
+
+		item = get_cap_vcap_start(adp_regs,
+					  USB3_ADP_CAP_ID, 0);
+		config[i].usb3_regs = list_to_numbered_array(item);
+
+		item = get_cap_vcap_start(adp_regs,
+					  USB4_PORT_CAP_ID, 0);
+		config[i].usb4_port_regs = list_to_numbered_array(item);
 	}
 }
 
@@ -125,68 +212,18 @@ static bool is_offset_inaccessible(const char *regs)
 	return true;
 }
 
-/*
- * Returns the register value from the provided list in the block with
- * CAP_ID and VCAP_ID as given at the offset 'off'.
- */
-static u64 get_register_val(const struct list_item *regs_list, u8 cap_id,
-			    u8 vcap_id, u64 off)
+static u64 get_register_val(char **regs_list, u64 off)
 {
-	u64 num_commas, col;
-	bool found = false;
-	s64 first, second;
 	u64 total_col;
-	u64 row = 0;
-	char *regs;
 
-	for (; regs_list; regs_list = regs_list->next) {
-		num_commas = 0;
-		col = 0;
-		regs = (char*)regs_list->val;
-		total_col = strlen(regs);
-
-		for (; col < total_col; col++) {
-			if (num_commas == 2) {
-				u8 cap, vcap;
-
-				first = strpos(regs, ",", col);
-				if (first == -1)
-					break;
-
-				second = strpos(regs, ",", first + 1);
-				if (second == -1)
-					break;
-
-				cap = strtouh(get_substr(regs, col, first - col));
-				vcap = strtouh(get_substr(regs, first + 1,
-							  second - first - 1));
-				if (cap == cap_id && vcap == vcap_id)
-					found = true;
-
-				break;
-			} else if (regs[col] == ',')
-				num_commas++;
-		}
-
-		if (found)
-			break;
-	}
-
-	if (!found)
+	if (!regs_list || !(*regs_list))
 		return COMPLEMENT_BIT64;
 
-	for (; regs_list; regs_list = regs_list->next) {
-		if (row++ == off) {
-			regs = (char*)regs_list->val;
-			if (is_offset_inaccessible(regs))
-				return COMPLEMENT_BIT64;
+	if (is_offset_inaccessible(regs_list[off]))
+		return COMPLEMENT_BIT64;
 
-			total_col = strlen(regs);
-			return strtouh(regs + (total_col - 10));
-		}
-	}
-
-	return COMPLEMENT_BIT64;
+	total_col = strlen(regs_list[off]);
+	return strtouh(regs_list[off] + (total_col - 10));
 }
 
 /* Returns the total no. of domains in the host */
@@ -383,7 +420,7 @@ void debugfs_config_init(void)
 		adps = get_total_adps_debugfs(router);
 
 		routers_config[i].router = router;
-		routers_config[i].regs = get_router_regs(router);
+		get_router_regs(router, &routers_config[i]);
 
 		routers_config[i].adps_config = malloc(adps *
 						       sizeof(struct adp_config));
@@ -403,12 +440,24 @@ void debugfs_config_init(void)
 u64 get_router_register_val(const char *router, u8 cap_id, u8 vcap_id, u64 off)
 {
 	struct router_config *config;
+	char **regs = NULL;
 
 	config = get_router_config_item(routers_config, router);
 	if (!config)
 		return COMPLEMENT_BIT64;
 
-	return get_register_val(config->regs->next, cap_id, vcap_id, off);
+	if (cap_id == 0x0)
+		regs = config->regs;
+	else if (cap_id == ROUTER_VCAP_ID && vcap_id == ROUTER_VSEC1_ID)
+		regs = config->vsec1_regs;
+	else if (cap_id == ROUTER_VCAP_ID && vcap_id == ROUTER_VSEC3_ID)
+		regs = config->vsec3_regs;
+	else if (cap_id == ROUTER_VCAP_ID && vcap_id == ROUTER_VSEC4_ID)
+		regs = config->vsec4_regs;
+	else if (cap_id == ROUTER_VCAP_ID && vcap_id == ROUTER_VSEC6_ID)
+		regs = config->vsec6_regs;
+
+	return get_register_val(regs, off);
 }
 
 /*
@@ -424,6 +473,7 @@ u64 get_adapter_register_val(const char *router, u8 cap_id, u8 vcap_id, u8 adp,
 {
 	struct router_config *router_config;
 	struct adp_config *adp_config;
+	char **regs = NULL;
 
 	router_config = get_router_config_item(routers_config, router);
 	if (!router_config)
@@ -433,5 +483,18 @@ u64 get_adapter_register_val(const char *router, u8 cap_id, u8 vcap_id, u8 adp,
 	if (!adp_config)
 		return COMPLEMENT_BIT64;
 
-	return get_register_val(adp_config->regs->next, cap_id, vcap_id, off);
+	if (cap_id == 0x0)
+		regs = adp_config->regs;
+	else if (cap_id == LANE_ADP_CAP_ID)
+		regs = adp_config->lane_regs;
+	else if (cap_id == USB4_PORT_CAP_ID)
+		regs = adp_config->usb4_port_regs;
+	else if (cap_id == USB3_ADP_CAP_ID)
+		regs = adp_config->usb3_regs;
+	else if (cap_id == PCIE_ADP_CAP_ID)
+		regs = adp_config->pcie_regs;
+	else if (cap_id == DP_ADP_CAP_ID)
+		regs = adp_config->dp_regs;
+
+	return get_register_val(regs, off);
 }

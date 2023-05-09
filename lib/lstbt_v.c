@@ -1771,7 +1771,10 @@ void lstbt_v(const u8 *domain, const u8 *depth, const char *device, u8 num)
 			return;
 		}
 
-		dump_router_verbose(device, num);
+		found = dump_router_verbose(device, num);
+		if (!found)
+			fprintf(stderr, "no routers found/accessible\n");
+
 		return;
 	}
 
@@ -1800,6 +1803,6 @@ int main(void)
 	/*printf("%x\n", get_router_register_val("0-0", 5, 6, 170));
 	printf("%x\n", get_adapter_register_val("0-0", 0, 0, 1, 2));
 	return 0;*/
-	lstbt_v(NULL, NULL, NULL, 2);
+	lstbt_v(NULL, NULL, NULL, 3);
 	return 0;
 }

@@ -69,3 +69,4 @@ u32 strtouh(const char *str);
 char* get_substr(const char *str, u64 pos, u64 len);
 u64 get_total_list_items(const struct list_item *head);
 bool is_present_in_list(const struct list_item *head, const char *str);
+char** list_to_numbered_array(struct list_item *item);

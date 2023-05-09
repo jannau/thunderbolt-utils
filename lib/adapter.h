@@ -29,6 +29,16 @@
 #define DOWN_USB3_PVS				0x200101
 #define UP_USB3_PVS				0x200102
 
+/* Identifiers for the adapters present in a router */
+#define LANE_NUM				0x0
+#define HOST_INTERFACE_NUM			0x1
+#define DOWN_PCIE_NUM				0x2
+#define UP_PCIE_NUM				0x3
+#define DP_OUT_NUM				0x4
+#define DP_IN_NUM				0x5
+#define DOWN_USB3_NUM				0x6
+#define UP_USB3_NUM				0x7
+
 /* Lane adapter configuration space */
 #define LANE_ADP_CS_0				0x0
 #define LANE_ADP_CS_0_SUP_SPEEDS		BITMASK(19, 16) /* Same for Lane-1 as well */

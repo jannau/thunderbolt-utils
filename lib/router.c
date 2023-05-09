@@ -3,7 +3,6 @@
 #include <stdio.h>
 
 #include "helpers.h"
-#include "router.h"
 
 /*
  * Get the topology ID in the below format:

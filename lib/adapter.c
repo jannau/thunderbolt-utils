@@ -2,7 +2,6 @@
 #include <stdio.h>
 
 #include "helpers.h"
-#include "adapter.h"
 
 /*
  * Returns 'true' if the adapter is present in the router (more precisely,

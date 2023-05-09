@@ -382,3 +382,31 @@ bool is_present_in_list(const struct list_item *head, const char *str)
 
 	return false;
 }
+
+/*
+ * Convert a list of member type 'struct list_item' into an array of
+ * character pointers to enable random access via indexes.
+ */
+char** list_to_numbered_array(struct list_item *item)
+{
+	u64 num, i, len;
+	char **arr;
+
+	if (!item)
+		return NULL;
+
+	num = get_total_list_items(item);
+	arr = malloc(num * sizeof(char*));
+
+	i = 0;
+	for (; i < num; i++) {
+		len = strlen((char*)item->val);
+		arr[i] = malloc(len * sizeof(char));
+
+		strcpy(arr[i], (char*)item->val);
+
+		item = item->next;
+	}
+
+	return arr;
+}

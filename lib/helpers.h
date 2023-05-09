@@ -1,6 +1,8 @@
 #include <stdbool.h>
 
 #include "../utils.h"
+#include "adapter.h"
+#include "router.h"
 
 /* Maximum adapters possible in a router */
 #define MAX_ADAPTERS		64
@@ -16,12 +18,23 @@ static char *tbt_debugfs_path = "/sys/kernel/debug/thunderbolt/";
 
 static struct adp_config {
 	u8 adp;
-	struct list_item *regs;
+	char **regs;
+	char **lane_regs;
+	char **pcie_regs;
+	char **dp_regs;
+	char **usb3_regs;
+	char **usb4_port_regs;
 };
 
 static struct router_config {
 	char *router;
-	struct list_item *regs;
+
+	char **regs;
+	char **vsec1_regs;
+	char **vsec3_regs;
+	char **vsec4_regs;
+	char **vsec6_regs;
+
 	struct adp_config *adps_config;
 };
 static struct router_config *routers_config;
