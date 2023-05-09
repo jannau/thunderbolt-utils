@@ -1529,10 +1529,10 @@ static void dump_dp_in_adapters(const char *router)
  */
 static void dump_lane_adapters(const char *router)
 {
+	u32 usb4_clx, en_cl0s, en_cl1, en_cl2;
 	u64 locked, usb4_dh, clx;
 	u8 i = 0, majv;
 	u16 usb4v, dh;
-	u32 usb4_clx;
 
 	for (; i < MAX_ADAPTERS - 1; i++) {
 		if (!is_adp_lane(router, i))
@@ -1588,9 +1588,39 @@ static void dump_lane_adapters(const char *router)
 						    get_usb4_port_num(i));
 			if (clx == MAX_BIT32)
 				printf("CLx support: <Not accessible>\n");
-			else if (clx)
+			else if (clx) {
 				printf("CLx support: Pres+\n");
-			else
+
+				dump_spaces(VERBOSE_L3_SPACES);
+
+				en_cl0s = are_cl0s_enabled(router, i);
+				if (en_cl0s == MAX_BIT16)
+					printf("CL0s: <Not accessible>\n");
+				else if (en_cl0s)
+					printf("CL0s: En+\n");
+				else
+					printf("CL0s: En-\n");
+
+				dump_spaces(VERBOSE_L3_SPACES);
+
+				en_cl1 = is_cl1_enabled(router, i);
+				if (en_cl1 == MAX_BIT16)
+					printf("CL1: <Not accessible>\n");
+				else if (en_cl1)
+					printf("CL1: En+\n");
+				else
+					printf("CL1: En-\n");
+
+				dump_spaces(VERBOSE_L3_SPACES);
+
+				en_cl2 = is_cl2_enabled(router, i);
+				if (en_cl2 == MAX_BIT16)
+					printf("CL2: <Not accessible>\n");
+				else if (en_cl2)
+					printf("CL2: En+\n");
+				else
+					printf("CL2: En-\n");
+			} else
 				printf("CLx support: Pres-\n");
 		} else if (is_adp_lane_0(router, i)) {
 			dump_spaces(VERBOSE_L3_SPACES);
@@ -1598,9 +1628,39 @@ static void dump_lane_adapters(const char *router)
 			usb4_clx = is_usb4_clx_supported(router, i);
 			if (usb4_clx == MAX_BIT16)
 				printf("CLx support: <Not accessible>\n");
-			else if (usb4_clx)
+			else if (usb4_clx) {
 				printf("CLx support: Pres+\n");
-			else
+
+				dump_spaces(VERBOSE_L3_SPACES);
+
+				en_cl0s = are_cl0s_enabled(router, i);
+				if (en_cl0s == MAX_BIT16)
+					printf("CL0s: <Not accessible>\n");
+				else if (en_cl0s)
+					printf("CL0s: En+\n");
+				else
+					printf("CL0s: En-\n");
+
+				dump_spaces(VERBOSE_L3_SPACES);
+
+				en_cl1 = is_cl1_enabled(router, i);
+				if (en_cl1 == MAX_BIT16)
+					printf("CL1: <Not accessible>\n");
+				else if (en_cl1)
+					printf("CL1: En+\n");
+				else
+					printf("CL1: En-\n");
+
+				dump_spaces(VERBOSE_L3_SPACES);
+
+				en_cl2 = is_cl2_enabled(router, i);
+				if (en_cl2 == MAX_BIT16)
+					printf("CL2: <Not accessible>\n");
+				else if (en_cl2)
+					printf("CL2: En+\n");
+				else
+					printf("CL2: En-\n");
+			} else
 				printf("CLx support: Pres-\n");
 		}
 	}
