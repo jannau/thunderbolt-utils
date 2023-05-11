@@ -46,7 +46,7 @@ static bool is_retimer_in_router(const char *retimer, const char *router)
 }
 
 /* Dumps the retimer f/w version */
-static void dump_retimer_version(const char *retimer)
+static void dump_nvm_version(const char *retimer)
 {
 	char path[MAX_LEN];
 	char *ver;
@@ -75,7 +75,7 @@ static bool dump_retimer(const char *retimer)
 	dot_pos = strpos(retimer, ".", pos);
 	port = strtoud(get_substr(retimer, pos + 1, dot_pos - pos - 1));
 
-	printf("Domain %u Router %u: Port %u: ", domain, router, port);
+	printf("Domain %u Router %s: Port %u: ", domain, router, port);
 
 	snprintf(vid_path, sizeof(vid_path), "cat %s%s/vendor", tbt_sysfs_path, retimer);
 	vid = do_bash_cmd(vid_path);
