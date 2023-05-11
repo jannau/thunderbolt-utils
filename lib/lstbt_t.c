@@ -234,11 +234,11 @@ static bool enumerate_domain_tree(u8 domain, const u8 *depth, bool verbose)
 	return found;
 }
 
-/* Function to be called with '-t' as the only additional argument.
+/* Function to be called with '-t' and '-v' as the additional arguments.
  *
  * @verbose: 'True' if verbose output is needed, 'false' otherwise.
  */
-void lstbt_t(const u8 *domain, const u8 *depth, const char *device, bool verbose)
+int lstbt_t(const u8 *domain, const u8 *depth, const char *device, bool verbose)
 {
 	u8 domains = total_domains();
 	bool found = false;
@@ -246,22 +246,22 @@ void lstbt_t(const u8 *domain, const u8 *depth, const char *device, bool verbose
 
 	if (!domains) {
 		fprintf(stderr, "thunderbolt can't be found\n");
-		return;
+		return 1;
 	}
 
 	if (!validate_args(domain, depth, device)) {
-		fprintf(stderr, "invalid argument(s)\n");
-		return;
+		fprintf(stderr, "invalid argument(s)\n%s", help_msg);
+		return 1;
 	}
 
 	if (device) {
 		if (!is_router_present(device)) {
 			fprintf(stderr, "invalid device\n");
-			return;
+			return 1;
 		}
 
 		enumerate_dev_tree(device, 0, verbose);
-		return;
+		return 0;
 	}
 
 	if (!domain && !depth) {
@@ -281,10 +281,6 @@ void lstbt_t(const u8 *domain, const u8 *depth, const char *device, bool verbose
 
 	if (!found)
 		printf("no device(s) found\n");
-}
 
-int main()
-{
-	lstbt_t(NULL, NULL, NULL, 0);
 	return 0;
 }

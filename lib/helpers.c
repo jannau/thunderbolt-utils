@@ -226,6 +226,40 @@ static u64 get_register_val(char **regs_list, u64 off)
 	return strtouh(regs_list[off] + (total_col - 10));
 }
 
+/* Initialize the debugfs parameters for faster access */
+static void debugfs_config_init(void)
+{
+	struct list_item *router_list;
+	char *root_cmd, *router;
+	u64 total_routers, i;
+	char path[MAX_LEN];
+	u8 adps;
+
+	snprintf(path, sizeof(path), "ls %s", tbt_debugfs_path);
+	root_cmd = switch_cmd_to_root(path);
+
+	router_list = do_bash_cmd_list(root_cmd);
+
+	total_routers = get_total_list_items(router_list);
+	routers_config = malloc(total_routers * sizeof(struct router_config));
+
+	i = 0;
+
+	for(; router_list; router_list = router_list->next) {
+		router = (char*)router_list->val;
+		adps = get_total_adps_debugfs(router);
+
+		routers_config[i].router = router;
+		get_router_regs(router, &routers_config[i]);
+
+		routers_config[i].adps_config = malloc(adps *
+						       sizeof(struct adp_config));
+		get_adps_config(router, routers_config[i].adps_config);
+
+		i++;
+	}
+}
+
 /* Returns the total no. of domains in the host */
 u8 total_domains(void)
 {
@@ -396,40 +430,6 @@ u8 domain_of_router(const char *router)
 	return strtoud(get_substr(router, 0, 1));
 }
 
-/* Initialize the debugfs parameters for faster access */
-void debugfs_config_init(void)
-{
-	struct list_item *router_list;
-	char *root_cmd, *router;
-	u64 total_routers, i;
-	char path[MAX_LEN];
-	u8 adps;
-
-	snprintf(path, sizeof(path), "ls %s", tbt_debugfs_path);
-	root_cmd = switch_cmd_to_root(path);
-
-	router_list = do_bash_cmd_list(root_cmd);
-
-	total_routers = get_total_list_items(router_list);
-	routers_config = malloc(total_routers * sizeof(struct router_config));
-
-	i = 0;
-
-	for(; router_list; router_list = router_list->next) {
-		router = (char*)router_list->val;
-		adps = get_total_adps_debugfs(router);
-
-		routers_config[i].router = router;
-		get_router_regs(router, &routers_config[i]);
-
-		routers_config[i].adps_config = malloc(adps *
-						       sizeof(struct adp_config));
-		get_adps_config(router, routers_config[i].adps_config);
-
-		i++;
-	}
-}
-
 /*
  * Returns the register value of the router config. space of the provided router
  * with the provided CAP_ID and VCAP_ID at the provided block offset.
@@ -497,4 +497,76 @@ u64 get_adapter_register_val(const char *router, u8 cap_id, u8 vcap_id, u8 adp,
 		regs = adp_config->dp_regs;
 
 	return get_register_val(regs, off);
+}
+
+/*
+ * Returns 'true' if the arguments provided to the library are valid,
+ * 'false' otherwise.
+ */
+bool is_arg_valid(const char *arg)
+{
+	u8 i = 0;
+
+	if (!arg || strlen(arg) != 2)
+		return false;
+
+	if (arg[0] != '-')
+		return false;
+
+	for (; i < strlen(options); i++) {
+		if (options[i] == arg[1])
+			return true;
+	}
+
+	return false;
+}
+
+int __main(const char *domain, const char *depth, const char *device,
+	    const char *retimer, bool tree, u8 verbose)
+{
+	if (tree) {
+		if (retimer) {
+			fprintf(stderr, "invalid argument(s)\n%s", help_msg);
+			return 1;
+		} else
+			return lstbt_t(domain, depth, device, verbose);
+	} else if (retimer) {
+		return lstbt_r(domain, depth, device);
+	} else if (!tree && !verbose) {
+		return lstbt(domain, depth, device);
+	} else if (verbose) {
+		debugfs_config_init();
+		return lstbt_v(domain, depth, device, verbose);
+	}
+}
+
+char** ameliorate_args(int argc, char **argv)
+{
+	int i, j, k;
+	char **arr;
+
+	arr = malloc(MAX_LEN * sizeof(char*));
+	j = 0;
+
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			if (strlen(argv[i]) == 1) {
+				arr[j++] = argv[i];
+				continue;
+			}
+
+			for (k = 1; k < strlen(argv[i]); k++) {
+				char str[MAX_LEN];
+
+				snprintf(str, sizeof(str), "-%c", argv[i][k]);
+
+				arr[j] = malloc(2 * sizeof(char));
+				strcpy(arr[j++], str);
+			}
+		} else
+			arr[j++] = argv[i];
+	}
+
+	arr[j] = NULL;
+	return arr;
 }

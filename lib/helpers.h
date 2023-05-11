@@ -39,6 +39,27 @@ static struct router_config {
 };
 static struct router_config *routers_config;
 
+static char options[] = {'D', 'd', 's', 'r', 't', 'v', 'V', 'h'};
+static char *help_msg =
+"Usage: lstbt [options]...\n"
+"List TBT/USB4 devices\n"
+"  -D domain\n"
+"      Select the domain lstbt will examine\n"
+"  -d depth\n"
+"      Select the depth (starting from 0) lstbt will consider\n"
+"  -s device \n"
+"      Select the device (like displayed in sysfs) lstbt will examine\n"
+"  -r retimer <device>:<port>.<index>\n"
+"      Select the retimer (like displayed in sysfs) lstbt will examine\n"
+"  -t tree\n"
+"      Display the thunderbolt subsystem in tree format\n"
+"  -v verbose\n"
+"      Increase the verbosity (-vv for higher)\n"
+"  -V version\n"
+"      Display the version of the library\n"
+"  -h help\n"
+"      Display the usage\n";
+
 u8 total_domains(void);
 bool validate_args(const char *domain, const char *depth, const char *device);
 bool is_router_present(const char *router);
@@ -50,7 +71,14 @@ void dump_vdid(const char *router);
 void dump_generation(const char *router);
 u8 depth_of_router(const char *router);
 u8 domain_of_router(const char *router);
-void debugfs_config_init(void);
 u64 get_router_register_val(const char *router, u8 cap_id, u8 vcap_id, u64 off);
 u64 get_adapter_register_val(const char *router, u8 adp, u8 cap_id,
 			     u8 vcap_id, u64 off);
+bool is_arg_valid(const char *arg);
+int lstbt(const u8 *domain, const u8 *depth, const char *device);
+int lstbt_t(const u8 *domain, const u8 *depth, const char *device, bool verbose);
+int lstbt_v(const u8 *domain, const u8 *depth, const char *device, u8 num);
+int lstbt_r(const u8 *domain, const u8 *depth, const char *device);
+int __main(const char *domain, const char *depth, const char *device,
+	    const char *retimer, bool tree, u8 verbose);
+char** ameliorate_args(int argc, char **argv);

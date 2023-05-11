@@ -1807,9 +1807,10 @@ static bool dump_domain_verbose(u8 domain, const u8 *depth, u8 num)
 
 /*
  * Function to be called with '-v' as the only additional argument.
+ *
  * @num: Indicates the number of 'v' provided as the argument (caps to 'vv').
  */
-void lstbt_v(const u8 *domain, const u8 *depth, const char *device, u8 num)
+int lstbt_v(const u8 *domain, const u8 *depth, const char *device, u8 num)
 {
 	u8 domains = total_domains();
 	bool found = false;
@@ -1817,25 +1818,25 @@ void lstbt_v(const u8 *domain, const u8 *depth, const char *device, u8 num)
 
 	if (!domains) {
 		fprintf(stderr, "thunderbolt can't be found\n");
-		return;
+		return 1;
 	}
 
 	if (!validate_args(domain, depth, device)) {
-		fprintf(stderr, "invalid argument(s)\n");
-		return;
+		fprintf(stderr, "invalid argument(s)\n%s", help_msg);
+		return 1;
 	}
 
 	if (device) {
 		if (!is_router_present(device)) {
 			fprintf(stderr, "invalid device\n");
-			return;
+			return 1;
 		}
 
 		found = dump_router_verbose(device, num);
 		if (!found)
 			fprintf(stderr, "no routers found/accessible\n");
 
-		return;
+		return 0;
 	}
 
 	if (!domain && !depth) {
@@ -1855,14 +1856,6 @@ void lstbt_v(const u8 *domain, const u8 *depth, const char *device, u8 num)
 
 	if (!found)
 		fprintf(stderr, "no routers found/accessible\n");
-}
 
-int main(void)
-{
-	debugfs_config_init();
-	/*printf("%x\n", get_router_register_val("0-0", 5, 6, 170));
-	printf("%x\n", get_adapter_register_val("0-0", 0, 0, 1, 2));
-	return 0;*/
-	lstbt_v(NULL, NULL, NULL, 3);
 	return 0;
 }

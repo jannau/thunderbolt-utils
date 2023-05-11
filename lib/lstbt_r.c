@@ -120,7 +120,7 @@ static bool dump_retimers_in_router(const char *router)
 	bool found = false;
 	u8 domain;
 
-	domain = strtoud(get_substr(retimer, 0, 1));
+	domain = strtoud(get_substr(router, 0, 1));
 
 	snprintf(path, sizeof(path), "for line in $(ls %s); do echo $line; done",
 		 tbt_sysfs_path);
@@ -170,7 +170,7 @@ static bool validate_args_r(const char *domain, const char *depth, const char *d
 }
 
 /* Function to be called with '-r' as the extra argument */
-void lstbt_r(const u8 *domain, const u8 *depth, const char *device)
+int lstbt_r(const u8 *domain, const u8 *depth, const char *device)
 {
 	u8 domains = total_domains();
 	bool found = false;
@@ -178,18 +178,18 @@ void lstbt_r(const u8 *domain, const u8 *depth, const char *device)
 
 	if (!domains) {
 		fprintf(stderr, "thunderbolt can't be found\n");
-		return;
+		return 1;
 	}
 
 	if (!validate_args_r(domain, depth, device)) {
-		fprintf(stderr, "invalid argument(s)\n");
-		return;
+		fprintf(stderr, "invalid argument(s)\n%s", help_msg);
+		return 1;
 	}
 
 	if (device) {
 		if (!is_router_present(device)) {
 			fprintf(stderr, "invalid device\n");
-			return;
+			return 1;
 		}
 
 		found = dump_retimers_in_router(device);
@@ -205,10 +205,6 @@ void lstbt_r(const u8 *domain, const u8 *depth, const char *device)
 
 	if (!found)
 		printf("no retimer(s) found\n");
-}
 
-int main(void)
-{
-	lstbt_r(NULL, NULL, NULL);
 	return 0;
 }

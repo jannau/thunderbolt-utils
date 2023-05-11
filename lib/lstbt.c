@@ -4,6 +4,9 @@
 
 #include "helpers.h"
 
+#define LIBTBT_MAJ_VERSION	0
+#define LIBTBT_MIN_VERSION	1
+
 #define APPEND_HEX_CHAR		2
 
 /* Dump the vendor/device name of the router */
@@ -82,7 +85,7 @@ static bool enumerate_domain(u8 domain, const u8 *depth)
 }
 
 /* Function to be called with singular 'lstbt' (no retimers/extra arguments) */
-void lstbt(const u8 *domain, const u8 *depth, const char *device)
+int lstbt(const u8 *domain, const u8 *depth, const char *device)
 {
 	u8 domains = total_domains();
 	bool found = false;
@@ -90,22 +93,22 @@ void lstbt(const u8 *domain, const u8 *depth, const char *device)
 
 	if (!domains) {
 		fprintf(stderr, "thunderbolt can't be found\n");
-		return;
+		return 1;
 	}
 
 	if (!validate_args(domain, depth, device)) {
-		fprintf(stderr, "invalid argument(s)\n");
-		return;
+		fprintf(stderr, "invalid argument(s)\n%s", help_msg);
+		return 1;
 	}
 
 	if (device) {
 		if (!is_router_present(device)) {
 			fprintf(stderr, "invalid device\n");
-			return;
+			return 1;
 		}
 
 		dump_router(device);
-		return;
+		return 0;
 	}
 
 	if (!domain && !depth) {
@@ -125,10 +128,64 @@ void lstbt(const u8 *domain, const u8 *depth, const char *device)
 
 	if (!found)
 		printf("no device(s) found\n");
+
+	return 0;
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
-	lstbt(NULL, NULL, NULL);
-	return 0;
+	char *domain, *depth, *device, *retimer, *prev;
+	bool tree = false;
+	u8 verbose = 0;
+	char **arr;
+	u16 i = 0;
+
+	domain = depth = device = retimer = prev = NULL;
+
+	arr = ameliorate_args(argc, argv);
+
+	for (; i < MAX_LEN; i++) {
+		if (arr[i] == NULL)
+			break;
+
+		if (prev) {
+			if (prev[1] == 'D' && !domain)
+				domain = arr[i];
+			else if (prev[1] == 'd' && !depth)
+				depth = arr[i];
+			else if (prev[1] == 's' && !device)
+				device = arr[i];
+			else if (prev[1] == 'r' && !retimer)
+				retimer = arr[i];
+
+			prev = NULL;
+			continue;
+		}
+
+		if (!is_arg_valid(arr[i])) {
+			fprintf(stderr, "lstbt: invalid option -- '%s'\n", arr[i]);
+			fprintf(stderr, "%s", help_msg);
+
+			return 1;
+		}
+
+		if (arr[i][1] == 'D' || arr[i][1] == 'd' || arr[i][1] == 's' ||
+		    arr[i][1] == 'r')
+			prev = arr[i];
+		else if (arr[i][1] == 't')
+			tree = true;
+		else if (arr[i][1] == 'v')
+			verbose++;
+		else if (arr[i][1] == 'h') {
+			printf("%s", help_msg);
+			return 0;
+		}
+		else if (arr[i][1] == 'V') {
+			printf("lstbt (tbtutils) %u.%u\n", LIBTBT_MAJ_VERSION,
+			       LIBTBT_MIN_VERSION);
+			return 0;
+		}
+	}
+
+	return __main(domain, depth, device, retimer, tree, verbose);
 }
