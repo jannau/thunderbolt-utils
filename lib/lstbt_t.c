@@ -3,6 +3,8 @@
 
 #include "helpers.h"
 
+#define VERBOSE_SPACES	4
+
 /* Returns 'true' if the router is in the provided domain, 'false' otherwise */
 static inline bool is_router_domain(const char *router, u8 domain)
 {
@@ -87,7 +89,7 @@ static void dump_auth_sts(const char *router)
 
 	snprintf(path, sizeof(path), "cat %s%s/authorized", tbt_sysfs_path, router);
 	auth = strtoud(do_bash_cmd(path));
-	printf("Auth:%s ", (auth == 1) ? "Yes" : "No");
+	printf("Auth:%s\n", (auth == 1) ? "Yes" : "No");
 }
 
 /* Dump the vendor/device name of the router */
@@ -102,7 +104,19 @@ static void dump_name(const char *router)
 	snprintf(d_path, sizeof(d_path), "cat %s%s/device_name", tbt_sysfs_path, router);
 	device = do_bash_cmd(d_path);
 
-	printf("%s %s, ", vendor, device);
+	printf("%s %s ", vendor, device);
+}
+
+/* Dump the NVM version of the router */
+static void dump_nvm_version(const char *router)
+{
+	char path[MAX_LEN];
+	char *nvm;
+
+	snprintf(path, sizeof(path), "cat %s%s/nvm_version", tbt_sysfs_path, router);
+	nvm = do_bash_cmd(path);
+
+	printf("NVM %s, ", nvm);
 }
 
 /*
@@ -110,9 +124,12 @@ static void dump_name(const char *router)
  *
  * @depth: Depth is not the router's depth, rather, the depth in the topology,
  * which will be printed on the console.
+ * @verbose: 'True' if verbose output is needed, 'false' otherwise.
  */
-static void dump_router(const char *router, u8 depth)
+static void dump_router(const char *router, u8 depth, bool verbose)
 {
+	u8 i = 0;
+
 	dump_init_depth(depth);
 
 	if (!depth)
@@ -123,33 +140,41 @@ static void dump_router(const char *router, u8 depth)
 		printf("Port %u: ", downstream_port(router));
 
 	dump_vdid(router);
-
 	dump_name(router);
 
+	dump_generation(router);
+
+	if (!verbose)
+		return;
+
+	for (; i < VERBOSE_SPACES + 4 * depth; i++)
+		printf(" ");
+
 	if (!is_host_router(router)) {
+		dump_nvm_version(router);
+
 		dump_lanes(router);
 		printf("/");
 		dump_speed(router);
 	}
 
 	dump_auth_sts(router);
-
-	dump_generation(router);
 }
 
 /* Enumerate the router provided and all the routers connected to its
  * downstream ports.
  *
  * @depth: Depth is the row number of the router enumeration in the output console.
+ * @verbose: 'True' if verbose output is needed, 'false' otherwise.
  */
-static bool enumerate_dev_tree(const char *router, u8 depth)
+static bool enumerate_dev_tree(const char *router, u8 depth, bool verbose)
 {
 	u8 domain = domain_of_router(router);
 	struct list_item *item;
 	char path[MAX_LEN];
 	bool found = false;
 
-	dump_router(router, depth);
+	dump_router(router, depth, verbose);
 
 	snprintf(path, sizeof(path), "for line in $(ls %s%s); do echo $line; done",
 		 tbt_sysfs_path, router);
@@ -160,7 +185,7 @@ static bool enumerate_dev_tree(const char *router, u8 depth)
 		if (!is_router_format((char*)item->val, domain))
 			continue;
 
-		found |= enumerate_dev_tree((char*)item->val, depth + 1);
+		found |= enumerate_dev_tree((char*)item->val, depth + 1, verbose);
 	}
 
 	return true;
@@ -170,8 +195,9 @@ static bool enumerate_dev_tree(const char *router, u8 depth)
  *
  * @depth: If NULL, enumerate the complete domain, else, enumerate the routers
  * belonging to the provided depth in the given domain.
+ * @verbose: 'True' if verbose output is needed, 'false' otherwise.
  */
-static bool enumerate_domain_tree(u8 domain, const u8 *depth)
+static bool enumerate_domain_tree(u8 domain, const u8 *depth, bool verbose)
 {
 	struct list_item *router;
 	char path[MAX_LEN];
@@ -188,7 +214,8 @@ static bool enumerate_domain_tree(u8 domain, const u8 *depth)
 				continue;
 
 			if (is_router_depth((char*)router->val, strtoud(depth)))
-				found |= enumerate_dev_tree((char*)router->val, 0);
+				found |= enumerate_dev_tree((char*)router->val, 0,
+							    verbose);
 		}
 	} else {
 		for(; router != NULL; router = router->next) {
@@ -197,7 +224,8 @@ static bool enumerate_domain_tree(u8 domain, const u8 *depth)
 
 			if (is_host_router((char*)router->val) &&
 			    is_router_domain((char*)router->val, domain)) {
-				found |= enumerate_dev_tree((char*)router->val, 0);
+				found |= enumerate_dev_tree((char*)router->val, 0,
+							    verbose);
 				break;
 			}
 		}
@@ -206,8 +234,11 @@ static bool enumerate_domain_tree(u8 domain, const u8 *depth)
 	return found;
 }
 
-/* Function to be called with '-t' as the only additional argument */
-void lstbt_t(const u8 *domain, const u8 *depth, const char *device)
+/* Function to be called with '-t' as the only additional argument.
+ *
+ * @verbose: 'True' if verbose output is needed, 'false' otherwise.
+ */
+void lstbt_t(const u8 *domain, const u8 *depth, const char *device, bool verbose)
 {
 	u8 domains = total_domains();
 	bool found = false;
@@ -229,7 +260,7 @@ void lstbt_t(const u8 *domain, const u8 *depth, const char *device)
 			return;
 		}
 
-		enumerate_dev_tree(device, 0);
+		enumerate_dev_tree(device, 0, verbose);
 		return;
 	}
 
@@ -237,16 +268,16 @@ void lstbt_t(const u8 *domain, const u8 *depth, const char *device)
 		i = 0;
 
 		for (; i < domains; i++)
-			found = enumerate_domain_tree(i, NULL);
+			found = enumerate_domain_tree(i, NULL, verbose);
 	} else if (domain && !depth) {
-		found = enumerate_domain_tree(strtoud(domain), NULL);
+		found = enumerate_domain_tree(strtoud(domain), NULL, verbose);
 	} else if (!domain && depth) {
 		i = 0;
 
 		for (; i < domains; i++)
-			found = enumerate_domain_tree(i, depth);
+			found = enumerate_domain_tree(i, depth, verbose);
 	} else
-		found = enumerate_domain_tree(strtoud(domain), depth);
+		found = enumerate_domain_tree(strtoud(domain), depth, verbose);
 
 	if (!found)
 		printf("no device(s) found\n");
@@ -254,6 +285,6 @@ void lstbt_t(const u8 *domain, const u8 *depth, const char *device)
 
 int main()
 {
-	lstbt_t(NULL, NULL, NULL);
+	lstbt_t(NULL, NULL, NULL, 0);
 	return 0;
 }
