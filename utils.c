@@ -410,3 +410,19 @@ char** list_to_numbered_array(struct list_item *item)
 
 	return arr;
 }
+
+/* Returns 'true' if the given string is a number, 'false' otherwise */
+bool isnum(const char *arr)
+{
+	u64 i = 0;
+
+	if (!arr)
+		return false;
+
+	for (; i < strlen(arr); i++) {
+		if (!isdigit(arr[i]))
+			return false;
+	}
+
+	return true;
+}

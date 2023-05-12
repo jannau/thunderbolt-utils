@@ -162,7 +162,7 @@ static bool validate_args_r(const char *domain, const char *depth, const char *d
 	}
 
 	if (domain) {
-		if (strtoud(domain) >= domains)
+		if (!isnum(domain) || strtoud(domain) >= domains)
 			return false;
 	}
 

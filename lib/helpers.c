@@ -294,12 +294,12 @@ bool validate_args(const char *domain, const char *depth, const char *device)
 	}
 
 	if (domain) {
-		if (strtoud(domain) >= domains)
+		if (!isnum(domain) || strtoud(domain) >= domains)
 			return false;
 	}
 
 	if (depth) {
-		if (strtoud(depth) >= MAX_DEPTH_POSSIBLE)
+		if (!isnum(depth) || strtoud(depth) >= MAX_DEPTH_POSSIBLE)
 			return false;
 	}
 
