@@ -193,9 +193,7 @@ int lstbt_r(const u8 *domain, const u8 *depth, const char *device)
 		}
 
 		found = dump_retimers_in_router(device);
-	}
-
-	if (!domain) {
+	} else if (!domain) {
 		i = 0;
 
 		for (; i < domains; i++)
