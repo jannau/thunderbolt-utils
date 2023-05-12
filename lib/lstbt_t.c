@@ -47,51 +47,6 @@ static inline u8 downstream_port(const char *router)
 	return strtoud(get_substr(router, 2, 1));
 }
 
-/* Dump the router's lanes */
-static void dump_lanes(const char *router)
-{
-	char path[MAX_LEN];
-	char *lanes;
-
-	if (is_host_router(router)) {
-		printf("");
-		return;
-	}
-
-	snprintf(path, sizeof(path), "cat %s%s/tx_lanes", tbt_sysfs_path, router);
-	lanes = do_bash_cmd(path);
-	printf("x%s", lanes);
-}
-
-/* Dump the router's speed.
- * This doubles the 'tx_speed' represented in the sysfs.
- */
-static void dump_speed(const char *router)
-{
-	char path[MAX_LEN];
-	u8 speed;
-
-	if (is_host_router(router)) {
-		printf("");
-		return;
-	}
-
-	snprintf(path, sizeof(path), "cat %s%s/tx_speed", tbt_sysfs_path, router);
-	speed = strtoud(do_bash_cmd(path));
-	printf("%uG, ", speed * 2);
-}
-
-/* Dump the authentication status, depicting PCIe tunneling */
-static void dump_auth_sts(const char *router)
-{
-	char path[MAX_LEN];
-	bool auth;
-
-	snprintf(path, sizeof(path), "cat %s%s/authorized", tbt_sysfs_path, router);
-	auth = strtoud(do_bash_cmd(path));
-	printf("Auth:%s\n", (auth == 1) ? "Yes" : "No");
-}
-
 /* Dump the vendor/device name of the router */
 static void dump_name(const char *router)
 {
@@ -105,18 +60,6 @@ static void dump_name(const char *router)
 	device = do_bash_cmd(d_path);
 
 	printf("%s %s ", vendor, device);
-}
-
-/* Dump the NVM version of the router */
-static void dump_nvm_version(const char *router)
-{
-	char path[MAX_LEN];
-	char *nvm;
-
-	snprintf(path, sizeof(path), "cat %s%s/nvm_version", tbt_sysfs_path, router);
-	nvm = do_bash_cmd(path);
-
-	printf("NVM %s, ", nvm);
 }
 
 /*

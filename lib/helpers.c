@@ -415,6 +415,63 @@ void dump_generation(const char *router)
 	}
 }
 
+/* Dump the NVM version of the router */
+void dump_nvm_version(const char *router)
+{
+	char path[MAX_LEN];
+	char *nvm;
+
+	snprintf(path, sizeof(path), "cat %s%s/nvm_version", tbt_sysfs_path, router);
+	nvm = do_bash_cmd(path);
+
+	printf("NVM %s, ", nvm);
+}
+
+/* Dump the router's lanes */
+void dump_lanes(const char *router)
+{
+	char path[MAX_LEN];
+	char *lanes;
+
+	if (is_host_router(router)) {
+		printf("");
+		return;
+	}
+
+	snprintf(path, sizeof(path), "cat %s%s/tx_lanes", tbt_sysfs_path, router);
+	lanes = do_bash_cmd(path);
+	printf("x%s", lanes);
+}
+
+/* Dump the router's speed.
+ * This doubles the 'tx_speed' represented in the sysfs.
+ */
+void dump_speed(const char *router)
+{
+	char path[MAX_LEN];
+	u8 speed;
+
+	if (is_host_router(router)) {
+		printf("");
+		return;
+	}
+
+	snprintf(path, sizeof(path), "cat %s%s/tx_speed", tbt_sysfs_path, router);
+	speed = strtoud(do_bash_cmd(path));
+	printf("%uG, ", speed * 2);
+}
+
+/* Dump the authentication status, depicting PCIe tunneling */
+void dump_auth_sts(const char *router)
+{
+	char path[MAX_LEN];
+	bool auth;
+
+	snprintf(path, sizeof(path), "cat %s%s/authorized", tbt_sysfs_path, router);
+	auth = strtoud(do_bash_cmd(path));
+	printf("Auth:%s\n", (auth == 1) ? "Yes" : "No");
+}
+
 /* Returns the depth of the given valid router string */
 u8 depth_of_router(const char *router)
 {

@@ -46,7 +46,7 @@ static bool is_retimer_in_router(const char *retimer, const char *router)
 }
 
 /* Dumps the retimer f/w version */
-static void dump_nvm_version(const char *retimer)
+static void dump_retimer_nvm_version(const char *retimer)
 {
 	char path[MAX_LEN];
 	char *ver;
@@ -85,7 +85,7 @@ static bool dump_retimer(const char *retimer)
 
 	printf("ID %04x:%04x ", strtouh(vid), strtouh(did));
 
-	dump_nvm_version(retimer);
+	dump_retimer_nvm_version(retimer);
 
 	return true;
 }

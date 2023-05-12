@@ -1687,6 +1687,18 @@ static bool dump_router_verbose(char *router, u8 num)
 	dump_generation(router);
 
 	dump_spaces(VERBOSE_L1_SPACES);
+
+	if (!is_host_router(router)) {
+		dump_nvm_version(router);
+
+		dump_lanes(router);
+		printf("/");
+		dump_speed(router);
+	}
+
+	dump_auth_sts(router);
+
+	dump_spaces(VERBOSE_L1_SPACES);
 	printf("Domain: %u Depth: %u\n", domain_of_router(router), depth_of_router(router));
 
 	dump_spaces(VERBOSE_L1_SPACES);
