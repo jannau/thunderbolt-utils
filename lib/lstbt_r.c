@@ -153,11 +153,11 @@ static bool validate_args_r(const char *domain, const char *depth, const char *d
 			return false;
 		else {
 			for (; i < domains; i++) {
-				if (!is_router_format(device, i))
-					return false;
+				if (is_router_format(device, i))
+					return true;
 			}
 
-			return true;
+			return false;
 		}
 	}
 
