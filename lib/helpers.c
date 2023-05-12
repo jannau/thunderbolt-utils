@@ -521,6 +521,7 @@ bool is_arg_valid(const char *arg)
 	return false;
 }
 
+/* Actual 'main' function to distribute the functions */
 int __main(char *domain, char *depth, char *device, bool retimer, bool tree,
 	   u8 verbose)
 {
@@ -540,6 +541,7 @@ int __main(char *domain, char *depth, char *device, bool retimer, bool tree,
 	}
 }
 
+/* Split multiple argument strings into single ones */
 char** ameliorate_args(int argc, char **argv)
 {
 	int i, j, k;
