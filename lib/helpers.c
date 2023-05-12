@@ -11,6 +11,34 @@
  */
 #define MAX_DEPTH_POSSIBLE	8
 
+static char *tbt_debugfs_path = "/sys/kernel/debug/thunderbolt/";
+
+static struct router_config *routers_config = NULL;
+
+static char options[] = {'D', 'd', 's', 'r', 't', 'v', 'V', 'h'};
+
+char *tbt_sysfs_path = "/sys/bus/thunderbolt/devices/";
+
+char *help_msg =
+"Usage: lstbt [options]...\n"
+"List TBT/USB4 devices\n"
+"  -D domain\n"
+"      Select the domain lstbt will examine\n"
+"  -d depth\n"
+"      Select the depth (starting from 0) lstbt will consider\n"
+"  -s device\n"
+"      Select the device (like displayed in sysfs) lstbt will examine\n"
+"  -r retimer\n"
+"      Display the retimers present in the thunderbolt subsystem\n"
+"  -t tree\n"
+"      Display the thunderbolt subsystem in tree format\n"
+"  -v verbose\n"
+"      Increase the verbosity (-vv for higher)\n"
+"  -V version\n"
+"      Display the version of the library\n"
+"  -h help\n"
+"      Display the usage\n";
+
 /*
  * Returns the max. adapter num plus '1', as present in the debugfs of a
  * router.
@@ -258,6 +286,28 @@ static void debugfs_config_init(void)
 
 		i++;
 	}
+}
+
+/*
+ * Returns 'true' if the adapter is present in the router (more precisely,
+ * if the adapter's debugfs is present under the provided router), 'false'
+ * otherwise.
+ */
+bool is_adp_present(const char *router, u8 adp)
+{
+	char path[MAX_LEN];
+	char *root_cmd;
+	char *output;
+
+	snprintf(path, sizeof(path), "ls 2>/dev/null %s%s/port%u | wc -l", tbt_debugfs_path,
+		 router, adp);
+	root_cmd = switch_cmd_to_root(path);
+
+	output = do_bash_cmd(root_cmd);
+	if (strtoud(output))
+		return true;
+
+	return false;
 }
 
 /* Returns the total no. of domains in the host */
@@ -525,8 +575,7 @@ u64 get_router_register_val(const char *router, u8 cap_id, u8 vcap_id, u64 off)
  *
  * Caller needs to ensure that the arguments are valid.
  */
-u64 get_adapter_register_val(const char *router, u8 cap_id, u8 vcap_id, u8 adp,
-			     u64 off)
+u64 get_adapter_register_val(const char *router, u8 cap_id, u8 adp, u64 off)
 {
 	struct router_config *router_config;
 	struct adp_config *adp_config;

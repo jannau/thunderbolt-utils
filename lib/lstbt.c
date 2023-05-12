@@ -53,7 +53,7 @@ static bool dump_router(const char *router)
  *
  * Return 'true' if a device gets enumerated, 'false' otherwise.
  */
-static bool enumerate_domain(u8 domain, u8 *depth)
+static bool enumerate_domain(u8 domain, char *depth)
 {
 	struct list_item *router;
 	char path[MAX_LEN];
@@ -85,7 +85,7 @@ static bool enumerate_domain(u8 domain, u8 *depth)
 }
 
 /* Function to be called with singular 'lstbt' (no retimers/extra arguments) */
-int lstbt(u8 *domain, u8 *depth, char *device)
+int lstbt(char *domain, char *depth, char *device)
 {
 	u8 domains = total_domains();
 	bool found = false;

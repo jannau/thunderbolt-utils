@@ -170,7 +170,7 @@ static bool validate_args_r(char *domain, const char *depth, const char *device)
 }
 
 /* Function to be called with '-r' as the extra argument */
-int lstbt_r(u8 *domain, const u8 *depth, char *device)
+int lstbt_r(char *domain, const char *depth, char *device)
 {
 	u8 domains = total_domains();
 	bool found = false;

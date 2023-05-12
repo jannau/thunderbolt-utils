@@ -13,10 +13,9 @@
 #define PROTOCOL_DP		2
 #define PROTOCOL_HCI		3
 
-static char *tbt_sysfs_path = "/sys/bus/thunderbolt/devices/";
-static char *tbt_debugfs_path = "/sys/kernel/debug/thunderbolt/";
+extern char *tbt_sysfs_path;
 
-static struct adp_config {
+struct adp_config {
 	u8 adp;
 	char **regs;
 	char **lane_regs;
@@ -26,7 +25,7 @@ static struct adp_config {
 	char **usb4_port_regs;
 };
 
-static struct router_config {
+struct router_config {
 	char *router;
 
 	char **regs;
@@ -37,29 +36,10 @@ static struct router_config {
 
 	struct adp_config *adps_config;
 };
-static struct router_config *routers_config;
 
-static char options[] = {'D', 'd', 's', 'r', 't', 'v', 'V', 'h'};
-static char *help_msg =
-"Usage: lstbt [options]...\n"
-"List TBT/USB4 devices\n"
-"  -D domain\n"
-"      Select the domain lstbt will examine\n"
-"  -d depth\n"
-"      Select the depth (starting from 0) lstbt will consider\n"
-"  -s device\n"
-"      Select the device (like displayed in sysfs) lstbt will examine\n"
-"  -r retimer\n"
-"      Display the retimers present in the thunderbolt subsystem\n"
-"  -t tree\n"
-"      Display the thunderbolt subsystem in tree format\n"
-"  -v verbose\n"
-"      Increase the verbosity (-vv for higher)\n"
-"  -V version\n"
-"      Display the version of the library\n"
-"  -h help\n"
-"      Display the usage\n";
+extern char *help_msg;
 
+bool is_adp_present(const char *router, u8 adp);
 u8 total_domains(void);
 bool validate_args(char *domain, char *depth, const char *device);
 bool is_router_present(const char *router);
@@ -76,13 +56,12 @@ void dump_auth_sts(const char *router);
 u8 depth_of_router(const char *router);
 u8 domain_of_router(const char *router);
 u64 get_router_register_val(const char *router, u8 cap_id, u8 vcap_id, u64 off);
-u64 get_adapter_register_val(const char *router, u8 adp, u8 cap_id,
-			     u8 vcap_id, u64 off);
+u64 get_adapter_register_val(const char *router, u8 adp, u8 cap_id, u64 off);
 bool is_arg_valid(const char *arg);
-int lstbt(u8 *domain, u8 *depth, char *device);
-int lstbt_t(u8 *domain, u8 *depth, char *device, bool verbose);
-int lstbt_v(u8 *domain, u8 *depth, char *device, u8 num);
-int lstbt_r(u8 *domain, const u8 *depth, char *device);
+int lstbt(char *domain, char *depth, char *device);
+int lstbt_t(char *domain, char *depth, char *device, bool verbose);
+int lstbt_v(char *domain, char *depth, char *device, u8 num);
+int lstbt_r(char *domain, const char *depth, char *device);
 int __main(char *domain, char *depth, char *device, bool retimer, bool tree,
 	   u8 verbose);
 char** ameliorate_args(int argc, char **argv);

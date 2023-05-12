@@ -4,8 +4,6 @@
 #include <math.h>
 
 #include "helpers.h"
-#include "adapter.h"
-#include "router.h"
 
 #define VERBOSE_L1_SPACES		21
 #define VERBOSE_L2_SPACES		29
@@ -1786,7 +1784,7 @@ static bool dump_router_verbose(char *router, u8 num)
 	return true;
 }
 
-static bool dump_domain_verbose(u8 domain, u8 *depth, u8 num)
+static bool dump_domain_verbose(u8 domain, char *depth, u8 num)
 {
 	struct list_item *router;
 	char path[MAX_LEN];
@@ -1822,7 +1820,7 @@ static bool dump_domain_verbose(u8 domain, u8 *depth, u8 num)
  *
  * @num: Indicates the number of 'v' provided as the argument (caps to 'vv').
  */
-int lstbt_v(u8 *domain, u8 *depth, char *device, u8 num)
+int lstbt_v(char *domain, char *depth, char *device, u8 num)
 {
 	u8 domains = total_domains();
 	bool found = false;

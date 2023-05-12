@@ -262,7 +262,6 @@
 #define DP_OUT_ADP_LC_X2			0x2 /* 2 lanes */
 #define DP_OUT_ADP_LC_X4			0x4 /* 4 lanes */
 
-bool is_adp_present(const char *router, u8 adp);
 u64 get_adp_pvs(const char *router, u8 adp);
 u64 is_adp_plugged(const char *router, u8 adp);
 u64 is_adp_locked(const char *router, u8 adp);
