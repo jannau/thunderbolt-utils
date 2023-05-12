@@ -333,13 +333,13 @@ void be32_to_u32(u32 *data, u64 len)
 }
 
 /* Convert a string literal into its equivalent decimal format */
-u32 strtoud(const char *str)
+u32 strtoud(char *str)
 {
 	return strtoul(str, &str, 10);
 }
 
 /* Convert a string literal into its equivalent hexadecimal format */
-u32 strtouh(const char *str)
+u32 strtouh(char *str)
 {
 	return strtoul(str, &str, 16);
 }

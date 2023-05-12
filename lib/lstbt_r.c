@@ -140,7 +140,7 @@ static bool dump_retimers_in_router(const char *router)
 	return found;
 }
 
-static bool validate_args_r(const char *domain, const char *depth, const char *device)
+static bool validate_args_r(char *domain, const char *depth, const char *device)
 {
 	u8 domains = total_domains();
 	u8 i = 0;
@@ -170,7 +170,7 @@ static bool validate_args_r(const char *domain, const char *depth, const char *d
 }
 
 /* Function to be called with '-r' as the extra argument */
-int lstbt_r(const u8 *domain, const u8 *depth, const char *device)
+int lstbt_r(u8 *domain, const u8 *depth, char *device)
 {
 	u8 domains = total_domains();
 	bool found = false;

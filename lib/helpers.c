@@ -40,7 +40,7 @@ static u8 get_total_adps_debugfs(const char *router)
 	return 0;
 }
 
-static struct list_item* get_cap_vcap_start(const struct list_item *regs_list,
+static struct list_item* get_cap_vcap_start(struct list_item *regs_list,
 					    u8 cap_id, u8 vcap_id)
 {
 	u64 num_commas, col;
@@ -169,7 +169,7 @@ static void get_adps_config(const char *router, struct adp_config *config)
 	}
 }
 
-static struct router_config* get_router_config_item(const struct router_config *configs,
+static struct router_config* get_router_config_item(struct router_config *configs,
 						    const char *router)
 {
 	u64 i = 0;
@@ -182,7 +182,7 @@ static struct router_config* get_router_config_item(const struct router_config *
 	return NULL;
 }
 
-static struct adp_config* get_adp_config_item(const struct adp_config *configs,
+static struct adp_config* get_adp_config_item(struct adp_config *configs,
 					      u8 adp)
 {
 	u64 i = 0;
@@ -275,7 +275,7 @@ u8 total_domains(void)
 }
 
 /* Validate the arguments for 'lstbt', 'lstbt -t', and 'lstbt -v' */
-bool validate_args(const char *domain, const char *depth, const char *device)
+bool validate_args(char *domain, char *depth, const char *device)
 {
 	u8 domains = total_domains();
 	u8 i = 0;
@@ -521,8 +521,8 @@ bool is_arg_valid(const char *arg)
 	return false;
 }
 
-int __main(const char *domain, const char *depth, const char *device,
-	   bool retimer, bool tree, u8 verbose)
+int __main(char *domain, char *depth, char *device, bool retimer, bool tree,
+	   u8 verbose)
 {
 	if (tree) {
 		if (retimer) {

@@ -61,7 +61,7 @@ static char *help_msg =
 "      Display the usage\n";
 
 u8 total_domains(void);
-bool validate_args(const char *domain, const char *depth, const char *device);
+bool validate_args(char *domain, char *depth, const char *device);
 bool is_router_present(const char *router);
 bool is_router_format(const char *router, u8 domain);
 bool is_host_router(const char *router);
@@ -75,10 +75,10 @@ u64 get_router_register_val(const char *router, u8 cap_id, u8 vcap_id, u64 off);
 u64 get_adapter_register_val(const char *router, u8 adp, u8 cap_id,
 			     u8 vcap_id, u64 off);
 bool is_arg_valid(const char *arg);
-int lstbt(const u8 *domain, const u8 *depth, const char *device);
-int lstbt_t(const u8 *domain, const u8 *depth, const char *device, bool verbose);
-int lstbt_v(const u8 *domain, const u8 *depth, const char *device, u8 num);
-int lstbt_r(const u8 *domain, const u8 *depth, const char *device);
-int __main(const char *domain, const char *depth, const char *device,
-	   bool retimer, bool tree, u8 verbose);
+int lstbt(u8 *domain, u8 *depth, char *device);
+int lstbt_t(u8 *domain, u8 *depth, char *device, bool verbose);
+int lstbt_v(u8 *domain, u8 *depth, char *device, u8 num);
+int lstbt_r(u8 *domain, const u8 *depth, char *device);
+int __main(char *domain, char *depth, char *device, bool retimer, bool tree,
+	   u8 verbose);
 char** ameliorate_args(int argc, char **argv);

@@ -197,7 +197,7 @@ static bool enumerate_dev_tree(const char *router, u8 depth, bool verbose)
  * belonging to the provided depth in the given domain.
  * @verbose: 'True' if verbose output is needed, 'false' otherwise.
  */
-static bool enumerate_domain_tree(u8 domain, const u8 *depth, bool verbose)
+static bool enumerate_domain_tree(u8 domain, u8 *depth, bool verbose)
 {
 	struct list_item *router;
 	char path[MAX_LEN];
@@ -238,7 +238,7 @@ static bool enumerate_domain_tree(u8 domain, const u8 *depth, bool verbose)
  *
  * @verbose: 'True' if verbose output is needed, 'false' otherwise.
  */
-int lstbt_t(const u8 *domain, const u8 *depth, const char *device, bool verbose)
+int lstbt_t(u8 *domain, u8 *depth, char *device, bool verbose)
 {
 	u8 domains = total_domains();
 	bool found = false;

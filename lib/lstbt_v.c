@@ -93,7 +93,7 @@ static void dump_tbt_compatibility(const char *router)
  * Returns the router connected to the upstream port of the provided router.
  * In case of a host router, return the router itself.
  */
-static char* get_upstream_router(const char *router)
+static char* get_upstream_router(char *router)
 {
 	char *ups_router = malloc(MAX_LEN * sizeof(char));
 	char path[MAX_LEN];
@@ -169,7 +169,7 @@ static u8 get_ups_down_port(const char *router)
 
 
 /* Dump the power-states (sleep as of now) support for the router */
-static void dump_power_states_compatibility(const char *router)
+static void dump_power_states_compatibility(char *router)
 {
 	char *ups_router;
 	u64 lanes_conf;
@@ -1227,7 +1227,7 @@ static void dump_lr(u32 lr)
 		printf("HBR3(8.1GHz)\n");
 }
 
-static dump_lc(u32 lc)
+static void dump_lc(u32 lc)
 {
 	if (lc == MAX_BIT16)
 		printf("<Not accessible>\n");
@@ -1666,7 +1666,7 @@ static void dump_lane_adapters(const char *router)
 	}
 }
 
-static bool dump_router_verbose(const char *router, u8 num)
+static bool dump_router_verbose(char *router, u8 num)
 {
 	u64 topid_low, topid_high;
 	u8 max_adp, majv;
@@ -1774,7 +1774,7 @@ static bool dump_router_verbose(const char *router, u8 num)
 	return true;
 }
 
-static bool dump_domain_verbose(u8 domain, const u8 *depth, u8 num)
+static bool dump_domain_verbose(u8 domain, u8 *depth, u8 num)
 {
 	struct list_item *router;
 	char path[MAX_LEN];
@@ -1810,7 +1810,7 @@ static bool dump_domain_verbose(u8 domain, const u8 *depth, u8 num)
  *
  * @num: Indicates the number of 'v' provided as the argument (caps to 'vv').
  */
-int lstbt_v(const u8 *domain, const u8 *depth, const char *device, u8 num)
+int lstbt_v(u8 *domain, u8 *depth, char *device, u8 num)
 {
 	u8 domains = total_domains();
 	bool found = false;
