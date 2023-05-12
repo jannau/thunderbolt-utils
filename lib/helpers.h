@@ -47,10 +47,10 @@ static char *help_msg =
 "      Select the domain lstbt will examine\n"
 "  -d depth\n"
 "      Select the depth (starting from 0) lstbt will consider\n"
-"  -s device \n"
+"  -s device\n"
 "      Select the device (like displayed in sysfs) lstbt will examine\n"
-"  -r retimer <device>:<port>.<index>\n"
-"      Select the retimer (like displayed in sysfs) lstbt will examine\n"
+"  -r retimer\n"
+"      Display the retimers present in the thunderbolt subsystem\n"
 "  -t tree\n"
 "      Display the thunderbolt subsystem in tree format\n"
 "  -v verbose\n"
@@ -80,5 +80,5 @@ int lstbt_t(const u8 *domain, const u8 *depth, const char *device, bool verbose)
 int lstbt_v(const u8 *domain, const u8 *depth, const char *device, u8 num);
 int lstbt_r(const u8 *domain, const u8 *depth, const char *device);
 int __main(const char *domain, const char *depth, const char *device,
-	    const char *retimer, bool tree, u8 verbose);
+	   bool retimer, bool tree, u8 verbose);
 char** ameliorate_args(int argc, char **argv);

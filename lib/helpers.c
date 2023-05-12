@@ -522,7 +522,7 @@ bool is_arg_valid(const char *arg)
 }
 
 int __main(const char *domain, const char *depth, const char *device,
-	    const char *retimer, bool tree, u8 verbose)
+	   bool retimer, bool tree, u8 verbose)
 {
 	if (tree) {
 		if (retimer) {

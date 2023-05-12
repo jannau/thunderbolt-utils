@@ -134,13 +134,14 @@ int lstbt(const u8 *domain, const u8 *depth, const char *device)
 
 int main(int argc, char **argv)
 {
-	char *domain, *depth, *device, *retimer, *prev;
-	bool tree = false;
+	char *domain, *depth, *device, *prev;
+	bool tree, retimer;
 	u8 verbose = 0;
 	char **arr;
 	u16 i = 0;
 
-	domain = depth = device = retimer = prev = NULL;
+	domain = depth = device = prev = NULL;
+	tree = retimer = false;
 
 	arr = ameliorate_args(argc, argv);
 
@@ -155,8 +156,6 @@ int main(int argc, char **argv)
 				depth = arr[i];
 			else if (prev[1] == 's' && !device)
 				device = arr[i];
-			else if (prev[1] == 'r' && !retimer)
-				retimer = arr[i];
 
 			prev = NULL;
 			continue;
@@ -169,9 +168,10 @@ int main(int argc, char **argv)
 			return 1;
 		}
 
-		if (arr[i][1] == 'D' || arr[i][1] == 'd' || arr[i][1] == 's' ||
-		    arr[i][1] == 'r')
+		if (arr[i][1] == 'D' || arr[i][1] == 'd' || arr[i][1] == 's')
 			prev = arr[i];
+		else if (arr[i][1] == 'r')
+			retimer = true;
 		else if (arr[i][1] == 't')
 			tree = true;
 		else if (arr[i][1] == 'v')
@@ -185,6 +185,12 @@ int main(int argc, char **argv)
 			       LIBTBT_MIN_VERSION);
 			return 0;
 		}
+	}
+
+	/* If 'prev' is not 'NULL', it implies that an argument is missing */
+	if (prev) {
+		fprintf(stderr, "missing argument(s)\n%s", help_msg);
+		return 1;
 	}
 
 	return __main(domain, depth, device, retimer, tree, verbose);
