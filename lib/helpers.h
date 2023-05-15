@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ */
+
 #include <stdbool.h>
 
 #include "../utils.h"

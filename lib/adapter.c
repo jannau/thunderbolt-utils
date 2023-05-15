@@ -1,3 +1,12 @@
+/*
+ * Adapter configuration space
+ *
+ * This file provides functions to fetch the adapter config. space of a
+ * TBT/USB4 device.
+ *
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ */
+
 #include <string.h>
 #include <stdio.h>
 

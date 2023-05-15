@@ -1,3 +1,15 @@
+/*
+ * Helpers for the user-space library (lstbt)
+ *
+ * This file encompasses various helper functions, mainly for:
+ * 1. Common functionalities across the library.
+ * 2. The debugfs parameters for faster access.
+ * 3. Incorporating the primary function to distribute the functionalities
+ *    across the library.
+ *
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ */
+
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>

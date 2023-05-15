@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ */
+
 /* Basic adapter configuration space */
 #define ADP_CS_2				0x2
 #define ADP_CS_2_SUB_TYPE			BITMASK(7, 0)

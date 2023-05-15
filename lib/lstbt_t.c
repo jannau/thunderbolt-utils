@@ -1,3 +1,12 @@
+/*
+ * User-space utility for the thunderbolt/USB4 subsystem
+ *
+ * This file provides the output of the TBT/USB4 subsystem hierarchy in a
+ * tree format.
+ *
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ */
+
 #include <stdbool.h>
 #include <stdio.h>
 

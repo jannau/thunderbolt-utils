@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ */
+
 /* Router configuration registers related to USB4 */
 #define ROUTER_CS_1				0x1
 #define ROUTER_CS_1_UPS_ADP			BITMASK(13, 8)

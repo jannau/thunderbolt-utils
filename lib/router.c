@@ -1,3 +1,12 @@
+/*
+ * TBT/USB4 router configuration space
+ *
+ * This file provides functions to fetch the router config. space of a
+ * TBT/USB4 device (including the ones interoperable with TBT3 systems).
+ *
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

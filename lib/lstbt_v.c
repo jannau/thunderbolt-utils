@@ -1,3 +1,12 @@
+/*
+ * User-space utility for the thunderbolt/USB4 subsystem
+ *
+ * This file adds the verbose functionalities (lspci-like) of the TBT/USB4
+ * subsystem.
+ *
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

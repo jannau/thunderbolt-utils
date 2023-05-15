@@ -1,3 +1,14 @@
+/*
+ * User-space utility for the thunderbolt/USB4 subsystem
+ *
+ * This file encompasses the functionalities of singular lstbt (i.e.,
+ * without any extra arguments apart from domain, device, or depth).
+ * Further, this is the main file to fetch the arguments from the
+ * command line.
+ *
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ */
+
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
