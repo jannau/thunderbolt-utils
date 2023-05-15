@@ -643,7 +643,7 @@ static void dump_wake_status(const char *router)
 /* Returns the total no. of USB3 adapters */
 static u8 get_usb3_adps_num(const char *router)
 {
-	u8 i = 0, count = 0;
+	u8 i = 1, count = 0;
 	u8 max_adp;
 
 	max_adp = get_max_adp(router);
@@ -662,7 +662,7 @@ static u8 get_usb3_adps_num(const char *router)
 /* Returns the total no. of PCIe adapters */
 static u8 get_pcie_adps_num(const char *router)
 {
-	u8 i = 0, count = 0;
+	u8 i = 1, count = 0;
 	u8 max_adp;
 
 	max_adp = get_max_adp(router);
@@ -680,7 +680,7 @@ static u8 get_pcie_adps_num(const char *router)
 /* Returns the total no. of DP adapters */
 static u8 get_dp_adps_num(const char *router)
 {
-	u8 i = 0, count = 0;
+	u8 i = 1, count = 0;
 	u8 max_adp;
 
 	max_adp = get_max_adp(router);
