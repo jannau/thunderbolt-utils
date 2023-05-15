@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /*
  * Helpers for the user-space library (lstbt)
  *

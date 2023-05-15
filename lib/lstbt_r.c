@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /*
  * User-space utility for the thunderbolt/USB4 subsystem
  *

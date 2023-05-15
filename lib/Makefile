@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0
+
 # Makefile for tbtutils (lstbt)
 
 # Copyright (C) Rajat Khandelwal <rajat.khandelwal@intel.com>
