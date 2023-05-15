@@ -254,14 +254,36 @@ static u64 get_register_val(char **regs_list, u64 off)
 	return strtouh(regs_list[off] + (total_col - 10));
 }
 
+/* Returns 'true' if debugfs in mounted, 'false' otherwise */
+static bool is_debugfs_enabled(void)
+{
+	char path[MAX_LEN];
+	char *en;
+
+	snprintf(path, sizeof(path), "mount 2>/dev/null | grep debugfs | wc -l");
+	en = do_bash_cmd(path);
+
+	if (!strtoud(en))
+		return false;
+
+	return true;
+}
+
 /* Initialize the debugfs parameters for faster access */
-static void debugfs_config_init(void)
+static int debugfs_config_init(void)
 {
 	struct list_item *router_list;
 	char *root_cmd, *router;
 	u64 total_routers, i;
 	char path[MAX_LEN];
+	bool debugfs_en;
 	u8 adps;
+
+	debugfs_en = is_debugfs_enabled();
+	if (!debugfs_en) {
+		fprintf(stderr, "debugfs is not mounted\n");
+		return 1;
+	}
 
 	snprintf(path, sizeof(path), "ls %s", tbt_debugfs_path);
 	root_cmd = switch_cmd_to_root(path);
@@ -286,6 +308,8 @@ static void debugfs_config_init(void)
 
 		i++;
 	}
+
+	return 0;
 }
 
 /*
@@ -630,10 +654,12 @@ bool is_arg_valid(const char *arg)
 	return false;
 }
 
-/* Actual 'main' function to distribute the functions */
+/* Actual 'main' function to distribute the functionalities */
 int __main(char *domain, char *depth, char *device, bool retimer, bool tree,
 	   u8 verbose)
 {
+	int ret;
+
 	if (tree) {
 		if (retimer) {
 			fprintf(stderr, "invalid argument(s)\n%s", help_msg);
@@ -645,7 +671,10 @@ int __main(char *domain, char *depth, char *device, bool retimer, bool tree,
 	} else if (!tree && !verbose) {
 		return lstbt(domain, depth, device);
 	} else if (verbose) {
-		debugfs_config_init();
+		ret = debugfs_config_init();
+		if (ret)
+			return ret;
+
 		return lstbt_v(domain, depth, device, verbose);
 	}
 
