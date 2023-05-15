@@ -1,5 +1,7 @@
 # Makefile for tbtutils (lstbt)
 
+# Copyright (C) Rajat Khandelwal <rajat.khandelwal@intel.com>
+
 LIBTBT_EXEC = /usr/bin/lstbt
 
 CC = gcc
