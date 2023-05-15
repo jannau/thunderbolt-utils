@@ -93,7 +93,7 @@ static void crc32_init(void)
 	crc32_t3 = crc32_table_le[3];
 }
 
-struct list_item* list_add(struct list_item *tail, const void *val)
+struct list_item* list_add(struct list_item *tail, void *val)
 {
 	struct list_item *temp = malloc(sizeof(struct list_item));
 
@@ -110,17 +110,13 @@ struct list_item* list_add(struct list_item *tail, const void *val)
 
 int strpos(const char *str, const char *substr, u64 offset)
 {
-	char strnew[strlen(str)];
 	char *pos_str;
 	int pos;
 
-	strncpy(strnew, str + offset, strlen(str) - offset);
-	strnew[strlen(str) - offset] = '\0';
-
-	pos_str = strstr(strnew, substr);
+	pos_str = strstr(str + offset, substr);
 
 	if (pos_str)
-		pos = pos_str - (strnew + offset);
+		pos = pos_str - str;
 	else
 		pos = -1;
 
@@ -131,8 +127,13 @@ char* do_bash_cmd(const char *cmd)
 {
 	char *output = malloc(MAX_LEN * sizeof(char));
 	FILE *file = popen(cmd, "r");
+	char *ret;
 
-	fgets(output, MAX_LEN, file);
+	ret = fgets(output, MAX_LEN, file);
+	if (!ret) {
+		pclose(file);
+		return ret;
+	}
 
 	pclose(file);
 
@@ -196,9 +197,8 @@ char* switch_cmd_to_root(const char *cmd)
 
 	snprintf(cmd_as_root, sizeof(cmd_as_root), "sudo bash -c \"%s\"", cmd);
 
-	strncpy(cmd_to_return, cmd_as_root, sizeof(cmd_as_root));
-	cmd_to_return[sizeof(cmd_as_root)] = '\0';
-	return cmd_to_return;
+	strncpy(cmd_to_return, cmd_as_root, MAX_LEN);
+	return trim_white_space(cmd_to_return);
 }
 
 u64 get_page_aligned_addr(u64 off)
@@ -334,4 +334,99 @@ void be32_to_u32(u32 *data, u64 len)
 		*data = be32toh(*data);
 		++data;
 	}
+}
+
+/* Convert a string literal into its equivalent decimal format */
+u32 strtoud(char *str)
+{
+	return strtoul(str, &str, 10);
+}
+
+/* Convert a string literal into its equivalent hexadecimal format */
+u32 strtouh(char *str)
+{
+	return strtoul(str, &str, 16);
+}
+
+/* Returns a substring from a string 'str', starting from 'pos' with length 'len' */
+char* get_substr(const char *str, u64 pos, u64 len)
+{
+	char *substr = malloc((len + 1)* sizeof(char));
+	u64 index = 0;
+	u64 i = pos;
+
+	for (; i < pos + len; i++)
+		substr[index++] = str[i];
+
+	substr[index] = '\0';
+	return substr;
+}
+
+/* Returns the total number of items in the list */
+u64 get_total_list_items(const struct list_item *head)
+{
+	u64 num = 0;
+
+	for (; head; head = head->next)
+		num++;
+
+	return num;
+}
+
+/*
+ * Returns 'true' if an item of type 'char*' is present in the provided list,
+ * 'false' otherwise.
+ */
+bool is_present_in_list(const struct list_item *head, const char *str)
+{
+	for (; head; head = head->next) {
+		if (!strcmp((char*)head->val, str))
+			return true;
+	}
+
+	return false;
+}
+
+/*
+ * Convert a list of member type 'struct list_item' into an array of
+ * character pointers to enable random access via indexes.
+ */
+char** list_to_numbered_array(struct list_item *item)
+{
+	u64 num, i, len;
+	char **arr;
+
+	if (!item)
+		return NULL;
+
+	num = get_total_list_items(item);
+	arr = malloc(num * sizeof(char*));
+
+	i = 0;
+	for (; i < num; i++) {
+		len = strlen((char*)item->val);
+		arr[i] = malloc(len * sizeof(char));
+
+		strcpy(arr[i], (char*)item->val);
+
+		item = item->next;
+	}
+
+	return arr;
+}
+
+/* Returns 'true' if the given string is a number, 'false' otherwise */
+bool isnum(const char *arr)
+{
+	u64 i = 0;
+
+	if (!arr)
+		return false;
+
+	for (; i < strlen(arr); i++) {
+		if (!isdigit(arr[i]))
+			return false;
+	}
+
+	return true;
 }

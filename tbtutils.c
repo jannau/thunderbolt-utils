@@ -6,7 +6,7 @@
 
 #include "tb_cfg.h"
 
-#define TRIM_NUM_PATH	13
+#define TRIM_NUM_PATH		13
 
 static char *tbt_sysfs_path = "/sys/bus/thunderbolt/devices/";
 
