@@ -481,10 +481,12 @@ void dump_nvm_version(const char *router)
 void dump_lanes(const char *router)
 {
 	char path[MAX_LEN];
-	char *lanes;
+	char *lanes, *str;
+
+	str = NULL;
 
 	if (is_host_router(router)) {
-		printf("");
+		sprintf(str, "%s", "");
 		return;
 	}
 
@@ -499,10 +501,11 @@ void dump_lanes(const char *router)
 void dump_speed(const char *router)
 {
 	char path[MAX_LEN];
+	char *str = NULL;
 	u8 speed;
 
 	if (is_host_router(router)) {
-		printf("");
+		sprintf(str, "%s", "");
 		return;
 	}
 
@@ -645,12 +648,15 @@ int __main(char *domain, char *depth, char *device, bool retimer, bool tree,
 		debugfs_config_init();
 		return lstbt_v(domain, depth, device, verbose);
 	}
+
+	return 0;
 }
 
 /* Split multiple argument strings into single ones */
 char** ameliorate_args(int argc, char **argv)
 {
-	int i, j, k;
+	int i, j;
+	size_t k;
 	char **arr;
 
 	arr = malloc(MAX_LEN * sizeof(char*));
@@ -668,7 +674,7 @@ char** ameliorate_args(int argc, char **argv)
 
 				snprintf(str, sizeof(str), "-%c", argv[i][k]);
 
-				arr[j] = malloc(2 * sizeof(char));
+				arr[j] = malloc(3 * sizeof(char));
 				strcpy(arr[j++], str);
 			}
 		} else

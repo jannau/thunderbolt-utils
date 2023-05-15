@@ -135,7 +135,7 @@ u64 is_router_ready(const char *router);
 u64 is_tunneling_ready(const char *router);
 
 /* Below functions are applicable only for TBT3 routers */
-u16 get_tbt3_hot_events_disabled(const char *router, u8 port);
+u16 is_tbt3_hot_events_disabled_lane(const char *router);
 u16 get_tbt3_com_reg_dwords(const char *router);
 u32 get_tbt3_usb4_reg_dwords(const char *router);
 u16 get_tbt3_usb4_ports(const char *router);

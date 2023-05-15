@@ -127,8 +127,13 @@ char* do_bash_cmd(const char *cmd)
 {
 	char *output = malloc(MAX_LEN * sizeof(char));
 	FILE *file = popen(cmd, "r");
+	char *ret;
 
-	fgets(output, MAX_LEN, file);
+	ret = fgets(output, MAX_LEN, file);
+	if (!ret) {
+		pclose(file);
+		return ret;
+	}
 
 	pclose(file);
 
@@ -192,9 +197,8 @@ char* switch_cmd_to_root(const char *cmd)
 
 	snprintf(cmd_as_root, sizeof(cmd_as_root), "sudo bash -c \"%s\"", cmd);
 
-	strncpy(cmd_to_return, cmd_as_root, sizeof(cmd_as_root));
-	cmd_to_return[sizeof(cmd_as_root)] = '\0';
-	return cmd_to_return;
+	strncpy(cmd_to_return, cmd_as_root, MAX_LEN);
+	return trim_white_space(cmd_to_return);
 }
 
 u64 get_page_aligned_addr(u64 off)

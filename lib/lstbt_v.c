@@ -133,6 +133,8 @@ static u64 map_lvl_to_bitmask(u8 depth)
 		return LEVEL_5;
 	else if (depth == 6)
 		return LEVEL_6;
+
+	return COMPLEMENT_BIT64;
 }
 
 /*
@@ -1245,6 +1247,8 @@ static double dp_ebw_to_bw(u16 ebw, u16 gr)
 		return 0.5 * ebw;
 	else if (gr == DP_IN_BW_GR_FULL)
 		return ebw;
+
+	return -1;
 }
 
 /*
@@ -1556,8 +1560,7 @@ static void dump_lane_adapters(const char *router)
 
 		majv = (usb4v & USB4V_MAJOR_VER) >> USB4V_MAJOR_VER_SHIFT;
 		if (!majv) {
-			dh = get_tbt3_hot_events_disabled(router,
-							  get_usb4_port_num(i));
+			dh = is_tbt3_hot_events_disabled_lane(router);
 			if (dh == MAX_BIT8)
 				printf("Hot events: <Not accessible>\n");
 			else if (dh)

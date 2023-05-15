@@ -361,11 +361,13 @@ u64 is_tunneling_ready(const char *router)
 }
 
 /*
- * Returns a positive integer if hot events are disabled on the port '0'
- * otherwise.
+ * Returns a positive integer if hot events are disabled on the lane adapters
+ * of the TBT3 router, '0' otherwise.
  * If config. space is inaccessible, return a value of 256.
+ *
+ * Valid only for TBT3 routers.
  */
-u16 get_tbt3_hot_events_disabled(const char *router, u8 port)
+u16 is_tbt3_hot_events_disabled_lane(const char *router)
 {
 	u64 val;
 
