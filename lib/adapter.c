@@ -1682,20 +1682,3 @@ u64 is_dp_in_dptx_req(const char *router, u8 adp)
 
 	return val & ADP_DP_CS_8_DR;
 }
-
-/*int main(void)
-{
-	char *router = "0-1";
-	printf("%x\n", get_adapter_register_val(router, 0, 0, 1, ADP_CS_2));
-	printf("%d\n", is_adp_present(router, 0));
-	printf("%x\n", get_adp_pvs(router, 11));
-	printf("%d\n", are_hot_events_disabled(router, 11));
-	printf("%x\n", get_sup_link_speeds(router, 1));
-	printf("%x\n", get_sup_link_widths(router, 1));
-	printf("%x\n", get_usb4_cable_version(router, 1));
-	printf("is:%x\n", is_usb4_tbt3_compatible_mode(router, 1));
-	printf("usb3:%x\n", get_usb3_max_sup_lr(router, 17));
-	printf("pcie:%x\n", is_pcie_tx_ei(router, 11));
-	printf("dp:%x\n", is_dp_aux_en(router, 13));
-	return 0;
-}*/

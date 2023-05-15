@@ -587,34 +587,3 @@ u8 get_usb4_port_num(u8 lane_adp)
 {
 	return (lane_adp - 1) / 2;
 }
-
-/*int main(void)
-{
-	u64 low = get_top_id_low("0-30701");
-	if (low == MAX_BIT32) {
-		fprintf(stderr, "Not accessible\n");
-		return 0;
-	}
-	printf("low:%llx\n", low);
-	u64 high = get_top_id_high("0-30701");
-	if (high == MAX_BIT32) {
-		fprintf(stderr, "Not accessible\n");
-                return 0;
-        }
-	printf("high:%llx\n", high);
-	printf("topid:%llx\n", (high << 23) | low);
-	printf("routestring:%s\n", get_route_string((high << 23) | low));
-
-	bool a = is_router_configured("0-30701");
-	printf("conf:%d\n", a);
-
-	printf("%x\n", get_notification_timeout("0-30701"));
-
-	char *router = "0-30701";
-	printf("%x\n", get_cmuv(router));
-	printf("%x\n", get_usb4v(router));
-	printf("%x\n", is_wake_enabled(router, 0));
-	printf("%x\n", is_wake_enabled(router, 2));
-	printf("%x\n", is_tunneling_on(router, 1));
-	printf("%x\n", get_tbt3_wake_events_en(router, 0));
-}*/
