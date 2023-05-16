@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0
+
+// Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+
 #include "tb_cfg.h"
 
 char* trim_host_pci_id(u8 domain);
