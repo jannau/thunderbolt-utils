@@ -57,17 +57,17 @@
 
 #define RX_PROD_CONS_INDEX		0x8008
 #define RX_PROD_INDEX			BITMASK(31, 16)
-#define RX_PROD_INDEX_SHIFT(x)		x << 16
+#define RX_PROD_INDEX_SHIFT		16
 #define RX_CONS_INDEX			BITMASK(15, 0)
 
 #define RX_RING_BUF_SIZE		0x800c
 #define RX_RING_SIZE			BITMASK(15, 0)
 #define RX_RING_DATA_BUF_SIZE		BITMASK(27, 16)
-#define RX_RING_BUF_SIZE_SHIFT(x)	x << 16
+#define RX_RING_BUF_SIZE_SHIFT		16
 
 #define RX_RING_CTRL			0x29800
 #define RX_TX_E2E_HOP_ID		BITMASK(22, 12)
-#define RX_TX_E2E_HOP_ID_SHIFT(x)	x << 12
+#define RX_TX_E2E_HOP_ID_SHIFT		12
 #define RX_E2E_FLOW_EN			BIT(28)
 #define RX_NS				BIT(29)
 #define RX_RAW				BIT(30)
@@ -76,4 +76,4 @@
 #define RX_RING_PDF			0x29804
 #define RX_EOF_PDF			BITMASK(15, 0)
 #define RX_SOF_PDF			BITMASK(31, 16)
-#define RX_SOF_PDF_MASK(x)		x << 16
+#define RX_SOF_PDF_MASK			16

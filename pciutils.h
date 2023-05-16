@@ -9,8 +9,8 @@
 #define PCI_CMD_MEM		0x2
 #define PCI_CMD_MASTER		0x4
 
-static char *pci_drv_sysfs_path = "/sys/bus/pci/drivers/";
-static char *pci_dev_sysfs_path = "/sys/bus/pci/devices/";
+extern char *pci_drv_sysfs_path;
+extern char *pci_dev_sysfs_path;
 
 struct vdid {
 	char vendor_id[MAX_LEN];
@@ -21,3 +21,4 @@ void do_pci_rescan(void);
 void remove_pci_dev(const char *pci_id);
 struct vdid* get_vdid(const char *pci_id);
 void allow_bus_master(const char *pci_id);
+u64 total_grp_modules(const char *pci_id);

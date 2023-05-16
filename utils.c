@@ -34,7 +34,7 @@ static bool is_arch_x86(void)
 	char *bash_result;
 
 	bash_result = do_bash_cmd(path);
-	return strtoul(bash_result, &bash_result, 10);
+	return strtoud(bash_result);
 }
 
 static bool is_cpu_le(void)
@@ -43,7 +43,7 @@ static bool is_cpu_le(void)
 	char *bash_result;
 
 	bash_result = do_bash_cmd(path);
-	return strtoul(bash_result, &bash_result, 10);
+	return strtoud(bash_result);
 }
 
 static u32 do_crc(u32 crc, u32 x)

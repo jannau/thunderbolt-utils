@@ -11,10 +11,11 @@
 
 #define TRIM_IOMMU_NUM_PATH	13
 
+/* Binds the VFIO module to the provided PCI device */
 static void bind_vfio_module(const char *pci_id, const struct vdid *vdid)
 {
 	char dev_path[MAX_LEN];
-	char drv_path[MAX_LEN];
+	char drv_path[3 * MAX_LEN];
 
 	snprintf(dev_path, sizeof(dev_path), "echo %s > %s%s/driver/unbind",
 		 pci_id, pci_dev_sysfs_path, pci_id);
@@ -25,10 +26,11 @@ static void bind_vfio_module(const char *pci_id, const struct vdid *vdid)
 	do_bash_cmd(switch_cmd_to_root(drv_path));
 }
 
+/* Unbinds the VFIO module from the provided PCI device and removes it */
 static void unbind_vfio_module(const char *pci_id, const struct vdid *vdid)
 {
 	char dev_path[MAX_LEN];
-	char drv_path[MAX_LEN];
+	char drv_path[3 * MAX_LEN];
 
 	snprintf(dev_path, sizeof(dev_path), "echo %s > %s%s/driver/unbind",
 		 pci_id, pci_dev_sysfs_path, pci_id);
@@ -41,6 +43,7 @@ static void unbind_vfio_module(const char *pci_id, const struct vdid *vdid)
 	remove_pci_dev(pci_id);
 }
 
+/* Returns the IOMMU group number of the provided PCI device */
 static char* find_iommu_grp(const char *pci_id)
 {
 	char *iommu_grp = malloc(MAX_LEN * sizeof(char));
@@ -57,8 +60,7 @@ static char* find_iommu_grp(const char *pci_id)
 	len_str = strlen(bash_result + pos + TRIM_IOMMU_NUM_PATH);
 
 	strncpy(iommu_grp, bash_result + pos + TRIM_IOMMU_NUM_PATH, len_str);
-	iommu_grp[len_str] = '\0';
-	return iommu_grp;
+	return trim_white_space(iommu_grp);
 }
 
 static bool is_vfio_bar_index(u8 index)
@@ -81,6 +83,7 @@ static bool is_region_mmap(struct vfio_region_info *reg_info)
 	return reg_info->flags & VFIO_REGION_INFO_FLAG_MMAP;
 }
 
+/* Returns one dword from the host interface config. space at the given offset */
 static u32 read_host_mem(const struct vfio_hlvl_params *params, u64 off)
 {
 	struct vfio_region_info *reg_info = find_bar_for_off(params->bar_regions, off);
@@ -109,7 +112,8 @@ static u32 read_host_mem(const struct vfio_hlvl_params *params, u64 off)
 	return mem;
 }
 
-static struct vfio_iommu_type1_info* get_iommu_info(int container)
+/* Not usable for now */
+/*static struct vfio_iommu_type1_info* get_iommu_info(int container)
 {
 	struct vfio_iommu_type1_info *info = malloc(sizeof(struct vfio_iommu_type1_info));
 
@@ -118,7 +122,7 @@ static struct vfio_iommu_type1_info* get_iommu_info(int container)
 	ioctl(container, VFIO_IOMMU_GET_INFO, info);
 
 	return info;
-}
+}*/
 
 bool check_vfio_module(void)
 {
@@ -127,30 +131,46 @@ bool check_vfio_module(void)
 
 	present = do_bash_cmd(cmd);
 
-	return !strtoul(present, &present, 10);
+	return !strtoud(present);
 }
 
-void bind_grp_modules(const char *pci_id, bool bind)
+/*
+ * Binds VFIO to all the modules present in the IOMMU group of the given PCI device and
+ * returns the list of all the such modules.
+ */
+char** bind_grp_modules(const char *pci_id)
 {
 	struct list_item *list_modules;
+	char **dev_list = NULL;
 	char path[MAX_LEN];
+	u64 i = 0;
 
 	snprintf(path, sizeof(path), "for line in $(ls %s%s/iommu_group/devices); do echo $line; done",
 		 pci_dev_sysfs_path, pci_id);
 
 	list_modules = do_bash_cmd_list(path);
+	dev_list = malloc(get_total_list_items(list_modules) * sizeof(char*));
 
 	for (; list_modules != NULL; list_modules = list_modules->next) {
-		if (bind)
-			bind_vfio_module((char*)list_modules->val, get_vdid(list_modules->val));
-		else
-			unbind_vfio_module((char*)list_modules->val, get_vdid(list_modules->val));
+		dev_list[i++] = (char*)list_modules->val;
+		bind_vfio_module((char*)list_modules->val, get_vdid(list_modules->val));
 	}
 
-	if (!bind)
-		do_pci_rescan();
+	return dev_list;
 }
 
+/* Unbinds VFIO to all the PCI modules present in the 'dev_list' provided */
+void unbind_grp_modules(char **dev_list, u64 num)
+{
+	u64 i = 0;
+
+	for (; i < num; i++)
+		unbind_vfio_module(dev_list[i], get_vdid(dev_list[i]));
+
+	do_pci_rescan();
+}
+
+/* Initialize the VFIO for the given PCI ID */
 struct vfio_hlvl_params* vfio_dev_init(const char *pci_id)
 {
 	struct vfio_group_status group_status = { .argsz = sizeof(group_status) };
@@ -162,12 +182,12 @@ struct vfio_hlvl_params* vfio_dev_init(const char *pci_id)
 
 	container = open("/dev/vfio/vfio", O_RDWR);
 	if (ioctl(container, VFIO_GET_API_VERSION) != VFIO_API_VERSION) {
-		printf("unknown API version\n");
+		fprintf(stderr, "unknown API version\n");
 		return NULL;
 	}
 
 	if (!ioctl(container, VFIO_CHECK_EXTENSION, VFIO_TYPE1_IOMMU)) {
-		printf("type-1 iommu not supported\n");
+		fprintf(stderr, "type-1 iommu not supported\n");
 		return NULL;
 	}
 
@@ -178,7 +198,7 @@ struct vfio_hlvl_params* vfio_dev_init(const char *pci_id)
 	ioctl(group, VFIO_GROUP_GET_STATUS, &group_status);
 
 	if (!(group_status.flags & VFIO_GROUP_FLAGS_VIABLE)) {
-		printf("group not viable\n");
+		fprintf(stderr, "group not viable\n");
 		return NULL;
 	}
 
@@ -198,7 +218,8 @@ struct vfio_hlvl_params* vfio_dev_init(const char *pci_id)
 	return params;
 }
 
-void get_dev_bar_regions(struct vfio_hlvl_params *params, const char *pci_id)
+/* Returns the BAR regions of the given PCI device */
+void get_dev_bar_regions(struct vfio_hlvl_params *params)
 {
 	struct list_item *temp = NULL;
 	u8 i = 0;
@@ -226,7 +247,8 @@ void get_dev_bar_regions(struct vfio_hlvl_params *params, const char *pci_id)
 	}
 }
 
-void get_dev_pci_cfg_region(struct vfio_hlvl_params *params, const char *pci_id)
+/* Returns the PCI config. space region of the given PCI device */
+void get_dev_pci_cfg_region(struct vfio_hlvl_params *params)
 {
 	u8 i = 0;
 
@@ -249,7 +271,8 @@ void get_dev_pci_cfg_region(struct vfio_hlvl_params *params, const char *pci_id)
 	}
 }
 
-struct vfio_region_info* find_bar_for_off(const struct list_item *bar_regions, u64 off)
+/* Returns the BAR region number for the given offset */
+struct vfio_region_info* find_bar_for_off(struct list_item *bar_regions, u64 off)
 {
 	struct list_item *temp = bar_regions;
 	struct vfio_region_info reg_info;
@@ -268,7 +291,7 @@ struct vfio_region_info* find_bar_for_off(const struct list_item *bar_regions, u
 	}
 
 	if (!temp) {
-		printf("offset:0x%" PRIx64 " out of bounds\n", off);
+		fprintf(stderr, "offset:0x%" PRIx64 " out of bounds\n", off);
 		return NULL;
 	}
 
@@ -290,6 +313,7 @@ u8 read_host_mem_byte(const struct vfio_hlvl_params *params, u64 off)
 	return read_host_mem(params, off) & BITMASK(7, 0);
 }
 
+/* Writes a dword to the host interface config. space at the given offset */
 void write_host_mem(const struct vfio_hlvl_params *params, u64 off, u32 value)
 {
 	struct vfio_region_info *reg_info = find_bar_for_off(params->bar_regions, off);
@@ -314,12 +338,18 @@ void write_host_mem(const struct vfio_hlvl_params *params, u64 off, u32 value)
 	unmap_user_mapped_va(user_va, reg_info->size);
 }
 
+/*
+ * Prepare a VFIO DMA mapping for the given container.
+ *
+ * Note: Since all the storage classes for thunderbolt hardware are less than page
+ * size and aligment requirement for the mapping is in multiples of page size, prepare
+ * the mapping for a whole page, and not for a specific size for ease.
+ */
 struct vfio_iommu_type1_dma_map* iommu_map_va(int container, u8 op_flags, u8 index)
 {
 	struct vfio_iommu_type1_info info = { .argsz = sizeof(info) };
 	struct vfio_iommu_type1_dma_map *dma_map;
 	u64 pgsize_sup;
-	int ret;
 
 	dma_map = malloc(sizeof(struct vfio_iommu_type1_dma_map));
 	dma_map->argsz = sizeof(struct vfio_iommu_type1_dma_map);
@@ -328,13 +358,13 @@ struct vfio_iommu_type1_dma_map* iommu_map_va(int container, u8 op_flags, u8 ind
 	pgsize_sup = get_size_least_set(info.iova_pgsizes);
 
 	if (op_flags == READ_FLAG) {
-		dma_map->vaddr = get_user_mapped_read_va(-1, 0, pgsize_sup);
+		dma_map->vaddr = (u64)get_user_mapped_read_va(-1, 0, pgsize_sup);
 		dma_map->flags = VFIO_DMA_MAP_FLAG_READ;
 	} else if (op_flags == WRITE_FLAG) {
-		dma_map->vaddr = get_user_mapped_write_va(-1, 0, pgsize_sup);
+		dma_map->vaddr = (u64)get_user_mapped_write_va(-1, 0, pgsize_sup);
 		dma_map->flags = VFIO_DMA_MAP_FLAG_WRITE;
 	} else if (op_flags == RDWR_FLAG) {
-		dma_map->vaddr = get_user_mapped_rw_va(-1, 0, pgsize_sup);
+		dma_map->vaddr = (u64)get_user_mapped_rw_va(-1, 0, pgsize_sup);
 		dma_map->flags = VFIO_DMA_MAP_FLAG_READ | VFIO_DMA_MAP_FLAG_WRITE;
 	}
 
@@ -346,6 +376,7 @@ struct vfio_iommu_type1_dma_map* iommu_map_va(int container, u8 op_flags, u8 ind
 	return dma_map;
 }
 
+/* Destroy the DMA mapping created */
 void iommu_unmap_va(int container, const struct vfio_iommu_type1_dma_map *dma_map)
 {
 	struct vfio_iommu_type1_dma_unmap dma_unmap = { .argsz = sizeof(dma_unmap) };

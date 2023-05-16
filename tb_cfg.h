@@ -75,8 +75,3 @@ struct ring_desc {
 	u32 flags:12;
 	u32 rsvd;
 };
-
-struct rx_pair {
-	struct ring_desc *desc;
-	struct write_req *req;
-};
