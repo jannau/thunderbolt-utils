@@ -1,3 +1,13 @@
+// SPDX-License-Identifier: GPL-3.0
+/*
+ * General utilities
+ *
+ * This file comprises helpers to aid with generic utilities throughout
+ * the software.
+ *
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ */
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>

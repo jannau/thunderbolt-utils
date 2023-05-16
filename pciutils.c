@@ -1,3 +1,13 @@
+// SPDX-License-Identifier: GPL-3.0
+/*
+ * PCI utilities
+ *
+ * This file provides functionalities to perform PCI-related operations
+ * on the thunderbolt host IP including bus mastering, addition/removal, etc.
+ *
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ */
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

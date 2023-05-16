@@ -1,3 +1,16 @@
+// SPDX-License-Identifier: GPL-3.0
+/*
+ * Thunderbolt utilities
+ *
+ * This file provides various functionalities for the user on the thunderbolt IP,
+ * including:
+ * 1. Thunderbolt h/w initialization
+ * 2. Host interface config. space access
+ * 3. Dynamic allocation and mapping of DMA control packets as and when required
+ *
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ */
+
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>

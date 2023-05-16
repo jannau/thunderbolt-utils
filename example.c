@@ -1,3 +1,12 @@
+// SPDX-License-Identifier: GPL-3.0
+/*
+ * Example to demonstrate the transmission of DMA packets to a router.
+ * This sample code transmits a read control packet to read 1 dword from the host
+ * router of domain 0.
+ *
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ */
+
 #include <stdio.h>
 
 #include "tbtutils.h"

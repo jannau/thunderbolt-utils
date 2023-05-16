@@ -1,3 +1,15 @@
+// SPDX-License-Identifier: GPL-3.0
+/*
+ * Abstractions for VFIO-related functionalities
+ *
+ * This file provides helper functions to work with the VFIO parameters
+ * included in '<linux/vfio.h>'.
+ * Much of the work is handled in this file including initialization,
+ * access (reads/writes), etc.
+ *
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ */
+
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
