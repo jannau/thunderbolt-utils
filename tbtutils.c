@@ -185,8 +185,10 @@ static int tbt_wait_for_pwr(const char *pci_id)
 		bash_op[8] = '\0';
 
 		val = strtoul(bash_op, &bash_op, 16);
-		if (val & VS_FW_RDY)
+		if (val & VS_FW_RDY) {
+			printf("FW_RDY bit is set\n");
 			return 0;
+		}
 
 		msleep(5);
 	}
@@ -271,6 +273,7 @@ void allocate_tx_desc(const struct vfio_hlvl_params *params)
 	struct vfio_iommu_type1_dma_map *dma_map;
 	u8 i = 0;
 
+	printf("allocating and mapping %u DMA TX descriptors\n", TX_SIZE);
 	for (; i < TX_SIZE; i++) {
 		dma_map = iommu_map_va(params->container, RDWR_FLAG, page_index++);
 
@@ -285,6 +288,7 @@ void allocate_rx_desc(const struct vfio_hlvl_params *params)
 	struct vfio_iommu_type1_dma_map *dma_map;
 	u8 i = 0;
 
+	printf("allocating and mapping %u DMA RX descriptors\n", RX_SIZE);
 	for (; i < RX_SIZE; i++) {
 		dma_map = iommu_map_va(params->container, RDWR_FLAG, page_index++);
 
@@ -301,6 +305,8 @@ void allocate_rx_desc(const struct vfio_hlvl_params *params)
 void init_host_tx(const struct vfio_hlvl_params *params)
 {
 	u32 val = 0;
+
+	printf("initializing host-interface config. for TX\n");
 
 	write_host_mem(params, TX_BASE_LOW, tx_desc[0].iova & BITMASK(31,0));
 	write_host_mem(params, TX_BASE_HIGH, (tx_desc[0].iova & BITMASK(63, 32)) >> 32);
@@ -320,6 +326,8 @@ void init_host_tx(const struct vfio_hlvl_params *params)
 void init_host_rx(const struct vfio_hlvl_params *params)
 {
 	u32 val = 0;
+
+	printf("initializing host-interface config. for RX\n");
 
 	write_host_mem(params, RX_BASE_LOW, rx_desc[0].iova & BITMASK(31, 0));
 	write_host_mem(params, RX_BASE_HIGH, (rx_desc[0].iova & BITMASK(63, 32)) >> 32);
