@@ -361,6 +361,11 @@ int request_router_cfg(const char *pci_id, const struct vfio_hlvl_params *params
 	tx_start(params);
 	usleep(CTRL_TIMEOUT);
 
+	/*
+	 * Host interface layer of the router will set the 'TX_DESC_DONE' flag in the
+	 * TX descriptor stored in the host memory if successful transmission has
+	 * occured. Hence, verify it via reading the flag.
+	 */
 	if (!(tx_desc->flags & TX_DESC_DONE)) {
 		fprintf(stderr, "transport layer failed to receive the control packet\n");
 		return 1;
