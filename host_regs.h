@@ -80,4 +80,4 @@
 #define RX_RING_PDF			0x29804
 #define RX_EOF_PDF			BITMASK(15, 0)
 #define RX_SOF_PDF			BITMASK(31, 16)
-#define RX_SOF_PDF_MASK			16
+#define RX_SOF_PDF_MASK_SHIFT		16
