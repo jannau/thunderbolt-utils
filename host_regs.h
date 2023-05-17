@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0
+
+// Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+
 #include "utils.h"
 
 /* Indication of the TBT HW loading the f/w from the IMR */

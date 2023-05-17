@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0
+
+// Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+
 #include "pciutils.h"
 
 #define ICM_DRV_READY	0x3
