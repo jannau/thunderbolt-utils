@@ -9,6 +9,7 @@
  *    across the library.
  *
  * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ * Copyright (C) 2023 Intel Corporation
  */
 
 #include <stdbool.h>

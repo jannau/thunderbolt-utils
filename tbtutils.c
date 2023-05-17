@@ -9,6 +9,7 @@
  * 3. Dynamic allocation and mapping of DMA control packets as and when required
  *
  * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ * Copyright (C) 2023 Intel Corporation
  */
 
 #include <unistd.h>

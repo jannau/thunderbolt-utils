@@ -6,6 +6,7 @@
  * TBT/USB4 device (including the ones interoperable with TBT3 systems).
  *
  * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ * Copyright (C) 2023 Intel Corporation
  */
 
 #include <stdlib.h>

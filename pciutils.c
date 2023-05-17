@@ -6,6 +6,7 @@
  * on the thunderbolt host IP including bus mastering, addition/removal, etc.
  *
  * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ * Copyright (C) 2023 Intel Corporation
  */
 
 #include <string.h>

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 
-// Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+/*
+ * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
+ * Copyright (C) 2023 Intel Corporation
+ */
 
 #include "passthrough.h"
 
