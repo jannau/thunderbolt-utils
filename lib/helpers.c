@@ -210,12 +210,35 @@ static void get_adps_config(const char *router, struct adp_config *config)
 	}
 }
 
+static u64 get_total_routers_in_domain(u8 domain)
+{
+	struct list_item *router;
+	char path[MAX_LEN];
+	u64 num = 0;
+
+	snprintf(path, sizeof(path), "for line in $(ls %s); do echo $line; done",
+		 tbt_sysfs_path);
+	router = do_bash_cmd_list(path);
+
+	for (; router; router = router->next) {
+		if (is_router_format((char*)router->val, domain))
+			num++;
+	}
+
+	return num;
+}
+
 static struct router_config* get_router_config_item(struct router_config *configs,
 						    const char *router)
 {
+	u64 domains, total_routers = 0;
 	u64 i = 0;
 
-	for (; ; i++) {
+	domains = total_domains();
+	for (; i < domains; i++)
+		total_routers += get_total_routers_in_domain(i);
+
+	for (i = 0; i < total_routers; i++) {
 		if (!strcmp(configs[i].router, router))
 			return &configs[i];
 	}
@@ -223,12 +246,14 @@ static struct router_config* get_router_config_item(struct router_config *config
 	return NULL;
 }
 
-static struct adp_config* get_adp_config_item(struct adp_config *configs,
-					      u8 adp)
+static struct adp_config* get_adp_config_item(const char *router,
+					      struct adp_config *configs, u8 adp)
 {
-	u64 i = 0;
+	u64 i = 0, total_adps;
 
-	for (; ; i++) {
+	total_adps = get_total_adps_debugfs(router);
+
+	for (; i < total_adps; i++) {
 		if (configs[i].adp == adp)
 			return &configs[i];
 	}
@@ -264,6 +289,7 @@ static u64 get_register_val(char **regs_list, u64 off)
 		return COMPLEMENT_BIT64;
 
 	total_col = strlen(regs_list[off]);
+
 	return strtouh(regs_list[off] + (total_col - 10));
 }
 
@@ -625,7 +651,7 @@ u64 get_adapter_register_val(const char *router, u8 cap_id, u8 adp, u64 off)
 	if (!router_config)
 		return COMPLEMENT_BIT64;
 
-	adp_config = get_adp_config_item(router_config->adps_config, adp);
+	adp_config = get_adp_config_item(router, router_config->adps_config, adp);
 	if (!adp_config)
 		return COMPLEMENT_BIT64;
 
