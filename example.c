@@ -4,6 +4,10 @@
  * This sample code transmits a read control packet to read 1 dword from the host
  * router of domain 0.
  *
+ * To build and run:
+ * gcc -g -Wall -W example.c tbtutils.c passthrough.c pciutils.c utils.c -o test
+ * sudo ./test
+ *
  * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
  */
 
