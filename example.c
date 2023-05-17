@@ -24,8 +24,10 @@ int main(void)
 	u64 num;
 	int ret;
 
-	if (!pci_id)
-		return 1;
+	if (!pci_id) {
+		ret = 1;
+		goto out;
+	}
 
 	/*
 	 * Fetch the count of the no. of modules in the same IOMMU group as the
@@ -36,7 +38,9 @@ int main(void)
 	/* Check the presence of VFIO module in the system */
 	if (!check_vfio_module()) {
 		fprintf(stderr, "VFIO not found\n");
-		return 1;
+		ret = 1;
+
+		goto out;
 	}
 
 	/* Bind all the modules present in the same IOMMU group as the PCI device */
@@ -44,8 +48,10 @@ int main(void)
 
 	/* Initialize the VFIO for the PCI device */
 	params = vfio_dev_init(pci_id);
-	if (!params)
-		return 1;
+	if (!params) {
+		ret = 1;
+		goto out;
+	}
 
 	/* Fetch the BAR and PCI config. space regions for the PCI device */
 	get_dev_bar_regions(params);
@@ -57,7 +63,7 @@ int main(void)
 	/* Initialize the thunderbolt hardware before executing anything */
 	ret = tbt_hw_init(pci_id);
 	if (ret)
-		return ret;
+		goto out;
 
 	/* Allocate the TX and RX descriptors for the host thunderbolt controller */
 	allocate_tx_desc(params);
@@ -70,7 +76,7 @@ int main(void)
 	/* Request 1 dword from router config. space at offset 0x0 */
 	ret = request_router_cfg(pci_id, params, 0, 0, 1);
 
+out:
 	unbind_grp_modules(dev_list, num);
-
 	return ret;
 }
