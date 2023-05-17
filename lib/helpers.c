@@ -169,7 +169,7 @@ static void get_adps_config(const char *router, struct adp_config *config)
 {
 	struct list_item *item, *adp_regs;
 	u8 total_adps;
-	u8 i = 1;
+	u8 i = 0;
 
 	total_adps = get_total_adps_debugfs(router);
 
