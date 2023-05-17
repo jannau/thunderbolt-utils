@@ -22,7 +22,6 @@
 #define BITMASK(x, y)		(((~(0ULL)) - ((1ULL) << (y)) + 1) & \
 				(~(0ULL) >> (63 - (x))))
 
-//#define BITMASK(x, y)		(-1ULL >> (63 - x)) & ~(-1ULL >> (64 - y))
 #define BIT(x)			(u64)1 << x
 
 #define MAX_LEN			1024
