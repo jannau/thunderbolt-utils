@@ -21,6 +21,11 @@ struct vdid {
 	char device_id[MAX_LEN];
 };
 
+struct pci_vdid {
+	char *pci_id;
+	struct vdid *vdid;
+};
+
 void do_pci_rescan(void);
 void remove_pci_dev(const char *pci_id);
 struct vdid* get_vdid(const char *pci_id);

@@ -16,7 +16,7 @@ int main(void)
 	/* Fetch the PCI ID for the host thunderbolt controller for domain 0 */
 	char *pci_id = trim_host_pci_id(0);
 	struct vfio_hlvl_params *params;
-	char **dev_list;
+	struct pci_vdid *dev_list;
 	u64 num;
 	int ret;
 

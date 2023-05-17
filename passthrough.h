@@ -16,8 +16,8 @@ struct vfio_hlvl_params {
 };
 
 bool check_vfio_module(void);
-char** bind_grp_modules(const char *pci_id);
-void unbind_grp_modules(char **dev_list, u64 num);
+struct pci_vdid* bind_grp_modules(const char *pci_id);
+void unbind_grp_modules(struct pci_vdid *dev_list, u64 num);
 struct vfio_hlvl_params* vfio_dev_init(const char *pci_id);
 void get_dev_bar_regions(struct vfio_hlvl_params *params);
 void get_dev_pci_cfg_region(struct vfio_hlvl_params *params);

@@ -150,10 +150,10 @@ bool check_vfio_module(void)
  * Binds VFIO to all the modules present in the IOMMU group of the given PCI device and
  * returns the list of all the such modules.
  */
-char** bind_grp_modules(const char *pci_id)
+struct pci_vdid* bind_grp_modules(const char *pci_id)
 {
 	struct list_item *list_modules;
-	char **dev_list = NULL;
+	struct pci_vdid *dev_list;
 	char path[MAX_LEN];
 	u64 i = 0;
 
@@ -161,10 +161,12 @@ char** bind_grp_modules(const char *pci_id)
 		 pci_dev_sysfs_path, pci_id);
 
 	list_modules = do_bash_cmd_list(path);
-	dev_list = malloc(get_total_list_items(list_modules) * sizeof(char*));
+	dev_list = malloc(get_total_list_items(list_modules) * sizeof(struct pci_vdid));
 
 	for (; list_modules != NULL; list_modules = list_modules->next) {
-		dev_list[i++] = (char*)list_modules->val;
+		dev_list[i].pci_id = (char*)list_modules->val;
+		dev_list[i++].vdid = get_vdid(list_modules->val);
+
 		bind_vfio_module((char*)list_modules->val, get_vdid(list_modules->val));
 	}
 
@@ -172,12 +174,12 @@ char** bind_grp_modules(const char *pci_id)
 }
 
 /* Unbinds VFIO to all the PCI modules present in the 'dev_list' provided */
-void unbind_grp_modules(char **dev_list, u64 num)
+void unbind_grp_modules(struct pci_vdid *dev_list, u64 num)
 {
 	u64 i = 0;
 
 	for (; i < num; i++)
-		unbind_vfio_module(dev_list[i], get_vdid(dev_list[i]));
+		unbind_vfio_module(dev_list[i].pci_id, dev_list[i].vdid);
 
 	do_pci_rescan();
 }
