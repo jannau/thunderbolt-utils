@@ -21,7 +21,7 @@ int main(void)
 	char *pci_id = trim_host_pci_id(0);
 	struct vfio_hlvl_params *params;
 	struct pci_vdid *dev_list;
-	u64 num;
+	u64 num = 0;
 	int ret;
 
 	if (!pci_id) {
