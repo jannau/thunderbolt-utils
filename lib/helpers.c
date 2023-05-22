@@ -229,8 +229,7 @@ static u64 get_total_routers_in_domain(u8 domain)
 	return num;
 }
 
-static struct router_config* get_router_config_item(struct router_config *configs,
-						    const char *router)
+static struct router_config* get_router_config_item(const char *router)
 {
 	u64 domains, total_routers = 0;
 	u64 i = 0;
@@ -240,8 +239,8 @@ static struct router_config* get_router_config_item(struct router_config *config
 		total_routers += get_total_routers_in_domain(i);
 
 	for (i = 0; i < total_routers; i++) {
-		if (!strcmp(configs[i].router, router))
-			return &configs[i];
+		if (!strcmp(routers_config[i].router, router))
+			return &routers_config[i];
 	}
 
 	return NULL;
@@ -616,7 +615,7 @@ u64 get_router_register_val(const char *router, u8 cap_id, u8 vcap_id, u64 off)
 	struct router_config *config;
 	char **regs = NULL;
 
-	config = get_router_config_item(routers_config, router);
+	config = get_router_config_item(router);
 	if (!config)
 		return COMPLEMENT_BIT64;
 
@@ -648,7 +647,7 @@ u64 get_adapter_register_val(const char *router, u8 cap_id, u8 adp, u64 off)
 	struct adp_config *adp_config;
 	char **regs = NULL;
 
-	router_config = get_router_config_item(routers_config, router);
+	router_config = get_router_config_item(router);
 	if (!router_config)
 		return COMPLEMENT_BIT64;
 
