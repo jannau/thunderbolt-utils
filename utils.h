@@ -80,3 +80,4 @@ u64 get_total_list_items(const struct list_item *head);
 bool is_present_in_list(const struct list_item *head, const char *str);
 char** list_to_numbered_array(struct list_item *item);
 bool isnum(const char *arr);
+void free_list(struct list_item *head);

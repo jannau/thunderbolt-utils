@@ -33,6 +33,9 @@ static void dump_name(const char *router)
 	device = do_bash_cmd(d_path);
 
 	printf("%s %s ", vendor, device);
+
+	free(vendor);
+	free(device);
 }
 
 static void dump_spaces(u64 spaces)
@@ -125,6 +128,9 @@ static char* get_upstream_router(char *router)
 
 	memset(ups_router, '\0', MAX_LEN * sizeof(char));
 	strncpy(ups_router, output + pos1 + 1, pos2 - pos1 - 1);
+
+	free(output);
+
 	return ups_router;
 }
 
@@ -230,6 +236,8 @@ static void dump_power_states_compatibility(char *router)
 		else
 			printf("Sleep-\n");
 	}
+
+	free(ups_router);
 }
 
 /*
@@ -1424,7 +1432,7 @@ static void dump_dp_out_adapters(const char *router)
 	u64 en;
 
 	num = get_dp_adps_num(router);
-	if (!num) {
+	if (num == MAX_ADAPTERS) {
 		dump_spaces(VERBOSE_L2_SPACES);
 		printf("DP OUT: <Not accessible>\n");
 
@@ -1484,7 +1492,7 @@ static void dump_dp_in_adapters(const char *router)
 	u64 en;
 
 	num = get_dp_adps_num(router);
-	if (!num) {
+	if (num == MAX_ADAPTERS) {
 		dump_spaces(VERBOSE_L2_SPACES);
 		printf("DP IN: <Not accessible>\n");
 
@@ -1800,7 +1808,7 @@ static bool dump_router_verbose(char *router, u8 num)
 
 static bool dump_domain_verbose(u8 domain, char *depth, u8 num)
 {
-	struct list_item *router;
+	struct list_item *router, *head;
 	char path[MAX_LEN];
 	bool found = false;
 
@@ -1808,6 +1816,7 @@ static bool dump_domain_verbose(u8 domain, char *depth, u8 num)
 		 tbt_sysfs_path);
 
 	router = do_bash_cmd_list(path);
+	head = router;
 
 	if (depth) {
 		for(; router != NULL; router = router->next) {
@@ -1825,6 +1834,8 @@ static bool dump_domain_verbose(u8 domain, char *depth, u8 num)
 			found |= dump_router_verbose((char*)router->val, num);
 		}
 	}
+
+	free_list(head);
 
 	return found;
 }

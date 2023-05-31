@@ -10,6 +10,7 @@
  */
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "helpers.h"
@@ -71,6 +72,9 @@ static void dump_name(const char *router)
 	device = do_bash_cmd(d_path);
 
 	printf("%s %s ", vendor, device);
+
+	free(vendor);
+	free(device);
 }
 
 /*
@@ -124,7 +128,7 @@ static void dump_router(const char *router, u8 depth, bool verbose)
 static bool enumerate_dev_tree(const char *router, u8 depth, bool verbose)
 {
 	u8 domain = domain_of_router(router);
-	struct list_item *item;
+	struct list_item *item, *head;
 	char path[MAX_LEN];
 	bool found = false;
 
@@ -134,6 +138,7 @@ static bool enumerate_dev_tree(const char *router, u8 depth, bool verbose)
 		 tbt_sysfs_path, router);
 
 	item = do_bash_cmd_list(path);
+	head = item;
 
 	for (; item != NULL; item = item->next) {
 		if (!is_router_format((char*)item->val, domain))
@@ -141,6 +146,8 @@ static bool enumerate_dev_tree(const char *router, u8 depth, bool verbose)
 
 		found |= enumerate_dev_tree((char*)item->val, depth + 1, verbose);
 	}
+
+	free_list(head);
 
 	return true;
 }
@@ -153,7 +160,7 @@ static bool enumerate_dev_tree(const char *router, u8 depth, bool verbose)
  */
 static bool enumerate_domain_tree(u8 domain, char *depth, bool verbose)
 {
-	struct list_item *router;
+	struct list_item *router, *head;
 	char path[MAX_LEN];
 	bool found = false;
 
@@ -161,6 +168,7 @@ static bool enumerate_domain_tree(u8 domain, char *depth, bool verbose)
 		 tbt_sysfs_path);
 
 	router = do_bash_cmd_list(path);
+	head = router;
 
 	if (depth) {
 		for(; router != NULL; router = router->next) {
@@ -184,6 +192,8 @@ static bool enumerate_domain_tree(u8 domain, char *depth, bool verbose)
 			}
 		}
 	}
+
+	free_list(head);
 
 	return found;
 }

@@ -11,6 +11,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "helpers.h"
@@ -67,6 +68,8 @@ static void dump_retimer_nvm_version(const char *retimer)
 
 	ver = do_bash_cmd(path);
 	printf("NVM %s\n", ver);
+
+	free(ver);
 }
 
 /* Dumps the retimer */
@@ -96,6 +99,9 @@ static bool dump_retimer(const char *retimer)
 
 	printf("ID %04x:%04x ", strtouh(vid), strtouh(did));
 
+	free(vid);
+	free(did);
+
 	dump_retimer_nvm_version(retimer);
 
 	return true;
@@ -104,7 +110,7 @@ static bool dump_retimer(const char *retimer)
 /* Dumps the retimers (if any) present in the provided domain */
 static bool enumerate_retimers_in_domain(u8 domain)
 {
-	struct list_item *retimer;
+	struct list_item *retimer, *head;
 	char path[MAX_LEN];
 	bool found = false;
 
@@ -112,6 +118,7 @@ static bool enumerate_retimers_in_domain(u8 domain)
 		 tbt_sysfs_path);
 
 	retimer = do_bash_cmd_list(path);
+	head = retimer;
 
 	for (; retimer; retimer = retimer->next) {
 		if (!is_retimer_format((char*)retimer->val, domain))
@@ -120,13 +127,15 @@ static bool enumerate_retimers_in_domain(u8 domain)
 		found |= dump_retimer((char*)retimer->val);
 	}
 
+	free_list(head);
+
 	return found;
 }
 
 /* Dumps the retimers (if any) present on any port in the provided router */
 static bool dump_retimers_in_router(const char *router)
 {
-	struct list_item *retimer;
+	struct list_item *retimer, *head;
 	char path[MAX_LEN];
 	bool found = false;
 	u8 domain;
@@ -137,6 +146,7 @@ static bool dump_retimers_in_router(const char *router)
 		 tbt_sysfs_path);
 
 	retimer = do_bash_cmd_list(path);
+	head = retimer;
 
 	for (; retimer; retimer = retimer->next) {
 		if (!is_retimer_format((char*)retimer->val, domain))
@@ -147,6 +157,8 @@ static bool dump_retimers_in_router(const char *router)
 
 		found |= dump_retimer((char*)retimer->val);
 	}
+
+	free_list(head);
 
 	return found;
 }

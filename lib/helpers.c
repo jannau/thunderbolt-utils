@@ -79,6 +79,8 @@ static u8 get_total_adps_debugfs(const char *router)
 			return port + 1;
 	}
 
+	free_list(item);
+
 	return 0;
 }
 
@@ -213,18 +215,22 @@ static void get_adps_config(const char *router, struct adp_config *config)
 
 static u64 get_total_routers_in_domain(u8 domain)
 {
-	struct list_item *router;
+	struct list_item *router, *head;
 	char path[MAX_LEN];
 	u64 num = 0;
 
 	snprintf(path, sizeof(path), "for line in $(ls %s); do echo $line; done",
 		 tbt_sysfs_path);
+
 	router = do_bash_cmd_list(path);
+	head = router;
 
 	for (; router; router = router->next) {
 		if (is_router_format((char*)router->val, domain))
 			num++;
 	}
+
+	free_list(head);
 
 	return num;
 }
@@ -302,16 +308,19 @@ static bool is_debugfs_enabled(void)
 	snprintf(path, sizeof(path), "mount 2>/dev/null | grep debugfs | wc -l");
 	en = do_bash_cmd(path);
 
-	if (!strtoud(en))
+	if (!strtoud(en)) {
+		free(en);
 		return false;
+	}
 
+	free(en);
 	return true;
 }
 
 /* Initialize the debugfs parameters for faster access */
 static int debugfs_config_init(void)
 {
-	struct list_item *router_list;
+	struct list_item *router_list, *head;
 	char *root_cmd, *router;
 	u64 total_routers, i;
 	char path[MAX_LEN];
@@ -328,6 +337,7 @@ static int debugfs_config_init(void)
 	root_cmd = switch_cmd_to_root(path);
 
 	router_list = do_bash_cmd_list(root_cmd);
+	head = router_list;
 
 	total_routers = get_total_list_items(router_list);
 	routers_config = malloc(total_routers * sizeof(struct router_config));
@@ -335,7 +345,9 @@ static int debugfs_config_init(void)
 	i = 0;
 
 	for(; router_list; router_list = router_list->next) {
-		router = (char*)router_list->val;
+		router = malloc(strlen((char*)router_list->val) * sizeof(char));
+		strcpy(router, (char*)router_list->val);
+
 		adps = get_total_adps_debugfs(router);
 
 		routers_config[i].router = router;
@@ -347,6 +359,8 @@ static int debugfs_config_init(void)
 
 		i++;
 	}
+
+	free_list(head);
 
 	return 0;
 }
@@ -367,9 +381,12 @@ bool is_adp_present(const char *router, u8 adp)
 	root_cmd = switch_cmd_to_root(path);
 
 	output = do_bash_cmd(root_cmd);
-	if (strtoud(output))
+	if (strtoud(output)) {
+		free(output);
 		return true;
+	}
 
+	free(output);
 	return false;
 }
 
@@ -378,13 +395,16 @@ u8 total_domains(void)
 {
 	char path[MAX_LEN];
 	char *output;
+	u32 val;
 
 	snprintf(path, sizeof(path), "ls 2>/dev/null %s | grep domain | wc -l",
 		 tbt_sysfs_path);
 
 	output = do_bash_cmd(path);
+	val = strtoud(output);
 
-	return strtoud(output);
+	free(output);
+	return val;
 }
 
 /* Validate the arguments for 'lstbt', 'lstbt -t', and 'lstbt -v' */
@@ -428,9 +448,12 @@ bool is_router_present(const char *router)
 	snprintf(path, sizeof(path), "ls %s%s %s; echo $?", tbt_sysfs_path,
 		 router, REDIRECTED_NULL);
 	bash = do_bash_cmd(path);
-	if (strtoud(bash))
+	if (strtoud(bash)) {
+		free(bash);
 		return false;
+	}
 
+	free(bash);
 	return true;
 }
 
@@ -499,6 +522,9 @@ void dump_vdid(const char *router)
 	did = do_bash_cmd(did_path);
 
 	printf("ID %04x:%04x ", strtouh(vid), strtouh(did));
+
+	free(vid);
+	free(did);
 }
 
 /* Dump the generation of the router */
@@ -506,9 +532,12 @@ void dump_generation(const char *router)
 {
 	char gen[MAX_LEN];
 	u8 generation;
+	char *gen_str;
 
 	snprintf(gen, sizeof(gen), "cat %s%s/generation", tbt_sysfs_path, router);
-	generation = strtoud(do_bash_cmd(gen));
+
+	gen_str = do_bash_cmd(gen);
+	generation = strtoud(gen_str);
 
 	switch(generation) {
 	case 1:
@@ -526,6 +555,8 @@ void dump_generation(const char *router)
 	default:
 		printf("(Unknown)\n");
 	}
+
+	free(gen_str);
 }
 
 /* Dump the NVM version of the router */
@@ -538,6 +569,8 @@ void dump_nvm_version(const char *router)
 	nvm = do_bash_cmd(path);
 
 	printf("NVM %s, ", nvm);
+
+	free(nvm);
 }
 
 /* Dump the router's lanes */
@@ -556,6 +589,8 @@ void dump_lanes(const char *router)
 	snprintf(path, sizeof(path), "cat %s%s/tx_lanes", tbt_sysfs_path, router);
 	lanes = do_bash_cmd(path);
 	printf("x%s", lanes);
+
+	free(lanes);
 }
 
 /* Dump the router's speed.
@@ -565,6 +600,7 @@ void dump_speed(const char *router)
 {
 	char path[MAX_LEN];
 	char *str = NULL;
+	char *speed_str;
 	u8 speed;
 
 	if (is_host_router(router)) {
@@ -573,19 +609,28 @@ void dump_speed(const char *router)
 	}
 
 	snprintf(path, sizeof(path), "cat %s%s/tx_speed", tbt_sysfs_path, router);
-	speed = strtoud(do_bash_cmd(path));
+
+	speed_str = do_bash_cmd(path);
+	speed = strtoud(speed_str);
 	printf("%uG, ", speed * 2);
+
+	free(speed_str);
 }
 
 /* Dump the authentication status, depicting PCIe tunneling */
 void dump_auth_sts(const char *router)
 {
 	char path[MAX_LEN];
+	char *auth_str;
 	bool auth;
 
 	snprintf(path, sizeof(path), "cat %s%s/authorized", tbt_sysfs_path, router);
-	auth = strtoud(do_bash_cmd(path));
+
+	auth_str = do_bash_cmd(path);
+	auth = strtoud(auth_str);
 	printf("Auth:%s\n", (auth == 1) ? "Yes" : "No");
+
+	free(auth_str);
 }
 
 /* Returns the depth of the given valid router string */

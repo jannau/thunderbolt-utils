@@ -13,6 +13,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "helpers.h"
@@ -35,6 +36,9 @@ static void dump_name(const char *router)
 	device = do_bash_cmd(d_path);
 
 	printf("%s %s ", vendor, device);
+
+	free(vendor);
+	free(device);
 }
 
 static bool dump_router(const char *router)
@@ -68,7 +72,7 @@ static bool dump_router(const char *router)
  */
 static bool enumerate_domain(u8 domain, char *depth)
 {
-	struct list_item *router;
+	struct list_item *router, *head;
 	char path[MAX_LEN];
 	bool found = false;
 
@@ -76,6 +80,7 @@ static bool enumerate_domain(u8 domain, char *depth)
 		 tbt_sysfs_path);
 
 	router = do_bash_cmd_list(path);
+	head = router;
 
 	if (depth) {
 		for(; router != NULL; router = router->next) {
@@ -93,6 +98,8 @@ static bool enumerate_domain(u8 domain, char *depth)
 			found |= dump_router((char*)router->val);
 		}
 	}
+
+	free_list(head);
 
 	return found;
 }

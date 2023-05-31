@@ -43,18 +43,28 @@ static bool is_arch_x86(void)
 {
 	char *path = "uname -m | grep x86 | wc -l";
 	char *bash_result;
+	bool ret;
 
 	bash_result = do_bash_cmd(path);
-	return strtoud(bash_result);
+	ret = strtoud(bash_result);
+
+	free(bash_result);
+
+	return ret;
 }
 
 static bool is_cpu_le(void)
 {
 	char *path = "lscpu | grep 'Little Endian' | wc -l";
 	char *bash_result;
+	bool ret;
 
 	bash_result = do_bash_cmd(path);
-	return strtoud(bash_result);
+	ret = strtoud(bash_result);
+
+	free(bash_result);
+
+	return ret;
 }
 
 static u32 do_crc(u32 crc, u32 x)
@@ -155,17 +165,17 @@ struct list_item* do_bash_cmd_list(const char *cmd)
 {
 	char *output = malloc(MAX_LEN * sizeof(char));
 	struct list_item *head = NULL;
-	FILE *file = popen(cmd, "r");
-
 	struct list_item *tail = head;
+	FILE *file = popen(cmd, "r");
+	char *temp_output = NULL;
 
 	while (fgets(output, MAX_LEN, file) != NULL) {
-		char *temp_output = malloc(MAX_LEN * sizeof(char));
+		temp_output = malloc(MAX_LEN * sizeof(char));
 
 		output = trim_white_space(output);
 
 		if (tail == NULL) {
-			head = list_add(tail, (void*)output);;
+			head = list_add(tail, (void*)output);
 			tail = head;
 
 			output = temp_output;
@@ -178,6 +188,9 @@ struct list_item* do_bash_cmd_list(const char *cmd)
 	}
 
 	pclose(file);
+
+	if (temp_output)
+		free(temp_output);
 
 	return head;
 }
@@ -440,4 +453,22 @@ bool isnum(const char *arr)
 	}
 
 	return true;
+}
+
+/* Frees the memory for a dynamically allocated list */
+void free_list(struct list_item *head)
+{
+	struct list_item *moving = head;
+	struct list_item *temp;
+	void *buf;
+
+	while (moving) {
+		buf = (void*)moving->val;
+		temp = moving->next;
+
+		free(buf);
+		free(moving);
+
+		moving = temp;
+	}
 }
