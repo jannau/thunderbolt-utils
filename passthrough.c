@@ -228,7 +228,7 @@ struct vfio_hlvl_params* vfio_dev_init(const char *pci_id)
 	params->container = container;
 	params->group = group;
 	params->device = device;
-	params->dev_info = &device_info;
+	*params->dev_info = device_info;
 
 	return params;
 }

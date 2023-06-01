@@ -112,8 +112,10 @@ static char* get_upstream_router(char *router)
 	u64 pos1, pos2;
 	char *output;
 
-	if (is_host_router(router))
+	if (is_host_router(router)) {
+		free(ups_router);
 		return router;
+	}
 
 	snprintf(path, sizeof(path), "readlink %s%s", tbt_sysfs_path, router);
 	output = do_bash_cmd(path);

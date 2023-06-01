@@ -153,6 +153,8 @@ char* do_bash_cmd(const char *cmd)
 	ret = fgets(output, MAX_LEN, file);
 	if (!ret) {
 		pclose(file);
+		free(output);
+
 		return ret;
 	}
 

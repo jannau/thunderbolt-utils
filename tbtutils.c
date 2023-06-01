@@ -244,6 +244,8 @@ char* trim_host_pci_id(u8 domain)
 
 	if (total_domains() < (domain + 1)) {
 		fprintf(stderr, "invalid domain\n");
+		free(pci_id);
+
 		return NULL;
 	}
 

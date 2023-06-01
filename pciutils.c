@@ -58,6 +58,9 @@ struct vdid* get_vdid(const char *pci_id)
 
 	vdid->vendor_id[VDID_LEN] = '\0';
 	vdid->device_id[VDID_LEN] = '\0';
+
+	free(vdid_char);
+
 	return vdid;
 }
 
