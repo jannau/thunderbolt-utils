@@ -49,10 +49,17 @@ static bool is_retimer_in_router(const char *retimer, const char *router)
 	int pos;
 
 	pos = strpos(retimer, ":", 0);
+	if (pos < 0)
+		return false;
+
 	rtr = get_substr(retimer, 0, pos);
 
-	if (strcmp(rtr, router))
+	if (strcmp(rtr, router)) {
+		free(rtr);
 		return false;
+	}
+
+	free(rtr);
 
 	return true;
 }
@@ -84,9 +91,17 @@ static bool dump_retimer(const char *retimer)
 	domain = strtoud(get_substr(retimer, 0, 1));
 
 	pos = strpos(retimer, ":", 0);
+	if (pos < 0)
+		return false;
+
 	router = get_substr(retimer, 0, pos);
 
 	dot_pos = strpos(retimer, ".", pos);
+	if (dot_pos < 0) {
+		free(router);
+		return false;
+	}
+
 	port = strtoud(get_substr(retimer, pos + 1, dot_pos - pos - 1));
 
 	printf("Domain %u Router %s: Port %u: ", domain, router, port);
@@ -99,10 +114,11 @@ static bool dump_retimer(const char *retimer)
 
 	printf("ID %04x:%04x ", strtouh(vid), strtouh(did));
 
+	dump_retimer_nvm_version(retimer);
+
 	free(vid);
 	free(did);
-
-	dump_retimer_nvm_version(retimer);
+	free(router);
 
 	return true;
 }

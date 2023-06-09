@@ -63,6 +63,7 @@ static u8 get_total_adps_debugfs(const char *router)
 	char path[MAX_LEN];
 	char *root_cmd;
 	u8 port = 63;
+	u8 ret = 0;
 
 	snprintf(path, sizeof(path), "ls %s%s | grep 'port'", tbt_debugfs_path,
 		 router);
@@ -75,13 +76,16 @@ static u8 get_total_adps_debugfs(const char *router)
 
 		snprintf(port_val, sizeof(port_val), "port%u", port);
 
-		if (is_present_in_list(item, port_val))
-			return port + 1;
+		if (is_present_in_list(item, port_val)) {
+			ret = port + 1;
+			break;
+		}
 	}
 
 	free_list(item);
+	free(root_cmd);
 
-	return 0;
+	return ret;
 }
 
 static struct list_item* get_cap_vcap_start(struct list_item *regs_list,
@@ -161,6 +165,8 @@ static void get_router_regs(const char *router, struct router_config *config)
 	item = get_cap_vcap_start(router_regs, ROUTER_VCAP_ID,
 				  ROUTER_VSEC6_ID);
 	config->vsec6_regs = list_to_numbered_array(item);
+
+	free(root_cmd);
 }
 
 /*
@@ -214,6 +220,8 @@ static void get_adps_config(const char *router, struct adp_config *config)
 		item = get_cap_vcap_start(adp_regs,
 					  USB4_PORT_CAP_ID, 0);
 		config[i].usb4_port_regs = list_to_numbered_array(item);
+
+		free(root_cmd);
 	}
 }
 
@@ -365,6 +373,7 @@ static int debugfs_config_init(void)
 	}
 
 	free_list(head);
+	free(root_cmd);
 
 	return 0;
 }
@@ -458,10 +467,14 @@ bool is_adp_present(const char *router, u8 adp)
 	output = do_bash_cmd(root_cmd);
 	if (strtoud(output)) {
 		free(output);
+		free(root_cmd);
+
 		return true;
 	}
 
 	free(output);
+	free(root_cmd);
+
 	return false;
 }
 
@@ -828,7 +841,7 @@ int __main(char *domain, char *depth, char *device, bool retimer, bool tree,
 		return lstbt_r(domain, depth, device);
 	} else if (!tree && !verbose) {
 		return lstbt(domain, depth, device);
-	} else if (verbose) {
+	} else {
 		ret = debugfs_config_init();
 		if (ret)
 			return ret;

@@ -165,9 +165,11 @@ static u8 get_ups_down_port(const char *router)
 {
 	u64 topid_low, topid_high, top_id;
 	u64 level_bitmask;
-	u8 depth;
+	s8 depth;
 
-	if (is_host_router(router))
+	depth = depth_of_router(router) - 1;
+
+	if (is_host_router(router) || (depth < 0))
 		return 0;
 
 	topid_low = get_top_id_low(router);
@@ -179,8 +181,6 @@ static u8 get_ups_down_port(const char *router)
 		return MAX_ADAPTERS;
 
 	top_id = topid_high << 23 | topid_low;
-
-	depth = depth_of_router(router) - 1;
 
 	level_bitmask = map_lvl_to_bitmask(depth);
 	return (top_id & level_bitmask) >> (8 * depth);
@@ -207,16 +207,12 @@ static void dump_power_states_compatibility(char *router)
 	ups_router = get_upstream_router(router);
 
 	down_port = get_ups_down_port(router);
-	if (down_port == MAX_ADAPTERS) {
-		printf("<Not accessible>\n");
-		return;
-	}
+	if (down_port == MAX_ADAPTERS)
+		goto free;
 
 	usb4v = get_usb4v(router);
-	if (usb4v == MAX_BIT8) {
-		printf("<Not accessible>\n");
-		return;
-	}
+	if (usb4v == MAX_BIT8)
+		goto free;
 
 	majv = (usb4v & USB4V_MAJOR_VER) >> USB4V_MAJOR_VER_SHIFT;
 	if (!majv) {
@@ -239,6 +235,7 @@ static void dump_power_states_compatibility(char *router)
 			printf("Sleep-\n");
 	}
 
+free:
 	free(ups_router);
 }
 
@@ -1692,6 +1689,7 @@ static bool dump_router_verbose(char *router, u8 num)
 {
 	u64 topid_low, topid_high;
 	u8 max_adp, majv;
+	char *route_str;
 	u16 usb4v;
 
 	topid_low = get_top_id_low(router);
@@ -1702,7 +1700,9 @@ static bool dump_router_verbose(char *router, u8 num)
 	if (topid_high == MAX_BIT32)
 		return false;
 
-	printf("%s ", get_route_string(topid_high << 23 | topid_low));
+	route_str = get_route_string(topid_high << 23 | topid_low);
+	printf("%s ", route_str);
+	free(route_str);
 
 	dump_name(router);
 
