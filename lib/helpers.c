@@ -141,6 +141,8 @@ static void get_router_regs(const char *router, struct router_config *config)
 	root_cmd = switch_cmd_to_root(path);
 
 	router_regs = do_bash_cmd_list(root_cmd);
+	config->router_regs = router_regs;
+
 	item = get_cap_vcap_start(router_regs, 0x0, 0x0);
 	config->regs = list_to_numbered_array(item);
 
@@ -188,6 +190,8 @@ static void get_adps_config(const char *router, struct adp_config *config)
 		root_cmd = switch_cmd_to_root(path);
 
 		adp_regs = do_bash_cmd_list(root_cmd);
+		config[i].adp_regs = adp_regs;
+
 		item = get_cap_vcap_start(adp_regs, 0, 0);
 		config[i].regs = list_to_numbered_array(item);
 
@@ -363,6 +367,77 @@ static int debugfs_config_init(void)
 	free_list(head);
 
 	return 0;
+}
+
+static void free_router_regs(struct router_config *config, char **regs, u8 cap_id,
+			     u8 vcap_id)
+{
+	struct list_item *item;
+	u64 num, i = 0;
+
+	item = get_cap_vcap_start(config->router_regs, cap_id, vcap_id);
+	num = get_total_list_items(item);
+
+	for (; i < num; i++)
+		free(regs[i]);
+
+	free(regs);
+}
+
+static void free_router_config(struct router_config *config)
+{
+	free(config->router);
+
+	free_router_regs(config, config->regs, 0x0, 0x0);
+	free_router_regs(config, config->vsec1_regs, ROUTER_VCAP_ID, ROUTER_VSEC1_ID);
+	free_router_regs(config, config->vsec3_regs, ROUTER_VCAP_ID, ROUTER_VSEC3_ID);
+	free_router_regs(config, config->vsec4_regs, ROUTER_VCAP_ID, ROUTER_VSEC4_ID);
+	free_router_regs(config, config->vsec6_regs, ROUTER_VCAP_ID, ROUTER_VSEC6_ID);
+
+	free_list(config->router_regs);
+}
+
+static void free_adp_regs(struct adp_config *config, char **regs, u8 cap_id,
+			  u8 vcap_id)
+{
+	struct list_item *item;
+	u64 num, i = 0;
+
+	item = get_cap_vcap_start(config->adp_regs, cap_id, vcap_id);
+	num = get_total_list_items(item);
+
+	for (; i < num; i++)
+		free(regs[i]);
+
+	free(regs);
+}
+
+static void free_adp_config(struct adp_config *config)
+{
+	free_adp_regs(config, config->regs, 0x0, 0x0);
+	free_adp_regs(config, config->lane_regs, LANE_ADP_CAP_ID, 0x0);
+	free_adp_regs(config, config->pcie_regs, PCIE_ADP_CAP_ID, 0x0);
+	free_adp_regs(config, config->dp_regs, DP_ADP_CAP_ID, 0x0);
+	free_adp_regs(config, config->usb3_regs, USB3_ADP_CAP_ID, 0x0);
+	free_adp_regs(config, config->usb4_port_regs, USB4_PORT_CAP_ID, 0x0);
+
+	free_list(config->adp_regs);
+}
+
+/* Free the memory explicitly used for debugfs operations */
+static void debugfs_config_exit(void)
+{
+	u64 total_routers = 0;
+	u8 domains, i = 0;
+
+	domains = total_domains();
+	for (; i < domains; i++)
+		total_routers += get_total_routers_in_domain(i);
+
+	for (i = 0; i < total_routers; i++) {
+		free_router_config(&routers_config[i]);
+		free_adp_config(routers_config[i].adps_config);
+	}
 }
 
 /*
@@ -759,7 +834,11 @@ int __main(char *domain, char *depth, char *device, bool retimer, bool tree,
 		if (ret)
 			return ret;
 
-		return lstbt_v(domain, depth, device, verbose);
+		ret = lstbt_v(domain, depth, device, verbose);
+
+		debugfs_config_exit();
+
+		return ret;
 	}
 
 	return 0;

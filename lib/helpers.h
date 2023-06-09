@@ -24,6 +24,8 @@ extern char *tbt_sysfs_path;
 
 struct adp_config {
 	u8 adp;
+	struct list_item *adp_regs;
+
 	char **regs;
 	char **lane_regs;
 	char **pcie_regs;
@@ -34,6 +36,7 @@ struct adp_config {
 
 struct router_config {
 	char *router;
+	struct list_item *router_regs;
 
 	char **regs;
 	char **vsec1_regs;
