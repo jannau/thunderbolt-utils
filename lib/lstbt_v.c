@@ -113,8 +113,8 @@ static char* get_upstream_router(char *router)
 	char *output;
 
 	if (is_host_router(router)) {
-		free(ups_router);
-		return router;
+		strcpy(ups_router, router);
+		return ups_router;
 	}
 
 	snprintf(path, sizeof(path), "readlink %s%s", tbt_sysfs_path, router);
