@@ -652,9 +652,8 @@ void dump_nvm_version(const char *router)
 void dump_lanes(const char *router)
 {
 	char path[MAX_LEN];
-	char *lanes, *str;
-
-	str = NULL;
+	char str[MAX_LEN];
+	char *lanes;
 
 	if (is_host_router(router)) {
 		sprintf(str, "%s", "");
@@ -674,7 +673,7 @@ void dump_lanes(const char *router)
 void dump_speed(const char *router)
 {
 	char path[MAX_LEN];
-	char *str = NULL;
+	char str[MAX_LEN];
 	char *speed_str;
 	u8 speed;
 
@@ -755,13 +754,13 @@ u64 get_router_register_val(const char *router, u8 cap_id, u8 vcap_id, u64 off)
 
 /*
  * Returns the register value of the adapter config. space of the provided adapter
- * in the provided router with the given CAP_ID and VCAP_ID at the given block
+ * in the provided router with the given CAP_ID and SEC_ID at the given block
  * offset.
  * Return a value of (u64)~0 if something goes wrong.
  *
  * Caller needs to ensure that the arguments are valid.
  */
-u64 get_adapter_register_val(const char *router, u8 cap_id, u8 adp, u64 off)
+u64 get_adapter_register_val(const char *router, u8 cap_id, u8 sec_id, u8 adp, u64 off)
 {
 	struct router_config *router_config;
 	struct adp_config *adp_config;
@@ -781,11 +780,11 @@ u64 get_adapter_register_val(const char *router, u8 cap_id, u8 adp, u64 off)
 		regs = adp_config->lane_regs;
 	else if (cap_id == USB4_PORT_CAP_ID)
 		regs = adp_config->usb4_port_regs;
-	else if (cap_id == USB3_ADP_CAP_ID)
+	else if (cap_id == USB3_ADP_CAP_ID && sec_id == USB3_ADP_SEC_ID)
 		regs = adp_config->usb3_regs;
-	else if (cap_id == PCIE_ADP_CAP_ID)
+	else if (cap_id == PCIE_ADP_CAP_ID && sec_id == PCIE_ADP_SEC_ID)
 		regs = adp_config->pcie_regs;
-	else if (cap_id == DP_ADP_CAP_ID)
+	else if (cap_id == DP_ADP_CAP_ID && sec_id == DP_ADP_SEC_ID)
 		regs = adp_config->dp_regs;
 
 	return get_register_val(regs, off);

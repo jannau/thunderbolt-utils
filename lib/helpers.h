@@ -66,7 +66,7 @@ void dump_auth_sts(const char *router);
 u8 depth_of_router(const char *router);
 u8 domain_of_router(const char *router);
 u64 get_router_register_val(const char *router, u8 cap_id, u8 vcap_id, u64 off);
-u64 get_adapter_register_val(const char *router, u8 adp, u8 cap_id, u64 off);
+u64 get_adapter_register_val(const char *router, u8 cap_id, u8 sec_id, u8 adp, u64 off);
 bool is_arg_valid(const char *arg);
 int lstbt(char *domain, char *depth, char *device);
 int lstbt_t(char *domain, char *depth, char *device, bool verbose);

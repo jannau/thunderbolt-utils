@@ -158,6 +158,12 @@
 #define USB3_PLS_RESUME				0xf
 
 #define USB3_ADP_CAP_ID				0x4
+#define USB3_ADP_SEC_ID				0x0 /*
+						     * Identification including PCIe and DP
+						     * adapters which the have same capability
+						     * ID. Also see, 'PCIE_ADP_SEC_ID' and
+						     * 'DP_ADP_SEC_ID'.
+						     */
 
 /* PCIe configuration space */
 #define ADP_PCIE_CS_0				0x0
@@ -182,6 +188,7 @@
 #define PCIE_LTSSM_HOT_RESET			0xa
 
 #define PCIE_ADP_CAP_ID				0x4
+#define PCIE_ADP_SEC_ID				0x1
 
 /* DP configuration space */
 #define ADP_DP_CS_0				0x0
@@ -243,6 +250,7 @@
 #define ADP_DP_CS_8_DR				BIT(31)
 
 #define DP_ADP_CAP_ID				0x4
+#define DP_ADP_SEC_ID				0x2
 
 #define DP_IN_BW_GR_QUARTER			0x0 /* 0.25 Gbps */
 #define DP_IN_BW_GR_HALF			0x1 /* 0.5 Gbps */
