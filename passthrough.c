@@ -92,6 +92,7 @@ static char* find_iommu_grp(const char *pci_id)
 	len_str = strlen(bash_result + pos + TRIM_IOMMU_NUM_PATH);
 
 	strncpy(iommu_grp, bash_result + pos + TRIM_IOMMU_NUM_PATH, len_str);
+	iommu_grp[len_str] = '\0';
 
 	free(bash_result);
 
@@ -194,7 +195,7 @@ struct pci_vdid* bind_grp_modules(const char *pci_id)
 
 		dev_list[i].vdid = get_vdid(list_modules->val);
 
-		bind_vfio_module((char*)list_modules->val, dev_list[i].vdid);
+		bind_vfio_module((char*)list_modules->val, dev_list[i++].vdid);
 	}
 
 	free_list(head);

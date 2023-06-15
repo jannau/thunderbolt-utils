@@ -186,7 +186,7 @@ static int tbt_wait_for_pwr(const char *pci_id)
 		bash_op = do_bash_cmd(root_cmd);
 		bash_op[8] = '\0';
 
-		val = strtoul(bash_op, &bash_op, 16);
+		val = strtoud(bash_op);
 		if (val & VS_FW_RDY) {
 			printf("FW_RDY bit is set\n");
 			ret = 0;
@@ -237,7 +237,7 @@ static void tbt_hw_set_ltr(const char *pci_id)
 	bash_op = do_bash_cmd(root_cmd);
 	bash_op[8] = '\0';
 
-	val = strtoul(bash_op, &bash_op, 16);
+	val = strtoud(bash_op);
 	val &= 0xffff;
 	ltr = val << 16 | val; /* Always use the max. LTR value to be safe */
 
