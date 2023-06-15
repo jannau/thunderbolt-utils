@@ -14,6 +14,7 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,33 +28,51 @@
 /* Binds the VFIO module to the provided PCI device */
 static void bind_vfio_module(const char *pci_id, const struct vdid *vdid)
 {
-	char dev_path[MAX_LEN];
 	char drv_path[3 * MAX_LEN];
+	char *root_cmd, *bash_op;
+	char dev_path[MAX_LEN];
 
 	snprintf(dev_path, sizeof(dev_path), "echo %s > %s%s/driver/unbind",
 		 pci_id, pci_dev_sysfs_path, pci_id);
-	do_bash_cmd(switch_cmd_to_root(dev_path));
+	root_cmd = switch_cmd_to_root(dev_path);
+	bash_op = do_bash_cmd(root_cmd);
+
+	free(root_cmd);
+	free(bash_op);
 
 	snprintf(drv_path, sizeof(drv_path), "echo '%s %s' > %svfio-pci/new_id",
 		 vdid->vendor_id, vdid->device_id, pci_drv_sysfs_path);
-	do_bash_cmd(switch_cmd_to_root(drv_path));
+	root_cmd = switch_cmd_to_root(drv_path);
+	bash_op = do_bash_cmd(root_cmd);
+
+	free(root_cmd);
+	free(bash_op);
 }
 
 /* Unbinds the VFIO module from the provided PCI device and removes it */
 static void unbind_vfio_module(const char *pci_id, const struct vdid *vdid)
 {
-	char dev_path[MAX_LEN];
 	char drv_path[3 * MAX_LEN];
+	char *root_cmd, *bash_op;
+	char dev_path[MAX_LEN];
 
 	snprintf(dev_path, sizeof(dev_path), "echo %s > %s%s/driver/unbind",
 		 pci_id, pci_dev_sysfs_path, pci_id);
-	do_bash_cmd(switch_cmd_to_root(dev_path));
+	root_cmd = switch_cmd_to_root(dev_path);
+	bash_op = do_bash_cmd(root_cmd);
+
+	free(root_cmd);
+	free(bash_op);
 
 	snprintf(drv_path, sizeof(drv_path), "echo '%s %s' > %svfio-pci/remove_id",
 		 vdid->vendor_id, vdid->device_id, pci_drv_sysfs_path);
-	do_bash_cmd(switch_cmd_to_root(drv_path));
+	root_cmd = switch_cmd_to_root(drv_path);
+	bash_op = do_bash_cmd(root_cmd);
 
 	remove_pci_dev(pci_id);
+
+	free(root_cmd);
+	free(bash_op);
 }
 
 /* Returns the IOMMU group number of the provided PCI device */
@@ -73,6 +92,9 @@ static char* find_iommu_grp(const char *pci_id)
 	len_str = strlen(bash_result + pos + TRIM_IOMMU_NUM_PATH);
 
 	strncpy(iommu_grp, bash_result + pos + TRIM_IOMMU_NUM_PATH, len_str);
+
+	free(bash_result);
+
 	return trim_white_space(iommu_grp);
 }
 
@@ -153,7 +175,7 @@ bool check_vfio_module(void)
  */
 struct pci_vdid* bind_grp_modules(const char *pci_id)
 {
-	struct list_item *list_modules;
+	struct list_item *list_modules, *head;
 	struct pci_vdid *dev_list;
 	char path[MAX_LEN];
 	u64 i = 0;
@@ -162,14 +184,20 @@ struct pci_vdid* bind_grp_modules(const char *pci_id)
 		 pci_dev_sysfs_path, pci_id);
 
 	list_modules = do_bash_cmd_list(path);
+	head = list_modules;
+
 	dev_list = malloc(get_total_list_items(list_modules) * sizeof(struct pci_vdid));
 
 	for (; list_modules != NULL; list_modules = list_modules->next) {
-		dev_list[i].pci_id = (char*)list_modules->val;
-		dev_list[i++].vdid = get_vdid(list_modules->val);
+		dev_list[i].pci_id = malloc(MAX_LEN * sizeof(char));
+		strcpy(dev_list[i].pci_id, (char*)list_modules->val);
 
-		bind_vfio_module((char*)list_modules->val, get_vdid(list_modules->val));
+		dev_list[i].vdid = get_vdid(list_modules->val);
+
+		bind_vfio_module((char*)list_modules->val, dev_list[i].vdid);
 	}
+
+	free_list(head);
 
 	return dev_list;
 }
@@ -179,8 +207,13 @@ void unbind_grp_modules(struct pci_vdid *dev_list, u64 num)
 {
 	u64 i = 0;
 
-	for (; i < num; i++)
+	for (; i < num; i++) {
 		unbind_vfio_module(dev_list[i].pci_id, dev_list[i].vdid);
+		free(dev_list[i].pci_id);
+		free(dev_list[i].vdid);
+	}
+
+	free(dev_list);
 
 	do_pci_rescan();
 }
@@ -198,11 +231,15 @@ struct vfio_hlvl_params* vfio_dev_init(const char *pci_id)
 	container = open("/dev/vfio/vfio", O_RDWR);
 	if (ioctl(container, VFIO_GET_API_VERSION) != VFIO_API_VERSION) {
 		fprintf(stderr, "unknown API version\n");
+
+		close(container);
 		return NULL;
 	}
 
 	if (!ioctl(container, VFIO_CHECK_EXTENSION, VFIO_TYPE1_IOMMU)) {
 		fprintf(stderr, "type-1 iommu not supported\n");
+
+		close(container);
 		return NULL;
 	}
 
@@ -214,6 +251,10 @@ struct vfio_hlvl_params* vfio_dev_init(const char *pci_id)
 
 	if (!(group_status.flags & VFIO_GROUP_FLAGS_VIABLE)) {
 		fprintf(stderr, "group not viable\n");
+
+		free(iommu_grp);
+		close(container);
+
 		return NULL;
 	}
 
@@ -228,6 +269,8 @@ struct vfio_hlvl_params* vfio_dev_init(const char *pci_id)
 	params->container = container;
 	params->group = group;
 	params->device = device;
+
+	params->dev_info = malloc(sizeof(struct vfio_device_info));
 	*params->dev_info = device_info;
 
 	return params;
@@ -246,14 +289,18 @@ void get_dev_bar_regions(struct vfio_hlvl_params *params)
 
 		region_info->argsz = sizeof(*region_info);
 
-		if (!is_vfio_bar_index(i))
+		if (!is_vfio_bar_index(i)) {
+			free(region_info);
 			continue;
+		}
 
 		region_info->index = i;
 		ioctl(params->device, VFIO_DEVICE_GET_REGION_INFO, region_info);
 
-		if (region_info->size == 0x0)
+		if (region_info->size == 0x0) {
+			free(region_info);
 			continue;
+		}
 
 		temp = list_add(temp, (void*)region_info);
 
@@ -274,8 +321,10 @@ void get_dev_pci_cfg_region(struct vfio_hlvl_params *params)
 
 		region_info->argsz = sizeof(*region_info);
 
-		if (!is_vfio_pci_cfg_index(i))
+		if (!is_vfio_pci_cfg_index(i)) {
+			free(region_info);
 			continue;
+		}
 
 		region_info->index = i;
 		ioctl(params->device, VFIO_DEVICE_GET_REGION_INFO, region_info);
@@ -392,7 +441,7 @@ struct vfio_iommu_type1_dma_map* iommu_map_va(int container, u8 op_flags, u8 ind
 }
 
 /* Destroy the DMA mapping created */
-void iommu_unmap_va(int container, const struct vfio_iommu_type1_dma_map *dma_map)
+void iommu_unmap_va(int container, struct vfio_iommu_type1_dma_map *dma_map)
 {
 	struct vfio_iommu_type1_dma_unmap dma_unmap = { .argsz = sizeof(dma_unmap) };
 
@@ -400,4 +449,23 @@ void iommu_unmap_va(int container, const struct vfio_iommu_type1_dma_map *dma_ma
 	dma_unmap.iova = dma_map->iova;
 
 	ioctl(container, VFIO_IOMMU_UNMAP_DMA, &dma_unmap);
+}
+
+/*
+ * Frees the DMA buffers and mappings:
+ * 1. Free the virtual address of the buffer
+ * 2. Unmap the DMA mapping to the 'iova'
+ * 3. Free the VFIO DMA structure
+ */
+void free_dma_map(int container, struct vfio_iommu_type1_dma_map *dma_map)
+{
+	struct vfio_iommu_type1_info info = { .argsz = sizeof(info) };
+	u64 pgsize_sup;
+
+	ioctl(container, VFIO_IOMMU_GET_INFO, &info);
+	pgsize_sup = get_size_least_set(info.iova_pgsizes);
+
+	munmap((void*)dma_map->vaddr, pgsize_sup);
+	iommu_unmap_va(container, dma_map);
+	free(dma_map);
 }

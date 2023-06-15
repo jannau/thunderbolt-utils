@@ -97,9 +97,9 @@ static struct req_payload* make_req_payload(u32 addr, u64 len, u32 adp, u32 cfg_
 
 /* Prepare the transmit descriptor and the read buffer request */
 static struct ring_desc* make_tx_read_req(const struct vfio_hlvl_params *params, u64 route,
-					  const struct req_payload *payload)
+					  const struct req_payload *payload,
+					  struct vfio_iommu_type1_dma_map *dma_map)
 {
-	struct vfio_iommu_type1_dma_map *dma_map;
 	struct ring_desc *desc;
 	struct read_req *req;
 
@@ -174,6 +174,7 @@ static void tx_start(const struct vfio_hlvl_params *params)
 static int tbt_wait_for_pwr(const char *pci_id)
 {
 	char *root_cmd, *bash_op;
+	int ret = ETIMEDOUT;
 	u16 retries = 350; /* TODO: Verify the proper amount of retries */
 	char cmd[MAX_LEN];
 	u32 val;
@@ -188,20 +189,28 @@ static int tbt_wait_for_pwr(const char *pci_id)
 		val = strtoul(bash_op, &bash_op, 16);
 		if (val & VS_FW_RDY) {
 			printf("FW_RDY bit is set\n");
-			return 0;
+			ret = 0;
+
+			free(bash_op);
+
+			break;
 		}
+
+		free(bash_op);
 
 		msleep(5);
 	}
 
-	return ETIMEDOUT;
+	free(root_cmd);
+
+	return ret;
 }
 
 /* Load the required f/w from the IMR and power on the TBT IP */
 static int tbt_hw_force_pwr(const char *pci_id, u32 val)
 {
+	char *root_cmd, *bash_op;
 	char cmd[MAX_LEN];
-	char *root_cmd;
 
 	val &= VS_DMA_DELAY_MASK;
 	val |= 0x22 < VS_DMA_DELAY_SHIFT; /* TODO: Check the DMA delay counter value */
@@ -209,7 +218,10 @@ static int tbt_hw_force_pwr(const char *pci_id, u32 val)
 
 	snprintf(cmd, sizeof(cmd), "setpci -s %s 0x%x.L=0x%x", pci_id, VS_CAP_22, val);
 	root_cmd = switch_cmd_to_root(cmd);
-	do_bash_cmd(root_cmd);
+	bash_op = do_bash_cmd(root_cmd);
+
+	free(root_cmd);
+	free(bash_op);
 
 	return tbt_wait_for_pwr(pci_id);
 }
@@ -229,9 +241,15 @@ static void tbt_hw_set_ltr(const char *pci_id)
 	val &= 0xffff;
 	ltr = val << 16 | val; /* Always use the max. LTR value to be safe */
 
+	free(root_cmd);
+	free(bash_op);
+
 	snprintf(wr_cmd, sizeof(wr_cmd), "setpci -s %s 0x%x.L=0x%x", pci_id, VS_CAP_15, ltr);
 	root_cmd = switch_cmd_to_root(wr_cmd);
-	do_bash_cmd(root_cmd);
+	bash_op = do_bash_cmd(root_cmd);
+
+	free(root_cmd);
+	free(bash_op);
 }
 
 /* Returns the host thunderbolt controller's PCI ID for the given domain */
@@ -258,6 +276,13 @@ char* trim_host_pci_id(u8 domain)
 	pos -= TRIM_NUM_PATH;
 
 	strncpy(pci_id, buf + pos, TRIM_NUM_PATH - 1);
+	pci_id[TRIM_NUM_PATH] = '\0'; /*
+				       * 'strncpy' doesn't guarantee a NULL-terminated
+				       * string.
+				       */
+
+	free(buf);
+
 	return trim_white_space(pci_id);
 }
 
@@ -280,6 +305,7 @@ void allocate_tx_desc(const struct vfio_hlvl_params *params)
 	for (; i < TX_SIZE; i++) {
 		dma_map = iommu_map_va(params->container, RDWR_FLAG, page_index++);
 
+		tx_desc[i].dma_map = dma_map;
 		tx_desc[i].va = (void*)dma_map->vaddr;
 		tx_desc[i].iova = dma_map->iova;
 	}
@@ -295,6 +321,7 @@ void allocate_rx_desc(const struct vfio_hlvl_params *params)
 	for (; i < RX_SIZE; i++) {
 		dma_map = iommu_map_va(params->container, RDWR_FLAG, page_index++);
 
+		rx_desc[i].dma_map = dma_map;
 		rx_desc[i].va = (void*)dma_map->vaddr;
 		rx_desc[i].iova = dma_map->iova;
 	}
@@ -355,9 +382,13 @@ int request_router_cfg(const char *pci_id, const struct vfio_hlvl_params *params
 		       u64 route, u32 addr, u64 dwords)
 {
 	struct req_payload *payload = make_req_payload(addr, dwords, 0, ROUTER_CFG);
-	struct ring_desc *tx_desc = make_tx_read_req(params, route, payload);
+	struct vfio_iommu_type1_dma_map *dma_map = NULL;
+	struct ring_desc *tx_desc;
 	/* Not needed for transmission */
 	//struct ring_desc *rx_desc = make_rx_read_resp(params);
+	int ret = 0;
+
+	tx_desc = make_tx_read_req(params, route, payload, dma_map);
 
 	allow_bus_master(pci_id);
 
@@ -371,19 +402,25 @@ int request_router_cfg(const char *pci_id, const struct vfio_hlvl_params *params
 	 */
 	if (!(tx_desc->flags & TX_DESC_DONE)) {
 		fprintf(stderr, "transport layer failed to receive the control packet\n");
-		return 1;
+		ret = 1;
+
+		goto free;
 	} else
 		printf("read request successfully posted to the transport layer\n");
 
-	return 0;
+free:
+	free(payload);
+	free_dma_map(params->container, dma_map);
+
+	return ret;
 }
 
 int tbt_hw_init(const char *pci_id)
 {
 	char *root_cmd, *bash_op;
 	char cmd[MAX_LEN];
+	int ret = 0;
 	u32 val;
-	int ret;
 
 	snprintf(cmd, sizeof(cmd), "setpci -s %s 0x%x.L", pci_id, VS_CAP_22);
 	root_cmd = switch_cmd_to_root(cmd);
@@ -394,10 +431,26 @@ int tbt_hw_init(const char *pci_id)
 	ret = tbt_hw_force_pwr(pci_id, val);
 	if (ret) {
 		fprintf(stderr, "timeout in powering on the TBT h/w\n");
-		return ret;
+		goto out;
 	}
 
 	tbt_hw_set_ltr(pci_id);
 
-	return 0;
+out:
+	free(root_cmd);
+	free(bash_op);
+
+	return ret;
+}
+
+/* Free the allocated DMA mapping of the descriptors */
+void free_tx_rx_desc(const struct vfio_hlvl_params *params)
+{
+	u8 i = 0;
+
+	for (; i < TX_SIZE; i++)
+		free_dma_map(params->container, tx_desc[i].dma_map);
+
+	for (i = 0; i < RX_SIZE; i++)
+		free_dma_map(params->container, rx_desc[i].dma_map);
 }

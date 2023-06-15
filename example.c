@@ -11,6 +11,7 @@
  * Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
  */
 
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "tbtutils.h"
@@ -26,7 +27,7 @@ int main(void)
 
 	if (!pci_id) {
 		ret = 1;
-		goto out;
+		goto pci_out;
 	}
 
 	/*
@@ -40,7 +41,7 @@ int main(void)
 		fprintf(stderr, "VFIO not found\n");
 		ret = 1;
 
-		goto out;
+		goto check_vfio_out;
 	}
 
 	/* Bind all the modules present in the same IOMMU group as the PCI device */
@@ -50,7 +51,7 @@ int main(void)
 	params = vfio_dev_init(pci_id);
 	if (!params) {
 		ret = 1;
-		goto out;
+		goto vfio_init_out;
 	}
 
 	/* Fetch the BAR and PCI config. space regions for the PCI device */
@@ -63,7 +64,7 @@ int main(void)
 	/* Initialize the thunderbolt hardware before executing anything */
 	ret = tbt_hw_init(pci_id);
 	if (ret)
-		goto out;
+		goto tbt_init_out;
 
 	/* Allocate the TX and RX descriptors for the host thunderbolt controller */
 	allocate_tx_desc(params);
@@ -76,7 +77,17 @@ int main(void)
 	/* Request 1 dword from router config. space at offset 0x0 */
 	ret = request_router_cfg(pci_id, params, 0, 0, 1);
 
-out:
+	free_tx_rx_desc(params);
+
+tbt_init_out:
+	free(params->dev_info);
+	free_list(params->bar_regions);
+	free(params->pci_cfg_region);
+	free(params);
+vfio_init_out:
 	unbind_grp_modules(dev_list, num);
+check_vfio_out:
+	free(pci_id);
+pci_out:
 	return ret;
 }

@@ -53,6 +53,7 @@ struct list_item {
  * Default size is coded to 'PAGE_SIZE'.
  */
 struct va_phy_addr {
+	struct vfio_iommu_type1_dma_map *dma_map;
 	void *va;
 	u64 iova;
 };
