@@ -233,14 +233,18 @@ struct vfio_hlvl_params* vfio_dev_init(const char *pci_id)
 	if (ioctl(container, VFIO_GET_API_VERSION) != VFIO_API_VERSION) {
 		fprintf(stderr, "unknown API version\n");
 
-		close(container);
+		if (container >= 0)
+			close(container);
+
 		return NULL;
 	}
 
 	if (!ioctl(container, VFIO_CHECK_EXTENSION, VFIO_TYPE1_IOMMU)) {
 		fprintf(stderr, "type-1 iommu not supported\n");
 
-		close(container);
+		if (container >= 0)
+			close(container);
+
 		return NULL;
 	}
 
@@ -255,8 +259,11 @@ struct vfio_hlvl_params* vfio_dev_init(const char *pci_id)
 
 		free(iommu_grp);
 
-		close(container);
-		close(group);
+		if (container >= 0)
+			close(container);
+
+		if (group >= 0)
+			close(group);
 
 		return NULL;
 	}
@@ -275,6 +282,8 @@ struct vfio_hlvl_params* vfio_dev_init(const char *pci_id)
 
 	params->dev_info = malloc(sizeof(struct vfio_device_info));
 	*params->dev_info = device_info;
+
+	free(iommu_grp);
 
 	return params;
 }

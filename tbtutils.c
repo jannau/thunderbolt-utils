@@ -98,24 +98,24 @@ static struct req_payload* make_req_payload(u32 addr, u64 len, u32 adp, u32 cfg_
 /* Prepare the transmit descriptor and the read buffer request */
 static struct ring_desc* make_tx_read_req(const struct vfio_hlvl_params *params, u64 route,
 					  const struct req_payload *payload,
-					  struct vfio_iommu_type1_dma_map *dma_map)
+					  struct vfio_iommu_type1_dma_map **dma_map)
 {
 	struct ring_desc *desc;
 	struct read_req *req;
 
 	/* DMA mapping for read control request */
-	dma_map = iommu_map_va(params->container, RDWR_FLAG, page_index++);
+	*dma_map = iommu_map_va(params->container, RDWR_FLAG, page_index++);
 
 	desc = (struct ring_desc*)tx_desc[tx_index].va;
-	desc->addr_low = dma_map->iova & BITMASK(31, 0);
-	desc->addr_high = (dma_map->iova & BITMASK(63, 32)) >> 32;
+	desc->addr_low = (*dma_map)->iova & BITMASK(31, 0);
+	desc->addr_high = ((*dma_map)->iova & BITMASK(63, 32)) >> 32;
 	desc->len = sizeof(struct read_req);
 	desc->eof_pdf = EOF_SOF_READ;
 	desc->sof_pdf = EOF_SOF_READ;
 	desc->flags = TX_REQ_STS;
 	desc->rsvd = 0;
 
-	req = (struct read_req*)dma_map->vaddr;
+	req = (struct read_req*)(*dma_map)->vaddr;
 	req->route_high = (route & BITMASK(63, 32)) >> 32;
 	req->route_low = route & BITMASK(31, 0);
 	req->payload = *payload;
@@ -388,7 +388,7 @@ int request_router_cfg(const char *pci_id, const struct vfio_hlvl_params *params
 	//struct ring_desc *rx_desc = make_rx_read_resp(params);
 	int ret = 0;
 
-	tx_desc = make_tx_read_req(params, route, payload, dma_map);
+	tx_desc = make_tx_read_req(params, route, payload, &dma_map);
 
 	allow_bus_master(pci_id);
 
