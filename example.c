@@ -83,6 +83,10 @@ tbt_init_out:
 	free(params->dev_info);
 	free_list(params->bar_regions);
 	free(params->pci_cfg_region);
+
+	close(params->container);
+	close(params->group);
+
 	free(params);
 vfio_init_out:
 	unbind_grp_modules(dev_list, num);

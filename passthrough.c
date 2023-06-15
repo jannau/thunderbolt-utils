@@ -253,7 +253,9 @@ struct vfio_hlvl_params* vfio_dev_init(const char *pci_id)
 		fprintf(stderr, "group not viable\n");
 
 		free(iommu_grp);
+
 		close(container);
+		close(group);
 
 		return NULL;
 	}
