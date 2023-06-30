@@ -87,8 +87,11 @@ static bool dump_retimer(const char *retimer)
 	char *vid, *did;
 	u8 domain, port;
 	char *router;
+	char *str;
 
-	domain = strtoud(get_substr(retimer, 0, 1));
+	str = get_substr(retimer, 0, 1);
+	domain = strtoud(str);
+	free(str);
 
 	pos = strpos(retimer, ":", 0);
 	if (pos < 0)
@@ -155,8 +158,11 @@ static bool dump_retimers_in_router(const char *router)
 	char path[MAX_LEN];
 	bool found = false;
 	u8 domain;
+	char *str;
 
-	domain = strtoud(get_substr(router, 0, 1));
+	str = get_substr(router, 0, 1);
+	domain = strtoud(str);
+	free(str);
 
 	snprintf(path, sizeof(path), "for line in $(ls %s); do echo $line; done",
 		 tbt_sysfs_path);

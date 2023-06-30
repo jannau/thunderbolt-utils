@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include "helpers.h"
 
@@ -29,7 +30,7 @@ static char *tbt_debugfs_path = "/sys/kernel/debug/thunderbolt/";
 
 static struct router_config *routers_config = NULL;
 
-static char options[] = {'D', 'd', 's', 'r', 't', 'v', 'V', 'h'};
+static char options[] = {'D', 'd', 's', 'r', 't', 'v', 'V', 'h', '\0'};
 
 char *tbt_sysfs_path = "/sys/bus/thunderbolt/devices/";
 
@@ -94,8 +95,8 @@ static struct list_item* get_cap_vcap_start(struct list_item *regs_list,
 	u64 num_commas, col;
 	bool found = false;
 	s64 first, second;
+	char *regs, *str;
 	u64 total_col;
-	char *regs;
 
 	for (; regs_list; regs_list = regs_list->next) {
 		num_commas = 0;
@@ -115,9 +116,15 @@ static struct list_item* get_cap_vcap_start(struct list_item *regs_list,
 				if (second == -1)
 					break;
 
-				cap = strtouh(get_substr(regs, col, first - col));
-				vcap = strtouh(get_substr(regs, first + 1,
-							  second - first - 1));
+				str = get_substr(regs, col, first - col);
+				cap = strtouh(str);
+				free(str);
+
+				str = get_substr(regs, first + 1,
+						 second - first - 1);
+				vcap = strtouh(str);
+				free(str);
+
 				if (cap == cap_id && vcap == vcap_id)
 					found = true;
 
@@ -357,8 +364,9 @@ static int debugfs_config_init(void)
 	i = 0;
 
 	for(; router_list; router_list = router_list->next) {
-		router = malloc(strlen((char*)router_list->val) * sizeof(char));
+		router = malloc((strlen((char*)router_list->val) + 1) * sizeof(char));
 		strcpy(router, (char*)router_list->val);
+		router[strlen((char*)router_list->val)] = '\0';
 
 		adps = get_total_adps_debugfs(router);
 
@@ -421,32 +429,49 @@ static void free_adp_regs(struct adp_config *config, char **regs, u8 cap_id,
 	free(regs);
 }
 
-static void free_adp_config(struct adp_config *config)
+static void free_adp_config(char *router, struct adp_config *config)
 {
-	free_adp_regs(config, config->regs, 0x0, 0x0);
-	free_adp_regs(config, config->lane_regs, LANE_ADP_CAP_ID, 0x0);
-	free_adp_regs(config, config->pcie_regs, PCIE_ADP_CAP_ID, 0x0);
-	free_adp_regs(config, config->dp_regs, DP_ADP_CAP_ID, 0x0);
-	free_adp_regs(config, config->usb3_regs, USB3_ADP_CAP_ID, 0x0);
-	free_adp_regs(config, config->usb4_port_regs, USB4_PORT_CAP_ID, 0x0);
+	u8 total_adps = get_total_adps_debugfs(router);
+	u8 i = 0;
 
-	free_list(config->adp_regs);
+	for (; i < total_adps; i++) {
+		free_adp_regs(&config[i], config[i].regs, 0x0, 0x0);
+		free_adp_regs(&config[i], config[i].lane_regs, LANE_ADP_CAP_ID, 0x0);
+		free_adp_regs(&config[i], config[i].pcie_regs, PCIE_ADP_CAP_ID, 0x0);
+		free_adp_regs(&config[i], config[i].dp_regs, DP_ADP_CAP_ID, 0x0);
+		free_adp_regs(&config[i], config[i].usb3_regs, USB3_ADP_CAP_ID, 0x0);
+		free_adp_regs(&config[i], config[i].usb4_port_regs, USB4_PORT_CAP_ID, 0x0);
+
+		free_list(config[i].adp_regs);
+	}
+
+	free(config);
 }
 
 /* Free the memory explicitly used for debugfs operations */
 static void debugfs_config_exit(void)
 {
+	struct list_item *router_list;
 	u64 total_routers = 0;
-	u8 domains, i = 0;
+	char path[MAX_LEN];
+	char *root_cmd;
+	u8 i;
 
-	domains = total_domains();
-	for (; i < domains; i++)
-		total_routers += get_total_routers_in_domain(i);
+	snprintf(path, sizeof(path), "ls %s", tbt_debugfs_path);
+	root_cmd = switch_cmd_to_root(path);
+
+	router_list = do_bash_cmd_list(root_cmd);
+	total_routers = get_total_list_items(router_list);
 
 	for (i = 0; i < total_routers; i++) {
+		free_adp_config(routers_config[i].router, routers_config[i].adps_config);
 		free_router_config(&routers_config[i]);
-		free_adp_config(routers_config[i].adps_config);
 	}
+
+	free(routers_config);
+
+	free_list(router_list);
+	free(root_cmd);
 }
 
 /*
@@ -553,7 +578,12 @@ bool is_router_format(const char *router, u8 domain)
 {
 	char num_str[MAX_LEN];
 	char *colon_str = ":";
-	int pos;
+	int pos, i = 0;
+
+	for (; i < (int)strlen(router); i++) {
+		if (!isdigit(router[i]) && (router[i] != '-'))
+			return false;
+	}
 
 	snprintf(num_str, sizeof(num_str), "%u-", domain);
 
@@ -732,7 +762,11 @@ u8 depth_of_router(const char *router)
 /* Returns the domain of the valid router string */
 u8 domain_of_router(const char *router)
 {
-	return strtoud(get_substr(router, 0, 1));
+	char *str = get_substr(router, 0, 1);
+	u8 domain = strtoud(str);
+
+	free(str);
+	return domain;
 }
 
 /*
@@ -869,20 +903,29 @@ char** ameliorate_args(int argc, char **argv)
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] == '-') {
 			if (strlen(argv[i]) == 1) {
-				arr[j++] = argv[i];
+				arr[j] = malloc(2 * sizeof(char));
+				memset(arr[j], '\0', 2 * sizeof(char));
+
+				arr[j++][0] = argv[i][0];
+
 				continue;
 			}
 
 			for (k = 1; k < strlen(argv[i]); k++) {
-				char str[MAX_LEN];
+				char str[3];
 
 				snprintf(str, sizeof(str), "-%c", argv[i][k]);
 
 				arr[j] = malloc(3 * sizeof(char));
+				memset(arr[j], '\0', 3 * sizeof(char));
 				strcpy(arr[j++], str);
 			}
-		} else
-			arr[j++] = argv[i];
+		} else {
+			arr[j] = malloc((strlen(argv[i]) + 1) * sizeof(char));
+			memset(arr[j], '\0', (strlen(argv[i]) + 1) * sizeof(char));
+
+			memcpy(arr[j++], argv[i], strlen(argv[i]) * sizeof(char));
+		}
 	}
 
 	arr[j] = NULL;

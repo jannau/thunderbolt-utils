@@ -56,7 +56,11 @@ static void dump_init_depth(u8 depth)
  */
 static inline u8 downstream_port(const char *router)
 {
-	return strtoud(get_substr(router, 2, 1));
+	char *str = get_substr(router, 2, 1);
+	u8 port = strtoud(str);
+
+	free(str);
+	return port;
 }
 
 /* Dump the vendor/device name of the router */

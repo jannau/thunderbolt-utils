@@ -45,12 +45,15 @@ static bool dump_router(const char *router)
 {
 	u8 domain, depth;
 	bool exist;
+	char *str;
 
 	exist = is_router_present(router);
 	if (!exist)
 		return false;
 
-	domain = strtoud(get_substr(router, 0, 1));
+	str = get_substr(router, 0, 1);
+	domain = strtoud(str);
+
 	depth = depth_of_router(router);
 
 	printf("Domain %u Depth %u: ", domain, depth);
@@ -58,6 +61,8 @@ static bool dump_router(const char *router)
 	dump_vdid(router);
 	dump_name(router);
 	dump_generation(router);
+
+	free(str);
 
 	return true;
 }
@@ -157,8 +162,9 @@ int main(int argc, char **argv)
 	char *domain, *depth, *device, *prev;
 	bool tree, retimer;
 	u8 verbose = 0;
+	int ret = 0;
 	char **arr;
-	u16 i = 0;
+	u32 i = 0;
 
 	domain = depth = device = prev = NULL;
 	tree = retimer = false;
@@ -185,8 +191,8 @@ int main(int argc, char **argv)
 			fprintf(stderr, "lstbt: invalid option -- '%s'\n", arr[i]);
 			fprintf(stderr, "%s", help_msg);
 
-			return 1;
-		}
+			ret = 1;
+			goto out;		}
 
 		if (arr[i][1] == 'D' || arr[i][1] == 'd' || arr[i][1] == 's')
 			prev = arr[i];
@@ -198,20 +204,39 @@ int main(int argc, char **argv)
 			verbose++;
 		else if (arr[i][1] == 'h') {
 			printf("%s", help_msg);
-			return 0;
+
+			ret = 0;
+			goto out;
 		}
 		else if (arr[i][1] == 'V') {
 			printf("lstbt (tbtutils) %u.%u\n", LIBTBT_MAJ_VERSION,
 			       LIBTBT_MIN_VERSION);
-			return 0;
+
+			ret = 0;
+			goto out;
 		}
 	}
 
 	/* If 'prev' is not 'NULL', it implies that an argument is missing */
 	if (prev) {
 		fprintf(stderr, "missing argument(s)\n%s", help_msg);
-		return 1;
+
+		ret = 1;
+		goto out;
 	}
 
-	return __main(domain, depth, device, retimer, tree, verbose);
+	ret = __main(domain, depth, device, retimer, tree, verbose);
+
+out:
+	for (i = 0; i < MAX_LEN * MAX_LEN; i++) {
+		if (!arr[i])
+			break;
+		else if (strlen(arr[i]) == 1 || arr[i][0] != '-')
+			continue;
+		else
+			free(arr[i]);
+	}
+	free(arr);
+
+	return ret;
 }

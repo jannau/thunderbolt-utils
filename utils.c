@@ -191,8 +191,7 @@ struct list_item* do_bash_cmd_list(const char *cmd)
 
 	pclose(file);
 
-	if (temp_output)
-		free(temp_output);
+	free(output);
 
 	return head;
 }
@@ -431,9 +430,10 @@ char** list_to_numbered_array(struct list_item *item)
 	i = 0;
 	for (; i < num; i++) {
 		len = strlen((char*)item->val);
-		arr[i] = malloc(len * sizeof(char));
+		arr[i] = malloc((len + 1) * sizeof(char));
 
 		strcpy(arr[i], (char*)item->val);
+		arr[i][len] = '\0';
 
 		item = item->next;
 	}
