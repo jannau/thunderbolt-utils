@@ -231,10 +231,8 @@ out:
 	for (i = 0; i < MAX_LEN * MAX_LEN; i++) {
 		if (!arr[i])
 			break;
-		else if (strlen(arr[i]) == 1 || arr[i][0] != '-')
-			continue;
-		else
-			free(arr[i]);
+
+		free(arr[i]);
 	}
 	free(arr);
 

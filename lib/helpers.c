@@ -893,9 +893,9 @@ int __main(char *domain, char *depth, char *device, bool retimer, bool tree,
 /* Split multiple argument strings into single ones */
 char** ameliorate_args(int argc, char **argv)
 {
+	char **arr;
 	int i, j;
 	size_t k;
-	char **arr;
 
 	arr = malloc(MAX_LEN * sizeof(char*));
 	j = 0;
