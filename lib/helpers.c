@@ -12,6 +12,7 @@
  * Copyright (C) 2023 Intel Corporation
  */
 
+#include <sys/stat.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
@@ -144,8 +145,12 @@ static struct list_item* get_cap_vcap_start(struct list_item *regs_list,
 static void get_router_regs(const char *router, struct router_config *config)
 {
 	struct list_item *item, *router_regs;
-	char path[MAX_LEN];
+	char path[MAX_LEN], check[MAX_LEN];
 	char *root_cmd;
+
+	snprintf(check, sizeof(check), "%s%s/regs", tbt_debugfs_path, router);
+	if (is_link_nabs(check))
+		exit(1);
 
 	snprintf(path, sizeof(path), "cat %s%s/regs | awk -v OFS=',' '{\\$1=\\$1}1'",
 		 tbt_debugfs_path, router);
@@ -192,10 +197,15 @@ static void get_adps_config(const char *router, struct adp_config *config)
 	total_adps = get_total_adps_debugfs(router);
 
 	for (; i < total_adps; i++) {
-		char path[MAX_LEN];
+		char path[MAX_LEN], check[MAX_LEN];
 		char *root_cmd;
 
 		config[i].adp = i;
+
+		snprintf(check, sizeof(check), "%s%s/port%u/regs", tbt_debugfs_path,
+			 router, i);
+		if (is_link_nabs(check))
+			exit(1);
 
 		snprintf(path, sizeof(path),
 			 "cat 2>/dev/null %s%s/port%u/regs | awk -v OFS=',' '{\\$1=\\$1}1'",
@@ -630,8 +640,13 @@ bool is_router_depth(const char *router, u8 depth)
 /* Dump the router's vendor/device IDs */
 void dump_vdid(const char *router)
 {
-	char vid_path[MAX_LEN], did_path[MAX_LEN];
+	char vid_path[MAX_LEN], did_path[MAX_LEN], vcheck[MAX_LEN], dcheck[MAX_LEN];
 	char *vid, *did;
+
+	snprintf(vcheck, sizeof(vcheck), "%s%s/vendor", tbt_sysfs_path, router);
+	snprintf(dcheck, sizeof(dcheck), "%s%s/device", tbt_sysfs_path, router);
+	if (is_link_nabs(vcheck) || is_link_nabs(dcheck))
+		exit(1);
 
 	snprintf(vid_path, sizeof(vid_path), "cat %s%s/vendor", tbt_sysfs_path, router);
 	vid = do_bash_cmd(vid_path);
@@ -648,9 +663,13 @@ void dump_vdid(const char *router)
 /* Dump the generation of the router */
 void dump_generation(const char *router)
 {
-	char gen[MAX_LEN];
+	char gen[MAX_LEN], check[MAX_LEN];
 	u8 generation;
 	char *gen_str;
+
+	snprintf(check, sizeof(check), "%s%s/generation", tbt_sysfs_path, router);
+	if (is_link_nabs(check))
+		exit(1);
 
 	snprintf(gen, sizeof(gen), "cat %s%s/generation", tbt_sysfs_path, router);
 
@@ -680,8 +699,12 @@ void dump_generation(const char *router)
 /* Dump the NVM version of the router */
 void dump_nvm_version(const char *router)
 {
-	char path[MAX_LEN];
+	char path[MAX_LEN], check[MAX_LEN];
 	char *nvm;
+
+	snprintf(check, sizeof(check), "%s%s/nvm_version", tbt_sysfs_path, router);
+	if (is_link_nabs(check))
+		exit(1);
 
 	snprintf(path, sizeof(path), "cat %s%s/nvm_version", tbt_sysfs_path, router);
 	nvm = do_bash_cmd(path);
@@ -694,7 +717,7 @@ void dump_nvm_version(const char *router)
 /* Dump the router's lanes */
 void dump_lanes(const char *router)
 {
-	char path[MAX_LEN];
+	char path[MAX_LEN], check[MAX_LEN];
 	char str[MAX_LEN];
 	char *lanes;
 
@@ -702,6 +725,10 @@ void dump_lanes(const char *router)
 		sprintf(str, "%s", "");
 		return;
 	}
+
+	snprintf(check, sizeof(check), "%s%s/tx_lanes", tbt_sysfs_path, router);
+	if (is_link_nabs(check))
+		exit(1);
 
 	snprintf(path, sizeof(path), "cat %s%s/tx_lanes", tbt_sysfs_path, router);
 	lanes = do_bash_cmd(path);
@@ -715,7 +742,7 @@ void dump_lanes(const char *router)
  */
 void dump_speed(const char *router)
 {
-	char path[MAX_LEN];
+	char path[MAX_LEN], check[MAX_LEN];
 	char str[MAX_LEN];
 	char *speed_str;
 	u8 speed;
@@ -724,6 +751,10 @@ void dump_speed(const char *router)
 		sprintf(str, "%s", "");
 		return;
 	}
+
+	snprintf(check, sizeof(check), "%s%s/tx_speed", tbt_sysfs_path, router);
+	if (is_link_nabs(check))
+		exit(1);
 
 	snprintf(path, sizeof(path), "cat %s%s/tx_speed", tbt_sysfs_path, router);
 
@@ -737,9 +768,13 @@ void dump_speed(const char *router)
 /* Dump the authentication status, depicting PCIe tunneling */
 void dump_auth_sts(const char *router)
 {
-	char path[MAX_LEN];
+	char path[MAX_LEN], check[MAX_LEN];
 	char *auth_str;
 	bool auth;
+
+	snprintf(check, sizeof(check), "%s%s/authorized", tbt_sysfs_path, router);
+	if (is_link_nabs(check))
+		exit(1);
 
 	snprintf(path, sizeof(path), "cat %s%s/authorized", tbt_sysfs_path, router);
 

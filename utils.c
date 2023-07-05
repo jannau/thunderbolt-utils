@@ -474,3 +474,22 @@ void free_list(struct list_item *head)
 		moving = temp;
 	}
 }
+
+/*
+ * Returns 'true' if the file name corresponds to a symlink/hardlink, and 'false'
+ * otherwise.
+ */
+bool is_link_nabs(const char *name)
+{
+	struct stat st;
+
+	if (lstat(name, &st) != 0)
+		return false;
+
+	if (!S_ISREG(st.st_mode) || (st.st_nlink > 1)) {
+		fprintf(stderr, "discovered file system corruptions, exiting...\n");
+		return true;
+	}
+
+	return false;
+}

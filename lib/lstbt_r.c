@@ -67,8 +67,12 @@ static bool is_retimer_in_router(const char *retimer, const char *router)
 /* Dumps the retimer f/w version */
 static void dump_retimer_nvm_version(const char *retimer)
 {
-	char path[MAX_LEN];
+	char path[MAX_LEN], check[MAX_LEN];
 	char *ver;
+
+	snprintf(check, sizeof(check), "%s%s/nvm_version", tbt_sysfs_path, retimer);
+	if (is_link_nabs(check))
+		exit(1);
 
 	snprintf(path, sizeof(path), "cat %s%s/nvm_version", tbt_sysfs_path,
 		 retimer);
@@ -82,7 +86,7 @@ static void dump_retimer_nvm_version(const char *retimer)
 /* Dumps the retimer */
 static bool dump_retimer(const char *retimer)
 {
-	char vid_path[MAX_LEN], did_path[MAX_LEN];
+	char vid_path[MAX_LEN], did_path[MAX_LEN], vcheck[MAX_LEN], dcheck[MAX_LEN];
 	int pos, dot_pos;
 	char *vid, *did;
 	u8 domain, port;
@@ -108,6 +112,11 @@ static bool dump_retimer(const char *retimer)
 	port = strtoud(get_substr(retimer, pos + 1, dot_pos - pos - 1));
 
 	printf("Domain %u Router %s: Port %u: ", domain, router, port);
+
+	snprintf(vcheck, sizeof(vcheck), "%s%s/vendor", tbt_sysfs_path, retimer);
+	snprintf(dcheck, sizeof(dcheck), "%s%s/device", tbt_sysfs_path, retimer);
+	if (is_link_nabs(vcheck) || is_link_nabs(dcheck))
+		exit(1);
 
 	snprintf(vid_path, sizeof(vid_path), "cat %s%s/vendor", tbt_sysfs_path, retimer);
 	vid = do_bash_cmd(vid_path);

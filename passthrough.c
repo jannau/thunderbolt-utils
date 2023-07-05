@@ -31,6 +31,11 @@ static void bind_vfio_module(const char *pci_id, const struct vdid *vdid)
 	char drv_path[3 * MAX_LEN];
 	char *root_cmd, *bash_op;
 	char dev_path[MAX_LEN];
+	char check[MAX_LEN];
+
+	snprintf(check, sizeof(check), "%s%s/driver/unbind", pci_dev_sysfs_path, pci_id);
+	if (is_link_nabs(check))
+		exit(1);
 
 	snprintf(dev_path, sizeof(dev_path), "echo %s > %s%s/driver/unbind",
 		 pci_id, pci_dev_sysfs_path, pci_id);
@@ -39,6 +44,11 @@ static void bind_vfio_module(const char *pci_id, const struct vdid *vdid)
 
 	free(root_cmd);
 	free(bash_op);
+
+	memset(check, '\0', MAX_LEN);
+	snprintf(check, sizeof(check), "%svfio-pci/new_id", pci_drv_sysfs_path);
+	if (is_link_nabs(check))
+		exit(1);
 
 	snprintf(drv_path, sizeof(drv_path), "echo '%s %s' > %svfio-pci/new_id",
 		 vdid->vendor_id, vdid->device_id, pci_drv_sysfs_path);
@@ -55,6 +65,11 @@ static void unbind_vfio_module(const char *pci_id, const struct vdid *vdid)
 	char drv_path[3 * MAX_LEN];
 	char *root_cmd, *bash_op;
 	char dev_path[MAX_LEN];
+	char check[MAX_LEN];
+
+	snprintf(check, sizeof(check), "%s%s/driver/unbind", pci_dev_sysfs_path, pci_id);
+	if (is_link_nabs(check))
+		exit(1);
 
 	snprintf(dev_path, sizeof(dev_path), "echo %s > %s%s/driver/unbind",
 		 pci_id, pci_dev_sysfs_path, pci_id);
@@ -63,6 +78,11 @@ static void unbind_vfio_module(const char *pci_id, const struct vdid *vdid)
 
 	free(root_cmd);
 	free(bash_op);
+
+	memset(check, '\0', MAX_LEN);
+	snprintf(check, sizeof(check), "%svfio-pci/remove_id", pci_drv_sysfs_path);
+	if (is_link_nabs(check))
+		exit(1);
 
 	snprintf(drv_path, sizeof(drv_path), "echo '%s %s' > %svfio-pci/remove_id",
 		 vdid->vendor_id, vdid->device_id, pci_drv_sysfs_path);

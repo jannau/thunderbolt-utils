@@ -26,8 +26,13 @@
 /* Dump the vendor/device name of the router */
 static void dump_name(const char *router)
 {
-	char v_path[MAX_LEN], d_path[MAX_LEN];
+	char v_path[MAX_LEN], d_path[MAX_LEN], vcheck[MAX_LEN], dcheck[MAX_LEN];
 	char *vendor, *device;
+
+	snprintf(vcheck, sizeof(vcheck), "%s%s/vendor_name", tbt_sysfs_path, router);
+	snprintf(dcheck, sizeof(dcheck), "%s%s/device_name", tbt_sysfs_path, router);
+	if (is_link_nabs(vcheck) || is_link_nabs(dcheck))
+		exit(1);
 
 	snprintf(v_path, sizeof(v_path), "cat %s%s/vendor_name", tbt_sysfs_path, router);
 	vendor = do_bash_cmd(v_path);

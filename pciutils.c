@@ -24,6 +24,9 @@ void do_pci_rescan(void)
 	char *path = "echo 1 > /sys/bus/pci/rescan";
 	char *root_cmd, *bash_op;
 
+	if (is_link_nabs("/sys/bus/pci/rescan"))
+		exit(1);
+
 	root_cmd = switch_cmd_to_root(path);
 	bash_op = do_bash_cmd(root_cmd);
 
@@ -34,8 +37,12 @@ void do_pci_rescan(void)
 /* Remove the provided PCI device from the system */
 void remove_pci_dev(const char *pci_id)
 {
+	char path[MAX_LEN], check[MAX_LEN];
 	char *root_cmd, *bash_op;
-	char path[MAX_LEN];
+
+	snprintf(check, sizeof(check), "%s%s/remove", pci_dev_sysfs_path, pci_id);
+	if (is_link_nabs(check))
+		exit(1);
 
 	snprintf(path, sizeof(path), "echo 1 > %s%s/remove", pci_dev_sysfs_path,
 		 pci_id);
