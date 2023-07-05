@@ -171,6 +171,11 @@ int main(int argc, char **argv)
 	char **arr;
 	u32 i = 0;
 
+	if (!is_input_printable(argc, argv)) {
+		fprintf(stderr, "discovered non-printable characters, exiting...\n");
+		exit(1);
+	}
+
 	domain = depth = device = prev = NULL;
 	tree = retimer = false;
 

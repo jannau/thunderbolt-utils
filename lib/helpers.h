@@ -75,3 +75,4 @@ int lstbt_r(char *domain, const char *depth, char *device);
 int __main(char *domain, char *depth, char *device, bool retimer, bool tree,
 	   u8 verbose);
 char** ameliorate_args(int argc, char **argv);
+bool is_input_printable(int argc, char **argv);

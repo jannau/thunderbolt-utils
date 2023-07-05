@@ -965,3 +965,18 @@ char** ameliorate_args(int argc, char **argv)
 	arr[j] = NULL;
 	return arr;
 }
+
+/* Returns 'true' if the input supplied is printable, 'false' otherwise */
+bool is_input_printable(int argc, char **argv)
+{
+	int i = 0, j;
+
+	for (; i < argc; i++) {
+		for (j = 0; j < (int)strlen(argv[i]); j++) {
+			if (!isprint(argv[i][j]))
+				return false;
+		}
+	}
+
+	return true;
+}
