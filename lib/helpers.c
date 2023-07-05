@@ -12,7 +12,6 @@
  * Copyright (C) 2023 Intel Corporation
  */
 
-#include <sys/stat.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
