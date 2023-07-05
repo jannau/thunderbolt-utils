@@ -172,7 +172,7 @@ int main(int argc, char **argv)
 	u32 i = 0;
 
 	if (!is_input_printable(argc, argv)) {
-		fprintf(stderr, "discovered non-printable characters, exiting...\n");
+		fprintf(stderr, "discovered non-printable character(s), exiting...\n");
 		exit(1);
 	}
 
