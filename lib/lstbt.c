@@ -219,7 +219,7 @@ int main(int argc, char **argv)
 			goto out;
 		}
 		else if (arr[i][1] == 'V') {
-			printf("lstbt (tbtutils) %u.%u\n", LIBTBT_MAJ_VERSION,
+			printf("lstbt (thunderbolt-utils) %u.%u\n", LIBTBT_MAJ_VERSION,
 			       LIBTBT_MIN_VERSION);
 
 			ret = 0;

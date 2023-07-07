@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 
-# Makefile for tbtutils (lstbt)
+# Makefile for thunderbolt-utils (lstbt)
 
 # Copyright (C) Rajat Khandelwal <rajat.khandelwal@intel.com>
 # Copyright (C) 2023 Intel Corporation
