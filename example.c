@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: LGPL-2.0
 /*
  * Example to demonstrate the transmission of DMA packets to a router.
  * This sample code transmits a read control packet to read 1 dword from the host
