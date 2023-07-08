@@ -93,5 +93,5 @@ vfio_init_out:
 check_vfio_out:
 	free(pci_id);
 pci_out:
-	return ret;
+	exit(ret); /* Terminate all the threads, if exist */
 }

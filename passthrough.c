@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <inttypes.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
@@ -180,14 +181,56 @@ static u32 read_host_mem(const struct vfio_hlvl_params *params, u64 off)
 	return info;
 }*/
 
+/*
+ * Function to run in a separate thread to check if the VFIO is enabled in no-IOMMU
+ * mode. If yes, terminate all the threads and don't allow the user (or attacker) to
+ * proceed with anything.
+ */
+void* wait_for_vfio_no_iommu(void* arg)
+{
+	char *cmd = "cat /sys/module/vfio/parameters/enable_unsafe_noiommu_mode";
+	char *result;
+
+	if (arg) {
+		fprintf(stderr, "inconsistencies detected... aborting!\n");
+		exit(1);
+	}
+
+	while (1) {
+		result = do_bash_cmd(cmd);
+		if (result && (result[0] == 'Y')) {
+			fprintf(stderr, "no-IOMMU enabled VFIO detected... aborting!\n");
+			free(result);
+
+			exit(1);
+		} else if (result)
+			free(result);
+	}
+}
+
 bool check_vfio_module(void)
 {
 	char *cmd = "modprobe 2>/dev/null vfio-pci; echo $?";
+	pthread_t vfio_no_iommu;
 	char *present;
+	bool pres;
+	int ret;
 
 	present = do_bash_cmd(cmd);
 
-	return !strtoud(present);
+	pres = !strtoud(present);
+	if (!pres) {
+		free(present);
+		return false;
+	}
+
+	ret = pthread_create(&vfio_no_iommu, NULL, wait_for_vfio_no_iommu, NULL);
+	if (ret)
+		printf("WARN: no-IOMMU VFIO mode is not being checked!\n");
+
+	free(present);
+
+	return true;
 }
 
 /*
