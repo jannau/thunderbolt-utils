@@ -8,7 +8,7 @@
 .lib/*.swp
 lstbt
 
-# Specific to the collection of the libraries to provide DMA abstraction
+# Specific to the collection of libraries to provide DMA abstraction
 # into user-space.
 *.o
 *.swp
