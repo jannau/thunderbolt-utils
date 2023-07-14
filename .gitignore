@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0
+
+# Copyright (C) Rajat Khandelwal <rajat.khandelwal@intel.com>
+# Copyright (C) 2023 Intel Corporation
+
+# Specific to the 'lstbt' utility
+.lib/*.o
+.lib/*.swp
+lstbt
+
+# Specific to the collection of the libraries to provide DMA abstraction
+# into user-space.
+*.o
+*.swp
+test
