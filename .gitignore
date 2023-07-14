@@ -8,8 +8,8 @@
 .lib/*.swp
 lstbt
 
-# Specific to the collection of libraries to provide DMA abstraction
-# into user-space.
+# Specific to the collection of libraries to provide DMA abstraction user-space,
+# including the temporary files for 'utils.c' commonly used for both. 
 *.o
 *.swp
 test
