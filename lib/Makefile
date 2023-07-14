@@ -2,7 +2,7 @@
 
 # Makefile for thunderbolt-utils (lstbt)
 
-# Copyright (C) Rajat Khandelwal <rajat.khandelwal@intel.com>
+# Copyright (C) 2023 Rajat Khandelwal <rajat.khandelwal@intel.com>
 # Copyright (C) 2023 Intel Corporation
 
 LIBTBT_EXEC = /usr/bin/lstbt
