@@ -145,14 +145,14 @@ int lstbt(char *domain, char *depth, char *device)
 		i = 0;
 
 		for (; i < domains; i++)
-			found = enumerate_domain(i, NULL);
+			found |= enumerate_domain(i, NULL);
 	} else if (domain && !depth) {
 		found = enumerate_domain(strtoud(domain), NULL);
 	} else if (!domain && depth) {
 		i = 0;
 
 		for (; i < domains; i++)
-			found = enumerate_domain(i, depth);
+			found |= enumerate_domain(i, depth);
 	} else
 		found = enumerate_domain(strtoud(domain), depth);
 

@@ -241,14 +241,14 @@ int lstbt_t(char *domain, char *depth, char *device, bool verbose)
 		i = 0;
 
 		for (; i < domains; i++)
-			found = enumerate_domain_tree(i, NULL, verbose);
+			found |= enumerate_domain_tree(i, NULL, verbose);
 	} else if (domain && !depth) {
 		found = enumerate_domain_tree(strtoud(domain), NULL, verbose);
 	} else if (!domain && depth) {
 		i = 0;
 
 		for (; i < domains; i++)
-			found = enumerate_domain_tree(i, depth, verbose);
+			found |= enumerate_domain_tree(i, depth, verbose);
 	} else
 		found = enumerate_domain_tree(strtoud(domain), depth, verbose);
 

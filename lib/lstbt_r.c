@@ -251,7 +251,7 @@ int lstbt_r(char *domain, const char *depth, char *device)
 		i = 0;
 
 		for (; i < domains; i++)
-			found = enumerate_retimers_in_domain(i);
+			found |= enumerate_retimers_in_domain(i);
 	} else
 		found = enumerate_retimers_in_domain(strtoud(domain));
 

@@ -1888,14 +1888,14 @@ int lstbt_v(char *domain, char *depth, char *device, u8 num)
 		i = 0;
 
 		for (; i < domains; i++)
-			found = dump_domain_verbose(i, NULL, num);
+			found |= dump_domain_verbose(i, NULL, num);
 	} else if (domain && !depth) {
 		found = dump_domain_verbose(strtoud(domain), NULL, num);
 	} else if (!domain && depth) {
 		i = 0;
 
 		for (; i < domains; i++)
-			found = dump_domain_verbose(i, depth, num);
+			found |= dump_domain_verbose(i, depth, num);
 	} else
 		found = dump_domain_verbose(strtoud(domain), depth, num);
 
