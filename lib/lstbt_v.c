@@ -1697,6 +1697,9 @@ static bool dump_router_verbose(char *router, u8 num)
 	char *route_str;
 	u16 usb4v;
 
+	are_adp_types_filled = false;
+	fill_adp_types_in_router(router);
+
 	topid_low = get_top_id_low(router);
 	if (topid_low == MAX_BIT32)
 		return false;

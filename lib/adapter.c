@@ -14,6 +14,44 @@
 
 #include "helpers.h"
 
+static u16 adp_types[MAX_ADAPTERS]; /* Hold an array to fill the adapter
+				     * types for the adapters present in the router
+				     * to enable faster access to the information
+				     * regarding if an adapter is a specific protocol
+				     * adapter or a lane adapter, or none.
+				     */
+
+bool are_adp_types_filled = false;
+
+/* Function used to fill the above data structure */
+void fill_adp_types_in_router(const char *router)
+{
+	u8 i = 1;
+
+	adp_types[0] = MAX_BIT8;
+
+	for (; i < MAX_ADAPTERS; i++) {
+		if (is_adp_lane(router, i))
+			adp_types[i] = LANE_NUM;
+		else if (is_adp_up_usb3(router, i))
+			adp_types[i] = UP_USB3_NUM;
+		else if (is_adp_down_usb3(router, i))
+			adp_types[i] = DOWN_USB3_NUM;
+		else if (is_adp_up_pcie(router, i))
+			adp_types[i] = UP_PCIE_NUM;
+		else if (is_adp_down_pcie(router, i))
+			adp_types[i] = DOWN_PCIE_NUM;
+		else if (is_adp_dp_in(router, i))
+			adp_types[i] = DP_IN_NUM;
+		else if (is_adp_dp_out(router, i))
+			adp_types[i] = DP_OUT_NUM;
+		else
+			adp_types[i] = MAX_BIT8;
+	}
+
+	are_adp_types_filled = true;
+}
+
 /*
  * Returns the protocol, version, and sub-type of the adapter.
  * If config. space is inaccessible or adapter doesn't exist, return a
@@ -100,6 +138,9 @@ u64 are_hot_events_disabled(const char *router, u8 adp)
 bool is_adp_lane(const char *router, u8 adp)
 {
 	u64 pvs;
+
+	if (are_adp_types_filled)
+		return adp_types[adp] == LANE_NUM;
 
 	pvs = get_adp_pvs(router, adp);
 
@@ -588,6 +629,9 @@ bool is_adp_up_usb3(const char *router, u8 adp)
 {
 	u64 pvs;
 
+	if (are_adp_types_filled)
+		return adp_types[adp] == UP_USB3_NUM;
+
 	pvs = get_adp_pvs(router, adp);
 	if (pvs == MAX_BIT32)
 		return false;
@@ -602,6 +646,9 @@ bool is_adp_up_usb3(const char *router, u8 adp)
 bool is_adp_down_usb3(const char *router, u8 adp)
 {
 	u64 pvs;
+
+	if (are_adp_types_filled)
+		return adp_types[adp] == DOWN_USB3_NUM;
 
 	pvs = get_adp_pvs(router, adp);
 	if (pvs == MAX_BIT32)
@@ -858,6 +905,9 @@ bool is_adp_up_pcie(const char *router, u8 adp)
 {
 	u64 pvs;
 
+	if (are_adp_types_filled)
+		return adp_types[adp] == UP_PCIE_NUM;
+
 	pvs = get_adp_pvs(router, adp);
 	if (pvs == MAX_BIT32)
 		return false;
@@ -872,6 +922,9 @@ bool is_adp_up_pcie(const char *router, u8 adp)
 bool is_adp_down_pcie(const char *router, u8 adp)
 {
 	u64 pvs;
+
+	if (are_adp_types_filled)
+		return adp_types[adp] == DOWN_PCIE_NUM;
 
 	pvs = get_adp_pvs(router, adp);
 	if (pvs == MAX_BIT32)
@@ -1029,6 +1082,9 @@ bool is_adp_dp_in(const char *router, u8 adp)
 {
 	u64 pvs;
 
+	if (are_adp_types_filled)
+		return adp_types[adp] == DP_IN_NUM;
+
 	pvs = get_adp_pvs(router, adp);
 	if (pvs == MAX_BIT32)
 		return false;
@@ -1043,6 +1099,9 @@ bool is_adp_dp_in(const char *router, u8 adp)
 bool is_adp_dp_out(const char *router, u8 adp)
 {
 	u64 pvs;
+
+	if (are_adp_types_filled)
+		return adp_types[adp] == DP_OUT_NUM;
 
 	pvs = get_adp_pvs(router, adp);
 	if (pvs == MAX_BIT32)
