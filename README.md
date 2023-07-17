@@ -3,6 +3,9 @@ Thunderbolt/USB4 utilities
 
 This software is a collection of various user-space functionalities for the thunderbolt/USB4 subsystem, along with a library (lstbt) to query the TBT/USB4 devices present in
 the system. 
+Utilities included:
+1. lstbt
+2. Framework abstractions to provide the user wrappers to configure the TBT/USB4 subsystem via porting the DMA layer from kernel-space to user-space, paving way for independent software around it.
 
 ## Building and installing lstbt
 lstbt is present in the ./lib subdirectory of the software.
