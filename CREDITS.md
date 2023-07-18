@@ -3,7 +3,8 @@ The following acknowledges the owners and maintainers of the repository along wi
 ## Owners
 The following people (as of now) are responsible for creating the project and bringing it to its culmination.<br>
 [Rajat Khandelwal](https://github.com/rajatkha)<br>
-[Abhijeet Rao](https://github.com/arao15)
+[Abhijeet Rao](https://github.com/arao15)<br>
+T V Rama Lakshman
 
 ## Maintainers
 The repository is maintained currently by the following people.<br>
