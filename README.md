@@ -14,14 +14,16 @@ lstbt is present in the ./lib subdirectory of the software.
 Steps:<br>
 1. `cd ./lib`
 2. `make`
+3. `make install`
 
-## Uninstalling lstbt and cleaning up the build
+## cleaning up the build
 
 Steps:<br>
 1. `cd ./lib`
 2. `make clean`
 
 Note: The library installs itself in the /usr/bin filesystem path, hence pertinent permissions are required for the user to alter it.
+Note 2: It is not necessary to install lstbt for testing it.
 
 ## TBT/USB4 user-space functionalities
 This software serves as the first prefatory abstraction of various functionalities of the TBT/USB4 subsystem a user can
