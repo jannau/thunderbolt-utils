@@ -27,3 +27,4 @@ $(LIBTBT_EXEC): $(O_FILES)
 clean:
 	-$(RM) $(LIBTBT_EXEC) $(O_FILES)
 
+.PHONY: all clean
