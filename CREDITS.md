@@ -1,10 +1,10 @@
 The following acknowledges the owners and maintainers of the repository along with the people who have contributed to this repository directly (commits, validation) and indirectly (project management, bugs, ideas), and other references utilized.
 
 ## Owners
-The following people (as of now) are responsible for creating the project and bringing it to its culmination.<br>
+The following people are responsible for creating the project and bringing it to its culmination.<br>
 [Rajat Khandelwal](https://github.com/rajatkha)<br>
 [Abhijeet Rao](https://github.com/arao15)<br>
-T V Rama Lakshman
+[T V Rama Lakshman](https://github.com/ramalakshman)
 
 ## Maintainers
 The repository is maintained currently by the following people.<br>
