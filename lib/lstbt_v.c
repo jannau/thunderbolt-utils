@@ -1732,13 +1732,13 @@ static bool dump_router_verbose(char *router, u8 num)
 	printf("Domain: %u Depth: %u\n", domain_of_router(router), depth_of_router(router));
 
 	dump_spaces(VERBOSE_L1_SPACES);
-	printf("Total adapters: ");
+	printf("Max adapter num: ");
 
 	max_adp = get_max_adp(router);
 	if (max_adp == MAX_ADAPTERS)
 		printf("<Not accessible>\n");
 	else
-		printf("%u\n", max_adp + 1);
+		printf("%u\n", max_adp);
 
 	dump_spaces(VERBOSE_L1_SPACES);
 	printf("State: %s\n", get_router_state(router));
