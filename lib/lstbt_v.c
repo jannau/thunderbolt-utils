@@ -51,43 +51,23 @@ static void dump_spaces(u64 spaces)
 
 /*
  * Returns the router state respectively among one of the following:
- * 1. Uninitialized unplugged
- * 2. Uninitialized plugged
- * 3. Enumerated
+ * 1. Uninitialized plugged
+ * 2. Enumerated
+ *
+ * NOTE: 'Uninitialized unplugged' state can be ignored since router exists
+ * and thus its upstream port is connected.
  */
 static char* get_router_state(const char *router)
 {
-	u64 plugged, configured;
-	u8 upstream_adp;
+	u64 configured;
 
 	configured = is_router_configured(router);
-
-	if (is_host_router(router)) {
-		if (configured == MAX_BIT32)
-			return "<Not accessible>";
-		else if (configured)
-			return "Enumerated";
-		else
-			return "Uninitialized plugged";
-	}
-
-	upstream_adp = get_upstream_adp(router);
-	if (upstream_adp == MAX_ADAPTERS)
+	if (configured == MAX_BIT32)
 		return "<Not accessible>";
-
-	plugged = is_adp_plugged(router, upstream_adp);
-	if (plugged == MAX_BIT32)
-		return "<Not accessible>";
-	else if (!plugged)
-		return "Uninitialized unplugged";
-	else {
-		if (configured == MAX_BIT32)
-			return "<Not accessible>";
-		else if (configured)
-			return "Enumerated";
-		else
-			return "Uninitialized plugged";
-	}
+	else if (configured)
+		return "Enumerated";
+	else
+		return "Uninitialized plugged";
 }
 
 /* Dumps the thunderbolt compatibility (TBT3 as of now) of the router */
