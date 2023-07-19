@@ -713,7 +713,7 @@ void dump_nvm_version(const char *router)
 	free(nvm);
 }
 
-/* Dump the router's lanes */
+/* Dump the lanes used by the router at once */
 void dump_lanes(const char *router)
 {
 	char path[MAX_LEN], check[MAX_LEN];
@@ -736,15 +736,12 @@ void dump_lanes(const char *router)
 	free(lanes);
 }
 
-/* Dump the router's speed.
- * This doubles the 'tx_speed' represented in the sysfs.
- */
+/* Dump the router's speed per lane */
 void dump_speed(const char *router)
 {
 	char path[MAX_LEN], check[MAX_LEN];
 	char str[MAX_LEN];
 	char *speed_str;
-	u8 speed;
 
 	if (is_host_router(router)) {
 		sprintf(str, "%s", "");
@@ -758,8 +755,7 @@ void dump_speed(const char *router)
 	snprintf(path, sizeof(path), "cat %s%s/tx_speed", tbt_sysfs_path, router);
 
 	speed_str = do_bash_cmd(path);
-	speed = strtoud(speed_str);
-	printf("%uG, ", speed * 2);
+	printf("%s, ", speed_str);
 
 	free(speed_str);
 }
