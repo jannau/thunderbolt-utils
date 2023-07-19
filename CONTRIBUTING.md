@@ -2,7 +2,7 @@
 
 ### License
 
-thunderbolt-utils is licensed under the terms in [LICENSES]https://github.com/intel/thunderbolt-utils/tree/main/LICENSES. By contributing to the project, you agree to the license and copyright terms therein and release your contribution under these terms.
+thunderbolt-utils is licensed under the terms in [LICENSES](https://github.com/intel/thunderbolt-utils/tree/main/LICENSES). By contributing to the project, you agree to the license and copyright terms therein and release your contribution under these terms.
 
 ### Sign your work
 

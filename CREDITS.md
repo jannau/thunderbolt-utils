@@ -6,7 +6,7 @@ The following people (as of now) are responsible for creating the project and br
 [Abhijeet Rao](https://github.com/arao15)
 
 ## Maintainers
-The repository is maintained currently by the follwoing people.<br>
+The repository is maintained currently by the following people.<br>
 [Rajat Khandelwal](https://github.com/rajatkha)
 
 ## Contributors
